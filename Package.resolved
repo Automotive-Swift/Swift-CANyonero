@@ -1,0 +1,50 @@
+{
+  "pins" : [
+    {
+      "identity" : "bitbytedata",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tsolomko/BitByteData",
+      "state" : {
+        "revision" : "c119e12decae8f56066df3345a4ac1a05b2f06d5",
+        "version" : "2.0.1"
+      }
+    },
+    {
+      "identity" : "cornucopiacore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Cornucopia-Swift/CornucopiaCore",
+      "state" : {
+        "branch" : "master",
+        "revision" : "8b2973d89a72df9abcfbe7ac975c877a55821ddc"
+      }
+    },
+    {
+      "identity" : "swcompression",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tsolomko/SWCompression",
+      "state" : {
+        "revision" : "0714d4421e1fa1e02af51cd8e615417a95f0d230",
+        "version" : "4.8.1"
+      }
+    },
+    {
+      "identity" : "swift-can",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Automotive-Swift/Swift-CAN",
+      "state" : {
+        "branch" : "master",
+        "revision" : "5ade8df1a9f352bda038c8f4a270f8216dc2e2cf"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto",
+      "state" : {
+        "revision" : "ddb07e896a2a8af79512543b1c7eb9797f8898a5",
+        "version" : "1.1.7"
+      }
+    }
+  ],
+  "version" : 2
+}
