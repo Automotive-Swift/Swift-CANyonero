@@ -8,8 +8,8 @@ public enum CANyonero {
 
     public typealias Channel = UInt8
     public typealias PeriodicMessage = UInt8
-    static let HeaderLength = 4
-    static let ATT = 0x1A
+    public static let HeaderLength = 4
+    public static let ATT: UInt8 = 0x1A
 
     /// Constants for the protocol 'on-the-wire'.
     private enum Wire {
@@ -72,16 +72,16 @@ public enum CANyonero {
                 return
             }
             if bytes[0] != ATT {
-                self = .protocolViolation(details: "Message preambel not ATT.")
+                self = .protocolViolation(details: "Message preambel not ATT \(ATT, radix: .hex, prefix: true, toWidth: 2), received \(bytes[0], radix: .hex, prefix: true, toWidth: 2) instead.")
                 return
             }
             guard let reply = Wire.Reply(rawValue: bytes[1]) else {
                 self = .protocolViolation(details: "Raw value \(bytes[1], radix: .hex, toWidth: 2) is not a valid CANyonero protocol reply.")
                 return
             }
-            let plen = UInt32.CC_fromBytes(bytes[1...4])
-            guard bytes.count == plen + UInt32(HeaderLength) else {
-                self = .protocolViolation(details: "Message length \(bytes.count) not matching payload spec. Expected \(plen + UInt32(HeaderLength)) bytes.")
+            let plen = UInt16.CC_fromBytes(bytes[2...3])
+            guard bytes.count == plen + UInt16(HeaderLength) else {
+                self = .protocolViolation(details: "Message length \(bytes.count) not matching payload spec. Expected \(plen + UInt16(HeaderLength)) bytes.")
                 return
             }
             switch reply {
@@ -108,31 +108,39 @@ public enum CANyonero {
         case beginPeriodicMessage(onChannel: Channel, data: [UInt8])
         case endPeriodicMessage(onChannel: Channel)
 
+        public var command: UInt8 {
+            switch self {
+                case .ping: return Wire.Command.ping.rawValue
+                case .version: return Wire.Command.version.rawValue
+                case .setBitrate(_): return Wire.Command.bitrate.rawValue
+                case .setArbitration(_, _, _): return Wire.Command.arbitration.rawValue
+                case .setFilter(_, _, _, _): return Wire.Command.filter.rawValue
+                case .openChannel(_, _, _): return Wire.Command.open.rawValue
+                case .closeChannel(_): return Wire.Command.close.rawValue
+                case .send(_, _): return Wire.Command.send.rawValue
+                case .beginPeriodicMessage(_, _): return Wire.Command.beginPeriodicMessage.rawValue
+                case .endPeriodicMessage(_): return Wire.Command.endPeriodicMessage.rawValue
+            }
+        }
+
         public var payload: [UInt8] {
             switch self {
-                case .ping:
-                    return [Wire.Command.ping.rawValue, 0x00, 0x00]
-                case .version:
-                    return [Wire.Command.version.rawValue, 0x00, 0x00]
-                case .setBitrate(let bitrate):
-                    return [Wire.Command.bitrate.rawValue, 0x00, 0x04] + bitrate.CC_UInt8array
-                case .setArbitration(let channel, let request, let reply):
-                    return [Wire.Command.arbitration.rawValue, 0x00, 0x09, channel] + request.CC_UInt8array + reply.CC_UInt8array
-                case .setFilter(let channel, let request, let pattern, let mask):
-                    return [Wire.Command.arbitration.rawValue, 0x00, 0x0D, channel] + request.CC_UInt8array + pattern.CC_UInt8array + mask.CC_UInt8array
-                case .openChannel(let proto, let request, let reply):
-                    return [Wire.Command.open.rawValue, 0x00, 0x09, proto.rawValue] + request.CC_UInt8array + reply.CC_UInt8array
-                case .closeChannel(let channel):
-                    return [Wire.Command.close.rawValue, 0x00, 0x01, channel]
-                case .send(let onChannel, let data):
-                    let plen = 1 + UInt16(data.count)
-                    return [Wire.Command.send.rawValue] + plen.CC_UInt8array + [onChannel] + data
-                case .beginPeriodicMessage(let onChannel, let data):
-                    let plen = 1 + UInt16(data.count)
-                    return [Wire.Command.beginPeriodicMessage.rawValue] + plen.CC_UInt8array + [onChannel] + data
-                case .endPeriodicMessage(let onChannel):
-                    return [Wire.Command.endPeriodicMessage.rawValue, 0x00, 0x01, onChannel]
+                case .ping: return []
+                case .version: return []
+                case .setBitrate(let bitrate): return bitrate.CC_UInt8array
+                case .setArbitration(let channel, let request, let reply): return [channel] + request.CC_UInt8array + reply.CC_UInt8array
+                case .setFilter(let channel, let request, let pattern, let mask): return [channel] + request.CC_UInt8array + pattern.CC_UInt8array + mask.CC_UInt8array
+                case .openChannel(let proto, let request, let reply): return [proto.rawValue] + request.CC_UInt8array + reply.CC_UInt8array
+                case .closeChannel(let channel): return [channel]
+                case .send(let onChannel, let data): return [onChannel] + data
+                case .beginPeriodicMessage(let onChannel, let data): return [onChannel] + data
+                case .endPeriodicMessage(let onChannel): return [onChannel]
             }
+        }
+
+        public var frame: [UInt8] {
+            let payload = self.payload
+            return [CANyonero.ATT, self.command] + UInt16(payload.count).CC_UInt8array + payload
         }
     }
 }
