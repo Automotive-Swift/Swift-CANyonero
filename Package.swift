@@ -1,34 +1,37 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.8
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+
 import PackageDescription
 
 let package = Package(
     name: "Swift-CANyonero",
     platforms: [
-        .iOS(.v13),
-        .macOS(.v11),
-        .tvOS(.v13),
-        .watchOS(.v6),
-        //.linux
+        .macOS(.v12)
     ],
     products: [
-        .library(
-            name: "Swift-CANyonero",
-            targets: ["Swift-CANyonero"]),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/Automotive-Swift/Swift-CAN", branch: "master"),
-        .package(url: "https://github.com/Cornucopia-Swift/CornucopiaCore", branch: "master")
+        .library(name: "libCANyonero", targets: ["libCANyonero"]),
+        .library(name: "Swift-CANyonero", targets: ["Swift-CANyonero"]),
     ],
     targets: [
         .target(
+            name: "libCANyonero",
+            dependencies: []
+        ),
+        .target(
             name: "Swift-CANyonero",
-            dependencies: [
-                "CornucopiaCore",
-                "Swift-CAN"
-            ]
+            dependencies: ["libCANyonero"],
+            swiftSettings: [.unsafeFlags([
+                "-I", "Sources/libCANyonero",
+                "-cxx-interoperability-mode=swift-5.9",
+            ])]
         ),
         .testTarget(
-            name: "Swift-CANyoneroTests",
-            dependencies: ["Swift-CANyonero"]),
+            name: "Swift-CANyonero-Tests",
+            dependencies: ["Swift-CANyonero"],
+            swiftSettings: [.unsafeFlags([
+                "-I", "Sources/libCANyonero",
+                "-cxx-interoperability-mode=swift-5.9",
+            ])]
+        )
     ]
 )
