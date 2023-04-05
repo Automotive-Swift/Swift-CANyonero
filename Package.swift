@@ -12,6 +12,9 @@ let package = Package(
         .library(name: "libCANyonero", targets: ["libCANyonero"]),
         .library(name: "Swift-CANyonero", targets: ["Swift-CANyonero"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/Cornucopia-Swift/CornucopiaCore", branch: "master"),
+    ],
     targets: [
         .target(
             name: "libCANyonero",
@@ -19,7 +22,10 @@ let package = Package(
         ),
         .target(
             name: "Swift-CANyonero",
-            dependencies: ["libCANyonero"],
+            dependencies: [
+                "libCANyonero",
+                "CornucopiaCore",
+            ],
             swiftSettings: [.unsafeFlags([
                 "-I", "Sources/libCANyonero",
                 "-cxx-interoperability-mode=swift-5.9",
@@ -27,7 +33,9 @@ let package = Package(
         ),
         .testTarget(
             name: "Swift-CANyonero-Tests",
-            dependencies: ["Swift-CANyonero"],
+            dependencies: [
+                "Swift-CANyonero"
+            ],
             swiftSettings: [.unsafeFlags([
                 "-I", "Sources/libCANyonero",
                 "-cxx-interoperability-mode=swift-5.9",
