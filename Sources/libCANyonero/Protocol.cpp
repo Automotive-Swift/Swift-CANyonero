@@ -3,14 +3,6 @@
 ///
 #include "Protocol.hpp"
 
-/// Helpers
-void vector_append_uint32(std::vector<uint8_t>& vec, uint32_t value) {
-    vec.push_back(static_cast<uint8_t>(value >> 24));
-    vec.push_back(static_cast<uint8_t>(value >> 16));
-    vec.push_back(static_cast<uint8_t>(value >> 8));
-    vec.push_back(static_cast<uint8_t>(value & 0xFF));
-}
-
 /// Protocol Implementation
 namespace CANyonero {
 
@@ -98,6 +90,105 @@ PDU PDU::reset() {
 }
 
 //MARK: - Adapter -> Tester PDU Construction
+PDU PDU::pong(const Bytes payload) {
+    return PDU(PDUType::pong, payload);
+}
 
+PDU PDU::info(std::string vendor, std::string model, std::string hardware, std::string serial, std::string firmware) {
+    std::vector<uint8_t> payload;
+    std::vector<uint8_t> vendor_bytes(vendor.begin(), vendor.end());
+    std::vector<uint8_t> model_bytes(model.begin(), model.end());
+    std::vector<uint8_t> hardware_bytes(hardware.begin(), hardware.end());
+    std::vector<uint8_t> serial_bytes(serial.begin(), serial.end());
+    std::vector<uint8_t> firmware_bytes(firmware.begin(), firmware.end());
+
+    payload.insert(payload.end(), vendor_bytes.begin(), vendor_bytes.end());
+    payload.push_back('\n');
+    payload.insert(payload.end(), model_bytes.begin(), model_bytes.end());
+    payload.push_back('\n');
+    payload.insert(payload.end(), hardware_bytes.begin(), hardware_bytes.end());
+    payload.push_back('\n');
+    payload.insert(payload.end(), serial_bytes.begin(), serial_bytes.end());
+    payload.push_back('\n');
+    payload.insert(payload.end(), firmware_bytes.begin(), firmware_bytes.end());
+
+    return PDU(PDUType::info, payload);
+}
+
+PDU PDU::voltage(uint16_t millivolts) {
+    auto payload = Bytes();
+    vector_append_uint16(payload, millivolts);
+    return PDU(PDUType::voltage, payload);
+}
+
+PDU PDU::channelOpened(ChannelHandle handle) {
+    auto payload = Bytes(handle);
+    return PDU(PDUType::channelOpened, payload);
+}
+
+PDU PDU::channelClosed(ChannelHandle handle) {
+    auto payload = Bytes(handle);
+    return PDU(PDUType::channelOpened, payload);
+}
+
+PDU PDU::sent(ChannelHandle handle, uint16_t numberOfBytes) {
+    auto payload = Bytes(handle);
+    vector_append_uint16(payload, numberOfBytes);
+    return PDU(PDUType::sent, payload);
+}
+
+PDU PDU::arbitrationSet() {
+    return PDU(PDUType::arbitrationSet);
+}
+
+PDU PDU::periodicMessageStarted(PeriodicMessageHandle handle) {
+    auto payload = Bytes(handle);
+    return PDU(PDUType::periodicMessageStarted, payload);
+}
+
+PDU PDU::periodicMessageEnded(PeriodicMessageHandle handle) {
+    auto payload = Bytes(handle);
+    return PDU(PDUType::periodicMessageEnded, payload);
+}
+
+PDU PDU::updateStartedSendData() {
+    return PDU(PDUType::updateStartedSendData);
+}
+
+PDU PDU::updateDataReceived() {
+    return PDU(PDUType::updateDataReceived);
+}
+
+PDU PDU::updateCompleted() {
+    return PDU(PDUType::updateCompleted);
+}
+
+PDU PDU::resetting() {
+    return PDU(PDUType::resetting);
+}
+
+PDU PDU::errorUnspecified() {
+    return PDU(PDUType::errorUnspecified);
+}
+
+PDU PDU::errorHardware() {
+    return PDU(PDUType::errorHardware);
+}
+
+PDU PDU::errorInvalidChannel() {
+    return PDU(PDUType::errorInvalidChannel);
+}
+
+PDU PDU::errorInvalidPeriodic() {
+    return PDU(PDUType::errorInvalidPeriodic);
+}
+
+PDU PDU::errorNoResponse() {
+    return PDU(PDUType::errorNoResponse);
+}
+
+PDU PDU::errorInvalidCommand() {
+    return PDU(PDUType::errorInvalidCommand);
+}
 
 };

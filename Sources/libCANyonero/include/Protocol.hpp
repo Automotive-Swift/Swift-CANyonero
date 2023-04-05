@@ -7,8 +7,7 @@
 #include <string>
 #include <vector>
 
-// Helper method for swift
-std::vector<uint8_t> createVector8FromArray(const uint8_t* array, const size_t length);
+#include "Helpers.hpp"
 
 namespace CANyonero {
 
@@ -134,16 +133,16 @@ enum class PDUType: uint8_t {
     /// Battery Voltage. MUST include the battery voltage in millivolts (UInt16).
     voltage                 = 0xF2,
     /// Channel successfully opened ­– MUST include the (new) logical channel number (UInt8).
-    channelOpen             = 0xF3,
+    channelOpened           = 0xF3,
     /// Channel successfully closed ­– MUST include the logical channel number (UInt8).
     channelClosed           = 0xF4,
     /// Data sent ­– MUST include the logical channel number (UInt8).
     sent                    = 0xF5,
-    /// Arbitration set ­– MUST include the (new) logical channel number (UInt8).
+    /// Arbitration set.
     arbitrationSet          = 0xF6,
     /// Periodic message started to send ­– MUST include the (new) handle for the periodic message.
     periodicMessageStarted  = 0xF7,
-    /// Periodic message ended ­– MUST include the (new) handle for the periodic message.
+    /// Periodic message ended ­– MUST include the handle for the stopped periodic message.
     periodicMessageEnded    = 0xF8,
     /// Update prepared.
     updateStartedSendData   = 0xFA,
@@ -184,6 +183,10 @@ public:
     const std::vector<uint8_t> frame() const;
     const PDUType& type() const { return _type; }
 
+    //
+    // Tester -> Adapter
+    //
+
     /// Creates a `ping` PDU.
     static PDU ping(const Bytes payload = {});
     /// Creates a `requestInfo` PDU.
@@ -211,8 +214,49 @@ public:
     /// Creates a `reset` PDU.
     static PDU reset();
 
-    
+    //
+    // Adapter -> Tester
+    //
 
+    /// Creates a `pong` PDU.
+    static PDU pong(const Bytes payload = {});
+    /// Creates an `info` PDU.
+    static PDU info(std::string vendor, std::string model, std::string hardware, std::string serial, std::string firmware);
+    /// Creates a `voltage` PDU.
+    static PDU voltage(uint16_t millivolts);
+    /// Creates a `channelOpened` PDU.
+    static PDU channelOpened(ChannelHandle handle);
+    /// Creates a `channelClosed` PDU.
+    static PDU channelClosed(ChannelHandle handle);
+    /// Creates a `sent` PDU.
+    static PDU sent(ChannelHandle handle, uint16_t numberOfBytes);
+    /// Creates an `arbitrationSet` PDU.
+    static PDU arbitrationSet();
+    /// Creates a `periodicMessageStarted` PDU.
+    static PDU periodicMessageStarted(PeriodicMessageHandle handle);
+    /// Creates a `periodicMessageEnded` PDU.
+    static PDU periodicMessageEnded(PeriodicMessageHandle handle);
+    /// Creates an `updateStartedSendData` PDU.
+    static PDU updateStartedSendData();
+    /// Creates an `updateDataReceived` PDU.
+    static PDU updateDataReceived();
+    /// Creates an `updateCompleted` PDU.
+    static PDU updateCompleted();
+    /// Creates a `resetting` PDU.
+    static PDU resetting();
+
+    /// Creates an `errorUnspecified` PDU.
+    static PDU errorUnspecified();
+    /// Creates an `errorHardware` PDU.
+    static PDU errorHardware();
+    /// Creates an `errorInvalidChannel` PDU.
+    static PDU errorInvalidChannel();
+    /// Creates an `errorInvalidPeriodic` PDU.
+    static PDU errorInvalidPeriodic();
+    /// Creates an `errorNoResponse` PDU.
+    static PDU errorNoResponse();
+    /// Creates an `errorInvalidCommand` PDU.
+    static PDU errorInvalidCommand();
 };
 
 };
