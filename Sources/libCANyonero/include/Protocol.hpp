@@ -60,8 +60,8 @@ struct Arbitration {
     /// Reply extension (for CAN EA)
     uint8_t replyExtension;
 
-    /// Serialize.
-    void serialize(Bytes& payload) const;
+    void to_vector(Bytes& payload) const;
+    static Arbitration from_vector(const Bytes& payload);
 };
 
 /// The Channel protocol type.
@@ -172,16 +172,27 @@ enum class PDUType: uint8_t {
 /// Encapsulates a PDU on the wire.
 class PDU {
 
+    static const size_t HEADER_SIZE = 4;
     static const uint8_t ATT = 0x1F;
-
     PDUType _type;
+    uint16_t _length;
     std::vector<uint8_t> _payload;
 
 public:
     PDU(const PDUType type): _type(type) {};
     PDU(const PDUType type, const std::vector<uint8_t> payload): _type(type), _payload(payload) {};
-    const std::vector<uint8_t> frame() const;
+    PDU(const Bytes& frame);
+    const Bytes frame() const;
+
     const PDUType& type() const { return _type; }
+    const Arbitration arbitration() const;
+    const ChannelHandle channel() const;
+    const PeriodicMessageHandle periodicMessage() const;
+    const Bytes::const_iterator data() const;
+
+    /// Returns a negative value, if we need to more data to form a valid PDU.
+    /// Returns the number of consumed data, if there is enough data to create the PDU.
+    static int containsPDU(Bytes& bytes);
 
     //
     // Tester -> Adapter
@@ -202,7 +213,7 @@ public:
     /// Creates a `setArbitration` PDU.
     static PDU setArbitration(const ChannelHandle handle, const Arbitration arbitration);
     /// Creates a `startPeriodicMessage` PDU.
-    static PDU startPeriodicMessage(const Arbitration arbitration, const Bytes data);
+    static PDU startPeriodicMessage(const uint8_t timeout, const Arbitration arbitration, const Bytes data);
     /// Creates a `endPeriodicMessage` PDU.
     static PDU endPeriodicMessage(const PeriodicMessageHandle handle);
     /// Creates a `prepareForUpdate` PDU.

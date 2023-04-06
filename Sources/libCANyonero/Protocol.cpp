@@ -6,7 +6,8 @@
 /// Protocol Implementation
 namespace CANyonero {
 
-void Arbitration::serialize(Bytes& payload) const {
+//MARK: - Arbitration
+void Arbitration::to_vector(Bytes& payload) const {
     vector_append_uint32(payload, request);
     payload.push_back(requestExtension);
     vector_append_uint32(payload, replyPattern);
@@ -14,7 +15,60 @@ void Arbitration::serialize(Bytes& payload) const {
     payload.push_back(replyExtension);
 }
 
-const std::vector<uint8_t> PDU::frame() const {
+static Arbitration from_vector(Bytes::const_iterator& it) {
+    Arbitration a;
+    a.request = vector_read_uint32(it);
+    a.requestExtension = *it++;
+    a.replyPattern = vector_read_uint32(it);
+    a.replyMask = vector_read_uint32(it);
+    a.replyExtension = *it++;
+    return a;
+}
+
+const Arbitration PDU::arbitration() const {
+    assert(_type == PDUType::setArbitration);
+
+    auto it = _payload.begin() + 1; // skip channel info (setArbitration) or interval info (startPeriodic)
+    return from_vector(it);
+}
+
+//MARK: - PDU
+const ChannelHandle PDU::channel() const {
+    assert(_type == PDUType::openChannel ||
+           _type == PDUType::closeChannel ||
+           _type == PDUType::send ||
+           _type == PDUType::setArbitration);
+
+    return _payload[0];
+}
+
+const PeriodicMessageHandle PDU::periodicMessage() const {
+    assert(_type == PDUType::endPeriodicMessage);
+
+    return _payload[0];
+}
+
+const Bytes::const_iterator PDU::data() const {
+    switch(static_cast<uint8_t>(_type)) {
+        case (uint8_t)PDUType::send:
+            return _payload.begin() + 1;
+        case (uint8_t)PDUType::sendUpdateData:
+            return _payload.begin();
+        default:
+            assert(false);
+    }
+}
+
+PDU::PDU(const Bytes& frame) {
+    assert(frame.size() >= PDU::HEADER_SIZE);
+    uint16_t payloadLength = frame[2] << 8 | frame[3];
+    assert(frame.size() == PDU::HEADER_SIZE + payloadLength);
+
+    _type = static_cast<PDUType>(frame[1]);
+    _payload = Bytes(frame.begin() + 4, frame.end());
+}
+
+const Bytes PDU::frame() const {
 
     std::vector<uint8_t> frame = {
         PDU::ATT,
@@ -24,6 +78,13 @@ const std::vector<uint8_t> PDU::frame() const {
     };
     frame.insert(frame.end(), _payload.begin(), _payload.end());
     return frame;
+}
+
+int PDU::containsPDU(Bytes& bytes) {
+    if (bytes.size() < PDU::HEADER_SIZE) { return -1; }
+    uint16_t payloadLength = bytes[2] << 8 | bytes[3];
+    if (bytes.size() < PDU::HEADER_SIZE + payloadLength) { return -1; }
+    return PDU::HEADER_SIZE + payloadLength;
 }
 
 //MARK: - Tester -> Adapter PDU Construction
@@ -57,13 +118,13 @@ PDU PDU::send(const ChannelHandle handle, const Bytes data) {
 
 PDU PDU::setArbitration(const ChannelHandle handle, const Arbitration arbitration) {
     auto payload = Bytes(handle);
-    arbitration.serialize(payload);
+    arbitration.to_vector(payload);
     return PDU(PDUType::setArbitration, payload);
 }
 
-PDU PDU::startPeriodicMessage(const Arbitration arbitration, const Bytes data) {
-    auto payload = Bytes();
-    arbitration.serialize(payload);
+PDU PDU::startPeriodicMessage(const uint8_t interval, const Arbitration arbitration, const Bytes data) {
+    auto payload = Bytes(interval);
+    arbitration.to_vector(payload);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::startPeriodicMessage, payload);
 }
@@ -190,5 +251,7 @@ PDU PDU::errorNoResponse() {
 PDU PDU::errorInvalidCommand() {
     return PDU(PDUType::errorInvalidCommand);
 }
+
+
 
 };
