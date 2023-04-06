@@ -48,6 +48,12 @@ const PeriodicMessageHandle PDU::periodicMessage() const {
     return _payload[0];
 }
 
+const ChannelProtocol PDU::protocol() const {
+    assert(_type == PDUType::openChannel);
+
+    return static_cast<ChannelProtocol>(_payload[0]);
+}
+
 const Bytes::const_iterator PDU::data() const {
     switch(static_cast<uint8_t>(_type)) {
         case (uint8_t)PDUType::send:

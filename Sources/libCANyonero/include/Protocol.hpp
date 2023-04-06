@@ -88,18 +88,18 @@ enum class PDUType: uint8_t {
 
     /// PING ­– Tests the command processor. CAN include an arbitrary amount of payload (up to the maximum of 65535 bytes) which will be echoed.
     ping                    = 0x00,
-    /// REQUEST INFO­ – Requests device information.
+    /// REQUEST INFO­ – Requests sending the device information.
     requestInfo             = 0x01,
-    /// READ VOLTAGE ­– Requests battery voltage.
+    /// READ VOLTAGE ­– Requests sending the battery voltage.
     readVoltage             = 0x02,
 
     /// *Automotive Communication Commands*
 
-    /// OPEN ­– Open a logical channel. MUST include protocol specification (`UInt8`). See ``ChannelProtocol`` for available protocols.
+    /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`). See ``ChannelProtocol`` for available protocols.
     openChannel             = 0x03,
-    /// CLOSE ­– Close a logical channel. MUST include the channel number (`UInt8`).
+    /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
     closeChannel            = 0x04,
-    /// SEND ­– Send a data frame over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). Maximum data length is protocol specific.
+    /// SEND ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). Maximum data length specific to the channel protocol.
     send                    = 0x05,
     /// SET ARBITRATION ­– Set the request and response (or source and target) addresses. MUST include the channel number (`UInt8`) and arbitration infos. See ``Arbitration``.
     setArbitration          = 0x06,
@@ -188,6 +188,7 @@ public:
     const Arbitration arbitration() const;
     const ChannelHandle channel() const;
     const PeriodicMessageHandle periodicMessage() const;
+    const ChannelProtocol protocol() const;
     const Bytes::const_iterator data() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
