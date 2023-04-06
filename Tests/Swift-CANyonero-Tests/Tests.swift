@@ -31,4 +31,23 @@ final class Swift_CANyonero_Tests: XCTestCase {
         let frame = info.frame()
     }
 
+    func testParseInfo() throws {
+
+        let vendor = std.__1.string("Vanille-Media")
+        let model = std.__1.string("CANyonero Basic")
+        let hardware = std.__1.string("ESP32/A0")
+        let serial = std.__1.string("1234567890")
+        let firmware = std.__1.string("0.0.1")
+
+        let info = CANyonero.PDU.info(vendor, model, hardware, serial, firmware)
+        let pdu = CANyonero.PDU.init(info.frame());
+        XCTAssertEqual(pdu.type(), CANyonero.PDUType.info);
+        let parsedInfo = pdu.information()
+        XCTAssertEqual(parsedInfo.vendor, vendor)
+        XCTAssertEqual(parsedInfo.model, model)
+        XCTAssertEqual(parsedInfo.hardware, hardware)
+        XCTAssertEqual(parsedInfo.serial, serial)
+        XCTAssertEqual(parsedInfo.firmware, firmware)
+    }
+
 }

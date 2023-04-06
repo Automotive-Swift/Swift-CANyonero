@@ -3,8 +3,25 @@
 ///
 #include "Protocol.hpp"
 
+#include <sstream>
+
 /// Protocol Implementation
 namespace CANyonero {
+
+//MARK: - Info
+Info Info::from_vector(const Bytes& data) {
+    Info info;
+    std::stringstream ss;
+    ss.str(std::string(data.begin(), data.end()));
+
+    std::getline(ss, info.vendor, '\n');
+    std::getline(ss, info.model, '\n');
+    std::getline(ss, info.hardware, '\n');
+    std::getline(ss, info.serial, '\n');
+    std::getline(ss, info.firmware, '\n');
+
+    return info;
+}
 
 //MARK: - Arbitration
 void Arbitration::to_vector(Bytes& payload) const {
@@ -23,6 +40,11 @@ static Arbitration from_vector(Bytes::const_iterator& it) {
     a.replyMask = vector_read_uint32(it);
     a.replyExtension = *it++;
     return a;
+}
+
+const Info PDU::information() const {
+    assert(_type == PDUType::info);
+    return Info::from_vector(_payload);
 }
 
 const Arbitration PDU::arbitration() const {

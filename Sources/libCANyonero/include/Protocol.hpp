@@ -46,6 +46,18 @@ typedef std::vector<uint8_t> Bytes;
 
 using StdVectorOfUInt8 = std::vector<uint8_t>;
 
+/// The Info type
+struct Info {
+
+    std::string vendor;
+    std::string model;
+    std::string hardware;
+    std::string serial;
+    std::string firmware;
+
+    static Info from_vector(const Bytes& data);
+};
+
 /// The Arbitration type.
 struct Arbitration {
 
@@ -184,7 +196,8 @@ public:
     PDU(const Bytes& frame);
     const Bytes frame() const;
 
-    const PDUType& type() const { return _type; }
+    const PDUType type() const { return _type; }
+    const Info information() const;
     const Arbitration arbitration() const;
     const ChannelHandle channel() const;
     const PeriodicMessageHandle periodicMessage() const;
