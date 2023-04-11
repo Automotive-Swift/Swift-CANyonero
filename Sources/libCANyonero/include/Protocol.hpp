@@ -203,6 +203,7 @@ public:
     PeriodicMessageHandle periodicMessage() const;
     ChannelProtocol protocol() const;
     const Bytes::const_iterator data() const;
+    const Bytes& payload() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
     /// Returns the number of consumed data, if there is enough data to create the PDU.

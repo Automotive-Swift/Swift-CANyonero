@@ -87,6 +87,10 @@ const Bytes::const_iterator PDU::data() const {
     }
 }
 
+const Bytes& PDU::payload() const {
+    return _payload;
+}
+
 PDU::PDU(const Bytes& frame) {
     assert(frame.size() >= PDU::HEADER_SIZE);
     uint16_t payloadLength = frame[2] << 8 | frame[3];
