@@ -55,7 +55,7 @@ const Arbitration PDU::arbitration() const {
 }
 
 //MARK: - PDU
-const ChannelHandle PDU::channel() const {
+ChannelHandle PDU::channel() const {
     assert(_type == PDUType::openChannel ||
            _type == PDUType::closeChannel ||
            _type == PDUType::send ||
@@ -64,13 +64,13 @@ const ChannelHandle PDU::channel() const {
     return _payload[0];
 }
 
-const PeriodicMessageHandle PDU::periodicMessage() const {
+PeriodicMessageHandle PDU::periodicMessage() const {
     assert(_type == PDUType::endPeriodicMessage);
 
     return _payload[0];
 }
 
-const ChannelProtocol PDU::protocol() const {
+ChannelProtocol PDU::protocol() const {
     assert(_type == PDUType::openChannel);
 
     return static_cast<ChannelProtocol>(_payload[0]);
@@ -108,7 +108,7 @@ const Bytes PDU::frame() const {
     return frame;
 }
 
-int PDU::containsPDU(Bytes& bytes) {
+int PDU::containsPDU(const Bytes& bytes) {
     if (bytes.size() < PDU::HEADER_SIZE) { return -1; }
     uint16_t payloadLength = bytes[2] << 8 | bytes[3];
     if (bytes.size() < PDU::HEADER_SIZE + payloadLength) { return -1; }

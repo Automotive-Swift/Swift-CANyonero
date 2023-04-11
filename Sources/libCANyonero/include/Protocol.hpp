@@ -196,17 +196,17 @@ public:
     PDU(const Bytes& frame);
     const Bytes frame() const;
 
-    const PDUType type() const { return _type; }
+    PDUType type() const { return _type; }
     const Info information() const;
     const Arbitration arbitration() const;
-    const ChannelHandle channel() const;
-    const PeriodicMessageHandle periodicMessage() const;
-    const ChannelProtocol protocol() const;
+    ChannelHandle channel() const;
+    PeriodicMessageHandle periodicMessage() const;
+    ChannelProtocol protocol() const;
     const Bytes::const_iterator data() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
     /// Returns the number of consumed data, if there is enough data to create the PDU.
-    static int containsPDU(Bytes& bytes);
+    static int containsPDU(const Bytes& bytes);
 
     //
     // Tester -> Adapter
