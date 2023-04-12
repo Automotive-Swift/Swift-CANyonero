@@ -96,80 +96,87 @@ struct PeriodicMessage {
 /// The PDU type.
 enum class PDUType: uint8_t {
 
-    /// Ping & Info Commands
+    /// *Ping & Info Commands*
 
     /// PING ­– Tests the command processor. CAN include an arbitrary amount of payload (up to the maximum of 65535 bytes) which will be echoed.
-    ping                    = 0x00,
+    ping                    = 0x10,
     /// REQUEST INFO­ – Requests sending the device information.
-    requestInfo             = 0x01,
+    requestInfo             = 0x11,
     /// READ VOLTAGE ­– Requests sending the battery voltage.
-    readVoltage             = 0x02,
+    readVoltage             = 0x12,
+
+
+    /// *Hardware Configuration*
+
+    /// SET BITRATE – Set the Bitrate. MUST include the bitrate (`UInt32`). Not supported on all physical channels.
+    setBitrate              = 0x20,
+    /// REBOOT ­– Reset.
+    reset                   = 0x21,
+
 
     /// *Automotive Communication Commands*
 
     /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`). See ``ChannelProtocol`` for available protocols.
-    openChannel             = 0x03,
+    openChannel             = 0x30,
     /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
-    closeChannel            = 0x04,
+    closeChannel            = 0x31,
     /// SEND ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). Maximum data length specific to the channel protocol.
-    send                    = 0x05,
+    send                    = 0x33,
     /// SET ARBITRATION ­– Set the request and response (or source and target) addresses. MUST include the channel number (`UInt8`) and arbitration infos. See ``Arbitration``.
-    setArbitration          = 0x06,
+    setArbitration          = 0x34,
     /// START PERIODIC ­MESSAGE – Begin with sending a periodic message out-of-band. MUST include the ``PeriodicMessage`` structure.
-    startPeriodicMessage    = 0x07,
+    startPeriodicMessage    = 0x35,
     /// END PERIODIC MESSAGE ­– End with sending a periodic message out-of-band. MUST include a valid handle received from `startPeriodicMessage`.
-    endPeriodicMessage      = 0x08,
+    endPeriodicMessage      = 0x36,
 
     /// *Maintenance Commands*
 
     /// PREPARE FOR UPDATE ­– Begin firmware update.
-    prepareForUpdate        = 0x0A,
+    prepareForUpdate        = 0x40,
     /// SEND UPDATE DATA ­– Send update data.
-    sendUpdateData          = 0x0B,
+    sendUpdateData          = 0x41,
     /// COMMIT UPDATE ­– Install new data and reset.
-    commitUpdate            = 0x0C,
-    /// REBOOT ­– Reset.
-    reset                   = 0x0F,
+    commitUpdate            = 0x42,
 
     /// *Positive Replies*
 
+    /// Generic OK.
+    ok                      = 0x80,
     /// Response to PING. MAY include payload.
-    pong                    = 0xF0,
+    pong                    = 0x90,
     /// Info ­response ­– MUST include the following UTF8-strings separated by `\n` (`0x0A`):
     /// 1. Vendor name
     /// 2. Model name
     /// 3. Chipset + Hardware revision
     /// 4. Serial number
     /// 5. Firmware version
-    info                    = 0xF1,
+    info                    = 0x91,
     /// Battery Voltage. MUST include the battery voltage in millivolts (UInt16).
-    voltage                 = 0xF2,
+    voltage                 = 0x92,
+
     /// Channel successfully opened ­– MUST include the (new) logical channel number (UInt8).
-    channelOpened           = 0xF3,
+    channelOpened           = 0xB0,
     /// Channel successfully closed ­– MUST include the logical channel number (UInt8).
-    channelClosed           = 0xF4,
+    channelClosed           = 0xB1,
     /// Data sent ­– MUST include the logical channel number (UInt8).
-    sent                    = 0xF5,
-    /// Arbitration set.
-    arbitrationSet          = 0xF6,
+    sent                    = 0xB2,
+
     /// Periodic message started to send ­– MUST include the (new) handle for the periodic message.
-    periodicMessageStarted  = 0xF7,
+    periodicMessageStarted  = 0xB5,
     /// Periodic message ended ­– MUST include the handle for the stopped periodic message.
-    periodicMessageEnded    = 0xF8,
+    periodicMessageEnded    = 0xB6,
     /// Update prepared.
-    updateStartedSendData   = 0xFA,
+    updateStartedSendData   = 0xC0,
     /// Update data received.
-    updateDataReceived      = 0xFB,
+    updateDataReceived      = 0xC1,
     /// Update completed.
-    updateCompleted         = 0xFC,
-    /// Reset triggered. Connection will close.
-    resetting               = 0xFF,
+    updateCompleted         = 0xC2,
 
     /// *Negative Replies*
 
-    /// An unspecified error has occured.
+    /// An unspecified error has occured, e.g., a protocol violation.
     errorUnspecified        = 0xE0,
-    /// A hardware error has occured.
+    /// A hardware error has occured, e.g., a bitrate could not be set.
     errorHardware           = 0xE1,
     /// Invalid channel selected.
     errorInvalidChannel     = 0xE2,
@@ -219,6 +226,8 @@ public:
     static PDU requestInfo();
     /// Creates a `readVoltage` PDU.
     static PDU readVoltage();
+    /// Creates a `setBitrate` PDU.
+    static PDU setBitrate(const uint32_t bitrate);
     /// Creates an `openChannel` PDU.
     static PDU openChannel(const ChannelProtocol protocol);
     /// Creates a `closeChannel` PDU.
@@ -244,6 +253,8 @@ public:
     // Adapter -> Tester
     //
 
+    /// Creates an `OK` PDU.
+    static PDU ok();
     /// Creates a `pong` PDU.
     static PDU pong(const Bytes payload = {});
     /// Creates an `info` PDU.
@@ -256,8 +267,6 @@ public:
     static PDU channelClosed(ChannelHandle handle);
     /// Creates a `sent` PDU.
     static PDU sent(ChannelHandle handle, uint16_t numberOfBytes);
-    /// Creates an `arbitrationSet` PDU.
-    static PDU arbitrationSet();
     /// Creates a `periodicMessageStarted` PDU.
     static PDU periodicMessageStarted(PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.
@@ -268,8 +277,6 @@ public:
     static PDU updateDataReceived();
     /// Creates an `updateCompleted` PDU.
     static PDU updateCompleted();
-    /// Creates a `resetting` PDU.
-    static PDU resetting();
 
     /// Creates an `errorUnspecified` PDU.
     static PDU errorUnspecified();

@@ -132,6 +132,16 @@ PDU PDU::readVoltage() {
     return PDU(PDUType::readVoltage);
 }
 
+PDU PDU::setBitrate(const uint32_t bitrate) {
+    auto payload = Bytes();
+    vector_append_uint32(payload, bitrate);
+    return PDU(PDUType::setBitrate, payload);
+}
+
+PDU PDU::reset() {
+    return PDU(PDUType::reset);
+}
+
 PDU PDU::openChannel(const ChannelProtocol protocol) {
     auto payload = Bytes(static_cast<uint8_t>(protocol));
     return PDU(PDUType::openChannel, payload);
@@ -178,11 +188,11 @@ PDU PDU::commitUpdate() {
     return PDU(PDUType::commitUpdate);
 }
 
-PDU PDU::reset() {
-    return PDU(PDUType::reset);
+//MARK: - Adapter -> Tester PDU Construction
+PDU PDU::ok() {
+    return PDU(PDUType::ok);
 }
 
-//MARK: - Adapter -> Tester PDU Construction
 PDU PDU::pong(const Bytes payload) {
     return PDU(PDUType::pong, payload);
 }
@@ -230,10 +240,6 @@ PDU PDU::sent(ChannelHandle handle, uint16_t numberOfBytes) {
     return PDU(PDUType::sent, payload);
 }
 
-PDU PDU::arbitrationSet() {
-    return PDU(PDUType::arbitrationSet);
-}
-
 PDU PDU::periodicMessageStarted(PeriodicMessageHandle handle) {
     auto payload = Bytes(handle);
     return PDU(PDUType::periodicMessageStarted, payload);
@@ -254,10 +260,6 @@ PDU PDU::updateDataReceived() {
 
 PDU PDU::updateCompleted() {
     return PDU(PDUType::updateCompleted);
-}
-
-PDU PDU::resetting() {
-    return PDU(PDUType::resetting);
 }
 
 PDU PDU::errorUnspecified() {
