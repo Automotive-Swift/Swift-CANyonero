@@ -227,7 +227,6 @@ PDU PDU::voltage(uint16_t millivolts) {
 
 PDU PDU::channelOpened(ChannelHandle handle) {
     auto payload = Bytes(1, handle);
-    printf("size: %d\n", payload.size());
     return PDU(PDUType::channelOpened, payload);
 }
 
@@ -287,7 +286,5 @@ PDU PDU::errorNoResponse() {
 PDU PDU::errorInvalidCommand() {
     return PDU(PDUType::errorInvalidCommand);
 }
-
-
 
 };
