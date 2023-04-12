@@ -149,31 +149,31 @@ PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate) {
 }
 
 PDU PDU::closeChannel(const ChannelHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     return PDU(PDUType::openChannel, payload);
 }
 
 PDU PDU::send(const ChannelHandle handle, const Bytes data) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::send, payload);
 }
 
 PDU PDU::setArbitration(const ChannelHandle handle, const Arbitration arbitration) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     arbitration.to_vector(payload);
     return PDU(PDUType::setArbitration, payload);
 }
 
 PDU PDU::startPeriodicMessage(const uint8_t interval, const Arbitration arbitration, const Bytes data) {
-    auto payload = Bytes(interval);
+    auto payload = Bytes(1, interval);
     arbitration.to_vector(payload);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::startPeriodicMessage, payload);
 }
 
 PDU PDU::endPeriodicMessage(const PeriodicMessageHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     return PDU(PDUType::endPeriodicMessage, payload);
 }
 
@@ -226,28 +226,29 @@ PDU PDU::voltage(uint16_t millivolts) {
 }
 
 PDU PDU::channelOpened(ChannelHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
+    printf("size: %d\n", payload.size());
     return PDU(PDUType::channelOpened, payload);
 }
 
 PDU PDU::channelClosed(ChannelHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     return PDU(PDUType::channelOpened, payload);
 }
 
 PDU PDU::sent(ChannelHandle handle, uint16_t numberOfBytes) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     vector_append_uint16(payload, numberOfBytes);
     return PDU(PDUType::sent, payload);
 }
 
 PDU PDU::periodicMessageStarted(PeriodicMessageHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     return PDU(PDUType::periodicMessageStarted, payload);
 }
 
 PDU PDU::periodicMessageEnded(PeriodicMessageHandle handle) {
-    auto payload = Bytes(handle);
+    auto payload = Bytes(1, handle);
     return PDU(PDUType::periodicMessageEnded, payload);
 }
 
