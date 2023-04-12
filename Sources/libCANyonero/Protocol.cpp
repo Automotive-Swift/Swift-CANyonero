@@ -82,12 +82,12 @@ uint32_t PDU::bitrate() const {
     return vector_read_uint32(it);
 }
 
-const Bytes::const_iterator PDU::data() const {
-    switch(static_cast<uint8_t>(_type)) {
-        case (uint8_t)PDUType::send:
-            return _payload.begin() + 1;
-        case (uint8_t)PDUType::sendUpdateData:
-            return _payload.begin();
+Bytes PDU::data() const {
+    switch(_type) {
+        case PDUType::send:
+            return Bytes(_payload.begin() + 1, _payload.end());
+        case PDUType::sendUpdateData:
+            return Bytes(_payload.begin(), _payload.end());
         default:
             assert(false);
     }

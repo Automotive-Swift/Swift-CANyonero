@@ -205,7 +205,8 @@ public:
     PeriodicMessageHandle periodicMessage() const;
     ChannelProtocol protocol() const;
     uint32_t bitrate() const;
-    const Bytes::const_iterator data() const;
+    //FIXME: It's a copy...
+    Bytes data() const;
     const Bytes& payload() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
