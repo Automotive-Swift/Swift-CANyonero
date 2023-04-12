@@ -232,7 +232,7 @@ PDU PDU::channelOpened(ChannelHandle handle) {
 
 PDU PDU::channelClosed(ChannelHandle handle) {
     auto payload = Bytes(1, handle);
-    return PDU(PDUType::channelOpened, payload);
+    return PDU(PDUType::channelClosed, payload);
 }
 
 PDU PDU::sent(ChannelHandle handle, uint16_t numberOfBytes) {
