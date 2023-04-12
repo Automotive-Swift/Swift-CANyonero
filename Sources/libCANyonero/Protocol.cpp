@@ -76,6 +76,12 @@ ChannelProtocol PDU::protocol() const {
     return static_cast<ChannelProtocol>(_payload[0]);
 }
 
+uint32_t PDU::bitrate() const {
+    assert(_type == PDUType::openChannel);
+    auto it = _payload.begin() + 1;
+    return vector_read_uint32(it);
+}
+
 const Bytes::const_iterator PDU::data() const {
     switch(static_cast<uint8_t>(_type)) {
         case (uint8_t)PDUType::send:
@@ -132,18 +138,13 @@ PDU PDU::readVoltage() {
     return PDU(PDUType::readVoltage);
 }
 
-PDU PDU::setBitrate(const uint32_t bitrate) {
-    auto payload = Bytes();
-    vector_append_uint32(payload, bitrate);
-    return PDU(PDUType::setBitrate, payload);
-}
-
 PDU PDU::reset() {
     return PDU(PDUType::reset);
 }
 
-PDU PDU::openChannel(const ChannelProtocol protocol) {
+PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate) {
     auto payload = Bytes(static_cast<uint8_t>(protocol));
+    vector_append_uint32(payload, bitrate);
     return PDU(PDUType::openChannel, payload);
 }
 

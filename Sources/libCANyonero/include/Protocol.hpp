@@ -105,18 +105,9 @@ enum class PDUType: uint8_t {
     /// READ VOLTAGE ­– Requests sending the battery voltage.
     readVoltage             = 0x12,
 
-
-    /// *Hardware Configuration*
-
-    /// SET BITRATE – Set the Bitrate. MUST include the bitrate (`UInt32`). Not supported on all physical channels.
-    setBitrate              = 0x20,
-    /// REBOOT ­– Reset.
-    reset                   = 0x21,
-
-
     /// *Automotive Communication Commands*
 
-    /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`). See ``ChannelProtocol`` for available protocols.
+    /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`) and bitrate (`UInt32`). See ``ChannelProtocol`` for available protocols.
     openChannel             = 0x30,
     /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
     closeChannel            = 0x31,
@@ -137,6 +128,8 @@ enum class PDUType: uint8_t {
     sendUpdateData          = 0x41,
     /// COMMIT UPDATE ­– Install new data and reset.
     commitUpdate            = 0x42,
+    /// REBOOT ­– Reset.
+    reset                   = 0x43,
 
     /// *Positive Replies*
 
@@ -209,6 +202,7 @@ public:
     ChannelHandle channel() const;
     PeriodicMessageHandle periodicMessage() const;
     ChannelProtocol protocol() const;
+    uint32_t bitrate() const;
     const Bytes::const_iterator data() const;
     const Bytes& payload() const;
 
@@ -226,10 +220,8 @@ public:
     static PDU requestInfo();
     /// Creates a `readVoltage` PDU.
     static PDU readVoltage();
-    /// Creates a `setBitrate` PDU.
-    static PDU setBitrate(const uint32_t bitrate);
     /// Creates an `openChannel` PDU.
-    static PDU openChannel(const ChannelProtocol protocol);
+    static PDU openChannel(const ChannelProtocol protocol, const uint32_t bitrate);
     /// Creates a `closeChannel` PDU.
     static PDU closeChannel(const ChannelHandle handle);
     /// Creates a `send` PDU.
