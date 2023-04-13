@@ -151,8 +151,8 @@ enum class PDUType: uint8_t {
     channelOpened           = 0xB0,
     /// Channel successfully closed ­– MUST include the logical channel number (UInt8).
     channelClosed           = 0xB1,
-    /// Data sent ­– MUST include the logical channel number (UInt8).
-    sent                    = 0xB2,
+    /// Data for channel received ­– MUST include the logical channel number (UInt8) and the received data.
+    received                = 0xB2,
 
     /// Periodic message started to send ­– MUST include the (new) handle for the periodic message.
     periodicMessageStarted  = 0xB5,
@@ -260,8 +260,8 @@ public:
     static PDU channelOpened(ChannelHandle handle);
     /// Creates a `channelClosed` PDU.
     static PDU channelClosed(ChannelHandle handle);
-    /// Creates a `sent` PDU.
-    static PDU sent(ChannelHandle handle, uint16_t numberOfBytes);
+    /// Creates a `received` PDU.
+    static PDU received(ChannelHandle handle, const Bytes data);
     /// Creates a `periodicMessageStarted` PDU.
     static PDU periodicMessageStarted(PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.

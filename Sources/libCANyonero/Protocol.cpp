@@ -235,10 +235,10 @@ PDU PDU::channelClosed(ChannelHandle handle) {
     return PDU(PDUType::channelClosed, payload);
 }
 
-PDU PDU::sent(ChannelHandle handle, uint16_t numberOfBytes) {
+PDU PDU::received(ChannelHandle handle, const Bytes data) {
     auto payload = Bytes(1, handle);
-    vector_append_uint16(payload, numberOfBytes);
-    return PDU(PDUType::sent, payload);
+    payload.insert(payload.end(), data.begin(), data.end());
+    return PDU(PDUType::received, payload);
 }
 
 PDU PDU::periodicMessageStarted(PeriodicMessageHandle handle) {
