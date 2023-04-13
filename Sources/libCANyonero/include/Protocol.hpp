@@ -40,11 +40,6 @@ namespace CANyonero {
 /// as well as several error codes that can be used to indicate that an error occurred.
 ///
 
-typedef uint8_t ChannelHandle;
-typedef uint8_t PeriodicMessageHandle;
-typedef std::vector<uint8_t> Bytes;
-
-using StdVectorOfUInt8 = std::vector<uint8_t>;
 
 /// The Info type
 struct Info {

@@ -27,4 +27,11 @@ inline std::vector<uint8_t> createVector8FromArray(const uint8_t* array, const s
     return std::vector<uint8_t>(array, array + length);
 };
 
+namespace CANyonero {
+    typedef uint8_t ChannelHandle;
+    typedef uint8_t PeriodicMessageHandle;
+    typedef std::vector<uint8_t> Bytes;
+    using StdVectorOfUInt8 = std::vector<uint8_t>;
+}
+
 #endif
