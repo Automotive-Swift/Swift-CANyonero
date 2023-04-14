@@ -120,7 +120,7 @@ struct Frame {
 };
 
 class Transceiver {
-
+public:
     enum class Behavior {
         defensive,
         strict,
@@ -153,11 +153,11 @@ class Transceiver {
         uint8_t separationTime;
     };
 
-    const Behavior behavior;
-    const uint8_t width;
-    const uint8_t blockSize;
-    const uint8_t rxSeparationTime;
-    const uint8_t txSeparationTime;
+    Behavior behavior;
+    uint8_t width;
+    uint8_t blockSize;
+    uint8_t rxSeparationTime;
+    uint8_t txSeparationTime;
 
     // State
     State state;
@@ -168,6 +168,12 @@ class Transceiver {
     uint8_t receivingSequenceNumber;
     uint16_t receivingPendingCounter;
     uint8_t receivingUnconfirmedFramesCounter;
+
+    Transceiver()
+        :behavior(Behavior::strict),
+        width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
+    {
+    }
 
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint8_t rxSeparationTime = 0x00, uint8_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
@@ -255,7 +261,7 @@ private:
                 break;
             }
 
-            sendingSequenceNumber = ++sendingSequenceNumber % 16;
+            sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
         }
         return {
             .type = Action::Type::writeFrames,
