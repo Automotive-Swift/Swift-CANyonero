@@ -48,7 +48,7 @@ const Info PDU::information() const {
 }
 
 const Arbitration PDU::arbitration() const {
-    assert(_type == PDUType::setArbitration);
+    assert(_type == PDUType::setArbitration || _type == PDUType::startPeriodicMessage);
 
     auto it = _payload.begin() + 1; // skip channel info (setArbitration) or interval info (startPeriodic)
     return from_vector(it);

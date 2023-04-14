@@ -10,7 +10,7 @@ let package = Package(
     ],
     products: [
         .library(name: "libCANyonero", targets: ["libCANyonero"]),
-        .library(name: "Swift-CANyonero", targets: ["Swift-CANyonero"]),
+        //.library(name: "Swift-CANyonero", targets: ["Swift-CANyonero"]),
     ],
     dependencies: [
         .package(url: "https://github.com/Cornucopia-Swift/CornucopiaCore", branch: "master"),
@@ -20,6 +20,7 @@ let package = Package(
             name: "libCANyonero",
             dependencies: []
         ),
+        /*
         .target(
             name: "Swift-CANyonero",
             dependencies: [
@@ -31,6 +32,16 @@ let package = Package(
                 "-cxx-interoperability-mode=swift-5.9",
             ])]
         ),
+        */
+        .testTarget(
+            name: "libCANyonero-Tests",
+            dependencies: [
+                "libCANyonero"
+            ]
+        )
+
+        /*
+        ,
         .testTarget(
             name: "Swift-CANyonero-Tests",
             dependencies: [
@@ -40,6 +51,9 @@ let package = Package(
                 "-I", "Sources/libCANyonero",
                 "-cxx-interoperability-mode=swift-5.9",
             ])]
-        )
-    ]
+        ),
+        */
+    ],
+    cLanguageStandard: .c11,
+    cxxLanguageStandard: .cxx17
 )

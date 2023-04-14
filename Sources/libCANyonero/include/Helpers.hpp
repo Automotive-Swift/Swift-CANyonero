@@ -1,5 +1,6 @@
-#ifndef Helpers_hpp
-#define Helpers_hpp
+#ifndef HELPERS_HPP
+#define HELPERS_HPP
+#pragma once
 
 #include <vector>
 
