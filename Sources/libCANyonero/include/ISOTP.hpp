@@ -52,7 +52,7 @@ struct Frame {
     static Frame single(Bytes& bytes) {
         assert(bytes.size() <= 7);
         uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
-        auto vector = std::vector<uint8_t> { 1, pci };
+        auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         return Frame(vector);
     }
@@ -69,7 +69,7 @@ struct Frame {
         assert(sequenceNumber <= 0x0F);
         assert(count <= width);
         uint8_t pci = uint8_t(Type::consecutive) | uint8_t(sequenceNumber);
-        auto vector = std::vector<uint8_t> { 1, pci };
+        auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.begin() + count);
         vector.resize(width, ISOTP::padding);
     }
