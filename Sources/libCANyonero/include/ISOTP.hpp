@@ -40,9 +40,8 @@ struct Frame {
 
     /// Creates a frame from its on-the-wire structure (exactly 7 or 8 bytes).
     Frame(Bytes& bytes)
-    :bytes(bytes) {
-        assert(bytes.size() >= 7);
-
+    :bytes(bytes)
+    {
     }
 
     static Frame flowControl(FlowStatus status, uint8_t blockSize, uint8_t separationTime) {
@@ -51,7 +50,9 @@ struct Frame {
     }
 
     static Frame single(Bytes& bytes) {
-        auto vector = std::vector<uint8_t> { uint8_t(Type::single), uint8_t(bytes.size()) };
+        assert(bytes.size() <= 7);
+        uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
+        auto vector = std::vector<uint8_t> { 1, pci };
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         return Frame(vector);
     }
@@ -189,7 +190,6 @@ public:
 
         if (bytes.size() < width - 1) {
             // Content small enough to fit in a single frame, send single frame and leave state machine in `.idle`.
-            bytes.resize(width - 1, ISOTP::padding);
             auto frame = Frame::single(bytes);
             return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
         }
