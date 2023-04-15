@@ -175,12 +175,14 @@ public:
     uint16_t receivingPendingCounter;
     uint16_t receivingUnconfirmedFramesCounter;
 
+    // Don't call this constructor, it's only there to put a ``Transceiver`` in a container.
     Transceiver()
         :behavior(Behavior::strict),
         width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
     {
     }
 
+    /// Create a new ``Transceiver`` with a configuration.
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint8_t rxSeparationTime = 0x00, uint8_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
@@ -255,7 +257,7 @@ private:
             numberOfUnconfirmedFrames = ISOTP::maximumUnconfirmedBlocks;
         }
         auto nextFrames = std::vector<Frame> {};
-        for (int i = 0; i < numberOfUnconfirmedFrames; ++i) {
+        for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
             auto nextChunkSize = std::min(width - 1, static_cast<int>(sendingPayload.size()));
             auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, nextChunkSize, width);
             sendingPayload.erase(sendingPayload.begin(), sendingPayload.begin() + nextChunkSize);
@@ -286,6 +288,7 @@ private:
                 if (pduLength > bytes.size() - 1) { return { Action::Type::protocolViolation, "Did receive SINGLE with length exceeding payload." }; }
                 if (pduLength > 7) { return { Action::Type::protocolViolation, "Did receive SINGLE with invalid length > 7." }; }
                 auto data = Bytes(bytes.begin() + 1, bytes.begin() + 1 + pduLength);
+                // No need to call reset() as we didn't change anything in the state machine.
                 return {
                     .type = Action::Type::process,
                     .data = data,
