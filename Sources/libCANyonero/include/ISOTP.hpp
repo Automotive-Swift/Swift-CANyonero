@@ -49,11 +49,12 @@ struct Frame {
         return Frame(vector);
     }
 
-    static Frame single(Bytes& bytes) {
+    static Frame single(Bytes& bytes, uint8_t width) {
         assert(bytes.size() <= 7);
         uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
         auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.end());
+        vector.resize(width, ISOTP::padding);
         return Frame(vector);
     }
 
@@ -61,17 +62,19 @@ struct Frame {
         uint8_t pciHi = uint8_t(Type::first) | uint8_t(pduLength >> 8);
         uint8_t pciLo = uint8_t(pduLength & 0xFF);
         auto vector = std::vector<uint8_t> { pciHi, pciLo };
-        vector.insert(vector.end(), bytes.begin(), bytes.begin() + width);
+        vector.insert(vector.end(), bytes.begin(), bytes.begin() + width - 2);
         return Frame(vector);
     }
 
     static Frame consecutive(uint8_t sequenceNumber, Bytes& bytes, uint8_t count, uint8_t width) {
         assert(sequenceNumber <= 0x0F);
+        assert(count);
         assert(count <= width);
         uint8_t pci = uint8_t(Type::consecutive) | uint8_t(sequenceNumber);
         auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.begin() + count);
         vector.resize(width, ISOTP::padding);
+        return Frame(vector);
     }
 
     Type type() {
@@ -188,16 +191,16 @@ public:
 
         if (state != State::idle) { return { Action::Type::protocolViolation, "State machine not .idle" }; }
 
-        if (bytes.size() < width - 1) {
+        if (bytes.size() < width) {
             // Content small enough to fit in a single frame, send single frame and leave state machine in `.idle`.
-            auto frame = Frame::single(bytes);
+            auto frame = Frame::single(bytes, width);
             return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
         }
 
         // Content large enough to require multiple frames. Send first frame and proceeding state machine to `.sending`.
         auto frame = Frame::first(bytes.size(), bytes, width);
         state = State::sending;
-        sendingPayload = Bytes(bytes.begin() + width, bytes.end());
+        sendingPayload = Bytes(bytes.begin() + width - 2, bytes.end());
         sendingSequenceNumber = 0x01;
         return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
     }
@@ -245,7 +248,7 @@ private:
         auto frame = Frame(bytes);
         if (frame.type() != Frame::Type::flowControl) { return { Action::Type::protocolViolation, "Unexpected frame type received while sending. Did expect FLOW CONTROL." }; }
 
-        auto numberOfUnconfirmedFrames = frame.blockSize();
+        uint16_t numberOfUnconfirmedFrames = frame.blockSize();
         if (numberOfUnconfirmedFrames == 0) {
             numberOfUnconfirmedFrames = ISOTP::maximumUnconfirmedBlocks;
         }

@@ -2,6 +2,7 @@
 #define HELPERS_HPP
 #pragma once
 
+#include <iostream>
 #include <vector>
 
 inline void vector_append_uint32(std::vector<uint8_t>& vec, uint32_t value) {
@@ -24,6 +25,32 @@ inline uint32_t vector_read_uint32(std::vector<uint8_t>::const_iterator& it) {
     return val;
 }
 
+inline std::vector<uint8_t> vector_drop_first(std::vector<uint8_t>& vec, size_t n) {
+    std::vector<uint8_t> removed_elements;
+    for (int i = 0; i < n; i++) {
+        removed_elements.push_back(vec[i]);
+    }
+    vec.erase(vec.begin(), vec.begin() + n);
+    return removed_elements;
+}
+
+template<typename T>
+inline std::vector<T> operator+(const std::vector<T>& vec1, const std::vector<T>& vec2) {
+    std::vector<T> result = vec1;
+    result.insert(result.end(), vec2.begin(), vec2.end());
+    return result;
+}
+
+template<typename T>
+inline void print_hex_vector(const std::vector<T>& vec) {
+    std::cout << "[ ";
+    for (const auto& elem : vec) {
+        std::cout << std::hex << static_cast<int>(elem) << " ";
+    }
+    std::cout << "]" << std::endl;
+}
+
+/// For Swift/C++ interoperability.
 inline std::vector<uint8_t> createVector8FromArray(const uint8_t* array, const size_t length) {
     return std::vector<uint8_t>(array, array + length);
 };
