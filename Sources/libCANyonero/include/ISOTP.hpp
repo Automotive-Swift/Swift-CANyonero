@@ -44,8 +44,10 @@ struct Frame {
     {
     }
 
-    static Frame flowControl(FlowStatus status, uint8_t blockSize, uint8_t separationTime) {
-        std::vector<uint8_t> vector { uint8_t(Type::flowControl), uint8_t(status), blockSize, separationTime };
+    static Frame flowControl(FlowStatus status, uint8_t blockSize, uint8_t separationTime, uint8_t width) {
+        uint8_t pci = uint8_t(Type::flowControl) | uint8_t(status);
+        std::vector<uint8_t> vector { pci, blockSize, separationTime };
+        vector.resize(width, ISOTP::padding);
         return Frame(vector);
     }
 
@@ -102,9 +104,9 @@ struct Frame {
         return bytes[0] & 0x0F;
     }
 
-    uint8_t firstLength() {
+    uint16_t firstLength() {
         assert((bytes[0] & 0xF0) == 0x10); // ensure this is a first frame
-        return ((bytes[0] & 0x0F) << 8) | bytes[1];
+        return uint16_t((bytes[0] & 0x0F)) << 8 | bytes[1];
     }
 
     uint8_t consecutiveSequenceNumber() {
@@ -171,7 +173,7 @@ public:
     Bytes receivingPayload;
     uint8_t receivingSequenceNumber;
     uint16_t receivingPendingCounter;
-    uint8_t receivingUnconfirmedFramesCounter;
+    uint16_t receivingUnconfirmedFramesCounter;
 
     Transceiver()
         :behavior(Behavior::strict),
@@ -280,8 +282,9 @@ private:
                 if (state != State::idle) { return { Action::Type::protocolViolation, "Did receive SINGLE while we're not idle." }; }
 
                 auto pduLength = frame.singleLength();
+                if (pduLength > bytes.size() - 1) { return { Action::Type::protocolViolation, "Did receive SINGLE with length exceeding payload." }; }
                 if (pduLength > 7) { return { Action::Type::protocolViolation, "Did receive SINGLE with invalid length > 7." }; }
-                auto data = Bytes(bytes.begin() + 1, bytes.end());
+                auto data = Bytes(bytes.begin() + 1, bytes.begin() + 1 + pduLength);
                 return {
                     .type = Action::Type::process,
                     .data = data,
@@ -293,12 +296,15 @@ private:
 
                 auto pduLength = frame.firstLength();
                 if (pduLength < 8) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < 8." }; }
-
+                receivingPayload = std::vector<uint8_t>(bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - (width - 2);
                 receivingUnconfirmedFramesCounter = blockSize;
+                if (receivingUnconfirmedFramesCounter == 0) {
+                    receivingUnconfirmedFramesCounter = ISOTP::maximumUnconfirmedBlocks;
+                }
                 state = State::receiving;
                 receivingSequenceNumber = 0x01;
-                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime);
+                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime, width);
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = { 1, frame }
@@ -309,6 +315,7 @@ private:
                 if (state != State::receiving) { return { Action::Type::protocolViolation, "Did receive CONSECUTIVE while we're not receiving." }; }
 
                 if (frame.consecutiveSequenceNumber() != receivingSequenceNumber) { return { Action::Type::protocolViolation, "Did receive CONSECUTIVE with unexpected sequence number." }; }
+                receivingSequenceNumber = (receivingSequenceNumber + 1) & 0x0F;
 
                 auto length = std::min<uint16_t>(width - 1, receivingPendingCounter);
                 receivingPayload.insert(receivingPayload.end(), bytes.begin() + 1, bytes.begin() + 1 + length);
@@ -326,7 +333,7 @@ private:
                 if (receivingUnconfirmedFramesCounter > 0) { return { Action::Type::waitForMore }; }
 
                 receivingUnconfirmedFramesCounter = blockSize;
-                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime);
+                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime, width);
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = { 1, frame }

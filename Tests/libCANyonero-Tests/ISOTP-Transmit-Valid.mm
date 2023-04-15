@@ -13,13 +13,13 @@
 
 using namespace CANyonero::ISOTP;
 
-@interface ISOTP : XCTestCase
+@interface ISOTP_Transmit_Valid : XCTestCase
 
 @property(nonatomic,assign,readonly) Transceiver* isotp;
 
 @end
 
-@implementation ISOTP
+@implementation ISOTP_Transmit_Valid
 
 -(void)setUp {
     _isotp = new Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, 0, 0, 0);
@@ -97,7 +97,6 @@ using namespace CANyonero::ISOTP;
     for (auto& consecutive: secondAction.frames) {
         auto chunkSize = std::min(size_t(7), pdu.size());
         auto expected = std::vector<uint8_t>(1, 0x20 + sequenceNumber) + vector_drop_first(pdu, chunkSize);
-        print_hex_vector(expected);
         if (expected.size() < 8) {
             expected.resize(8, padding);
         }
@@ -133,7 +132,6 @@ using namespace CANyonero::ISOTP;
         for (auto& consecutive: secondAction.frames) {
             auto chunkSize = std::min(size_t(7), pdu.size());
             auto expected = std::vector<uint8_t>(1, 0x20 + sequenceNumber) + vector_drop_first(pdu, chunkSize);
-            print_hex_vector(expected);
             if (expected.size() < 8) {
                 expected.resize(8, padding);
             }
