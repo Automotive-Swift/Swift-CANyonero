@@ -18,7 +18,10 @@ let package = Package(
     targets: [
         .target(
             name: "libCANyonero",
-            dependencies: []
+            dependencies: [],
+            cxxSettings: [
+                .unsafeFlags(["-Werror", "-pedantic"])
+            ]
         ),
         /*
         .target(
@@ -54,6 +57,6 @@ let package = Package(
         ),
         */
     ],
-    cLanguageStandard: .c11,
+    cLanguageStandard: .c18,
     cxxLanguageStandard: .cxx20
 )

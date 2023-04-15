@@ -109,7 +109,7 @@ using namespace CANyonero::ISOTP;
     XCTAssert(pdu.empty());
 }
 
--(void)testMaxPayloadFlowControl {
+-(void)testMaxPayloadWithFlowControl {
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
 

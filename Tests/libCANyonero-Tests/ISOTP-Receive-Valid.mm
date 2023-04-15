@@ -97,40 +97,55 @@ using namespace CANyonero::ISOTP;
     }
 }
 
-/*
--(void)testMaxPayloadFlowControl {
+-(void)testMaxPayloadWithFlowControl {
+
+    auto blockSize = 5;
+    auto _isotp = new Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, blockSize, 0, 0);
+
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
 
-    auto firstAction = _isotp->writePDU(pdu);
-    XCTAssert(firstAction.type == Transceiver::Action::Type::writeFrames);
-    XCTAssertEqual(firstAction.frames.size(), 1);
-    auto frame = firstAction.frames[0];
-    XCTAssertEqual(frame.type(), Frame::Type::first);
-    XCTAssertEqual(frame.bytes.size(), 8);
-    auto expected = std::vector<uint8_t> { 0x1F, 0xFF } + vector_drop_first(pdu, 6);
-    XCTAssertEqual(frame.bytes, expected);
+    auto firstFrame = std::vector<uint8_t>{ 0x1F, 0xFF } + vector_drop_first(pdu, 6);
+    auto action = _isotp->didReceiveFrame(firstFrame);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(action.frames.size(), 1);
+    auto flowControl = action.frames[0];
 
+    XCTAssertEqual(flowControl.type(), Frame::Type::flowControl);
+    XCTAssertEqual(flowControl.bytes.size(), 8);
+    auto expected = std::vector<uint8_t> { 0x30, uint8_t(blockSize), 0x00, padding, padding, padding, padding, padding };
+    XCTAssertEqual(flowControl.bytes, expected);
+
+    uint8_t unconfirmedBlocks = blockSize;
+    uint8_t sequenceNumber = 0x01;
     while (!pdu.empty()) {
-        auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x20, 0x00 };
-        auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
-        XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
-        XCTAssertTrue(secondAction.frames.size() <= 0x20);
 
-        uint8_t sequenceNumber = 0x01;
-        for (auto& consecutive: secondAction.frames) {
-            auto chunkSize = std::min(size_t(7), pdu.size());
-            auto expected = std::vector<uint8_t>(1, 0x20 + sequenceNumber) + vector_drop_first(pdu, chunkSize);
-            if (expected.size() < 8) {
-                expected.resize(8, padding);
+        auto chunkSize = std::min(size_t(7), pdu.size());
+        auto consecutive = std::vector<uint8_t>(1, 0x20 + sequenceNumber) + vector_drop_first(pdu, chunkSize);
+        consecutive.resize(8, padding);
+        auto consecutiveAction = _isotp->didReceiveFrame(consecutive);
+        sequenceNumber = (sequenceNumber + 1) & 0x0F;
+        unconfirmedBlocks--;
+
+        if (!pdu.empty()) {
+            if (unconfirmedBlocks == 0) {
+                XCTAssertEqual(consecutiveAction.type, Transceiver::Action::Type::writeFrames);
+                XCTAssertEqual(flowControl.bytes.size(), 8);
+                auto expected = std::vector<uint8_t> { 0x30, uint8_t(blockSize), 0x00, padding, padding, padding, padding, padding };
+                XCTAssertEqual(flowControl.bytes, expected);
+                unconfirmedBlocks = blockSize;
+                continue;
+            } else {
+                XCTAssertEqual(consecutiveAction.type, Transceiver::Action::Type::waitForMore);
             }
-            XCTAssertEqual(consecutive.type(), Frame::Type::consecutive);
-            XCTAssertEqual(consecutive.bytes.size(), 8);
-            XCTAssertEqual(consecutive.bytes, expected);
-            sequenceNumber = (sequenceNumber + 1) & 0x0F;
+        } else {
+            XCTAssertEqual(consecutiveAction.type, Transceiver::Action::Type::process);
+            std::vector<uint8_t> pdu(maximumTransferSize);
+            std::iota(pdu.begin(), pdu.end(), 0);
+            XCTAssertEqual(consecutiveAction.data, pdu);
         }
     }
+    delete _isotp;
 }
-*/
 
 @end
