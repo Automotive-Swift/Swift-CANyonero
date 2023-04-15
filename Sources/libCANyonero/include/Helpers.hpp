@@ -3,6 +3,7 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 
 inline void vector_append_uint32(std::vector<uint8_t>& vec, uint32_t value) {
@@ -45,7 +46,7 @@ template<typename T>
 inline void print_hex_vector(const std::vector<T>& vec) {
     std::cout << "[ ";
     for (const auto& elem : vec) {
-        std::cout << std::hex << static_cast<int>(elem) << " ";
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << std::uppercase << static_cast<int>(elem) << " ";
     }
     std::cout << "]" << std::endl;
 }

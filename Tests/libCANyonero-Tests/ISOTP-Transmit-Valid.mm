@@ -64,7 +64,7 @@ using namespace CANyonero::ISOTP;
     auto expected = std::vector<uint8_t> { 0x10, 0x08, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36 };
     XCTAssertEqual(frame.bytes, expected);
 
-    auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00 };
+    auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding, padding };
     auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
     XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
     XCTAssertEqual(secondAction.frames.size(), 1);
@@ -88,7 +88,7 @@ using namespace CANyonero::ISOTP;
     auto expected = std::vector<uint8_t> { 0x1F, 0xFF } + vector_drop_first(pdu, 6);
     XCTAssertEqual(frame.bytes, expected);
 
-    auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00 };
+    auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding, padding };
     auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
     XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
     XCTAssertEqual(secondAction.frames.size(), 585);
@@ -123,7 +123,7 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(frame.bytes, expected);
 
     while (!pdu.empty()) {
-        auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x20, 0x00 };
+        auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x20, 0x00, padding, padding, padding, padding, padding };
         auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
         XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
         XCTAssertTrue(secondAction.frames.size() <= 0x20);

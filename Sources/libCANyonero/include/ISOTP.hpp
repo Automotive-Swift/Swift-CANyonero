@@ -209,7 +209,7 @@ public:
 
     /// Call this for any incoming frame.
     Action didReceiveFrame(Bytes& bytes) {
-        if (bytes.size() > width) { return { Action::Type::protocolViolation, "Incoming frame does not match predefined width." }; }
+        if (bytes.size() != width) { return { Action::Type::protocolViolation, "Incoming frame does not match predefined width." }; }
 
         switch (behavior) {
             case Behavior::strict: {
@@ -282,6 +282,7 @@ private:
                 if (state != State::idle) { return { Action::Type::protocolViolation, "Did receive SINGLE while we're not idle." }; }
 
                 auto pduLength = frame.singleLength();
+                if (pduLength == 0)  { return { Action::Type::protocolViolation, "Did receive SINGLE with zero length in PCI." }; }
                 if (pduLength > bytes.size() - 1) { return { Action::Type::protocolViolation, "Did receive SINGLE with length exceeding payload." }; }
                 if (pduLength > 7) { return { Action::Type::protocolViolation, "Did receive SINGLE with invalid length > 7." }; }
                 auto data = Bytes(bytes.begin() + 1, bytes.begin() + 1 + pduLength);
