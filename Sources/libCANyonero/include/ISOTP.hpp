@@ -228,6 +228,8 @@ public:
                 switch (state) {
                     case State::sending: {
                         action = parseFlowControlFrame(bytes);
+                        break;
+                        
                     default:
                         action = parseDataFrame(bytes);
                     }
@@ -243,8 +245,10 @@ public:
                         return action;
                     }
                 }
+                return action;
             }
         }
+        assert(false);
     }
 
 private:
