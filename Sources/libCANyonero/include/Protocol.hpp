@@ -248,19 +248,19 @@ public:
     /// Creates a `pong` PDU.
     static PDU pong(const Bytes payload = {});
     /// Creates an `info` PDU.
-    static PDU info(std::string vendor, std::string model, std::string hardware, std::string serial, std::string firmware);
+    static PDU info(const std::string vendor, const std::string model, const std::string hardware, const std::string serial, const std::string firmware);
     /// Creates a `voltage` PDU.
-    static PDU voltage(uint16_t millivolts);
+    static PDU voltage(const uint16_t millivolts);
     /// Creates a `channelOpened` PDU.
-    static PDU channelOpened(ChannelHandle handle);
+    static PDU channelOpened(const ChannelHandle handle);
     /// Creates a `channelClosed` PDU.
-    static PDU channelClosed(ChannelHandle handle);
+    static PDU channelClosed(const ChannelHandle handle);
     /// Creates a `received` PDU.
-    static PDU received(ChannelHandle handle, const Bytes data);
+    static PDU received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes data);
     /// Creates a `periodicMessageStarted` PDU.
-    static PDU periodicMessageStarted(PeriodicMessageHandle handle);
+    static PDU periodicMessageStarted(const PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.
-    static PDU periodicMessageEnded(PeriodicMessageHandle handle);
+    static PDU periodicMessageEnded(const PeriodicMessageHandle handle);
     /// Creates an `updateStartedSendData` PDU.
     static PDU updateStartedSendData();
     /// Creates an `updateDataReceived` PDU.
