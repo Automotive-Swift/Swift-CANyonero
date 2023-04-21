@@ -16,7 +16,7 @@ namespace CANyonero {
 namespace ISOTP {
 
 const size_t maximumTransferSize = 0xFFF; // 4095 bytes
-const size_t maximumUnconfirmedBlocks = 1000; // roughly
+const size_t maximumUnconfirmedBlocks = 1000; // 586 + n ;-)
 const uint8_t padding = 0xAA;
 
 struct Frame {
@@ -125,6 +125,8 @@ struct Frame {
     }
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 class Transceiver {
 public:
     enum class Behavior {
@@ -364,6 +366,7 @@ private:
         receivingUnconfirmedFramesCounter = 0;
     }
 };
+#pragma GCC diagnostic push
 
 }
 }
