@@ -8,5 +8,6 @@
 
 #include "Protocol.hpp"
 #include "ISOTP.hpp"
+#include "lz4.h"
 
 #endif

@@ -83,11 +83,37 @@ uint32_t PDU::bitrate() const {
 }
 
 Bytes PDU::data() const {
-    switch(_type) {
+    switch (_type) {
+        case PDUType::received:
+            /* fallthrough */
         case PDUType::send:
             return Bytes(_payload.begin() + 1, _payload.end());
         case PDUType::sendUpdateData:
             return Bytes(_payload.begin(), _payload.end());
+        default:
+            assert(false);
+    }
+}
+
+Bytes PDU::compressedData() const {
+    switch (_type) {
+        case PDUType::receivedCompressed:
+            /* fallthrough */
+        case PDUType::sendCompressed:
+            return Bytes(_payload.begin() + 1 + 2, _payload.end());
+        default:
+            assert(false);
+    }
+}
+
+uint16_t PDU::uncompressedLength() const {
+    switch (_type) {
+        case PDUType::receivedCompressed:
+            /* fallthrough */
+        case PDUType::sendCompressed: {
+            auto it = _payload.begin() + 1;
+            return vector_read_uint16(it);
+        }
         default:
             assert(false);
     }
@@ -157,6 +183,13 @@ PDU PDU::send(const ChannelHandle handle, const Bytes data) {
     auto payload = Bytes(1, handle);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::send, payload);
+}
+
+PDU PDU::sendCompressed(const ChannelHandle handle, const uint16_t uncompressedLength, const Bytes data) {
+    auto payload = Bytes(1, handle);
+    vector_append_uint16(payload, uncompressedLength);
+    payload.insert(payload.end(), data.begin(), data.end());
+    return PDU(PDUType::sendCompressed, payload);
 }
 
 PDU PDU::setArbitration(const ChannelHandle handle, const Arbitration arbitration) {
@@ -239,6 +272,15 @@ PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t e
     auto payload = Bytes(1, handle);
     vector_append_uint32(payload, id);
     payload.push_back(extension);
+    payload.insert(payload.end(), data.begin(), data.end());
+    return PDU(PDUType::received, payload);
+}
+
+PDU PDU::receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const uint16_t uncompressedLength, const Bytes data) {
+    auto payload = Bytes(1, handle);
+    vector_append_uint32(payload, id);
+    payload.push_back(extension);
+    vector_append_uint16(payload, uncompressedLength);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::received, payload);
 }

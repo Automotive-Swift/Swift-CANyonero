@@ -10,6 +10,7 @@ let package = Package(
     ],
     products: [
         .library(name: "libCANyonero", targets: ["libCANyonero"]),
+        .library(name: "ObjC-CANyonero", targets: ["ObjC-CANyonero"]),
         //.library(name: "Swift-CANyonero", targets: ["Swift-CANyonero"]),
     ],
     dependencies: [
@@ -19,6 +20,13 @@ let package = Package(
         .target(
             name: "libCANyonero",
             dependencies: [],
+            cxxSettings: [
+                .unsafeFlags(["-Werror", "-pedantic"])
+            ]
+        ),
+        .target(
+            name: "ObjC-CANyonero",
+            dependencies: ["libCANyonero"],
             cxxSettings: [
                 .unsafeFlags(["-Werror", "-pedantic"])
             ]
@@ -40,6 +48,12 @@ let package = Package(
             name: "libCANyonero-Tests",
             dependencies: [
                 "libCANyonero"
+            ]
+        ),
+        .testTarget(
+            name: "ObjC-CANyonero-Tests",
+            dependencies: [
+                "ObjC-CANyonero"
             ]
         )
 

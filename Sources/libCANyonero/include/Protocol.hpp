@@ -106,7 +106,7 @@ enum class PDUType: uint8_t {
     openChannel             = 0x30,
     /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
     closeChannel            = 0x31,
-    /// SEND ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). Maximum data length specific to the channel protocol.
+    /// SEND ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). The maximum data length specific to the channel protocol.
     send                    = 0x33,
     /// SET ARBITRATION ­– Set the request and response (or source and target) addresses. MUST include the channel number (`UInt8`) and arbitration infos. See ``Arbitration``.
     setArbitration          = 0x34,
@@ -114,6 +114,8 @@ enum class PDUType: uint8_t {
     startPeriodicMessage    = 0x35,
     /// END PERIODIC MESSAGE ­– End with sending a periodic message out-of-band. MUST include a valid handle received from `startPeriodicMessage`.
     endPeriodicMessage      = 0x36,
+    /// SEND COMPRESSED ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`), the uncompressed size (`UInt16`), and the LZ4-compressed payload (`[UInt8]`). The maximum data length is specific to the channel protocol.
+    sendCompressed          = 0x37,
 
     /// *Maintenance Commands*
 
@@ -139,15 +141,17 @@ enum class PDUType: uint8_t {
     /// 4. Serial number
     /// 5. Firmware version
     info                    = 0x91,
-    /// Battery Voltage. MUST include the battery voltage in millivolts (UInt16).
+    /// Battery Voltage. MUST include the battery voltage in millivolts (`UInt16`).
     voltage                 = 0x92,
 
-    /// Channel successfully opened ­– MUST include the (new) logical channel number (UInt8).
+    /// Channel successfully opened ­– MUST include the (new) logical channel number (`UInt8`).
     channelOpened           = 0xB0,
-    /// Channel successfully closed ­– MUST include the logical channel number (UInt8).
+    /// Channel successfully closed ­– MUST include the logical channel number (`UInt8`).
     channelClosed           = 0xB1,
-    /// Data for channel received ­– MUST include the logical channel number (UInt8) and the received data.
+    /// Data for channel received ­– MUST include the logical channel number (`UInt8`) and the received data.
     received                = 0xB2,
+    /// Data for channel received ­– MUST include the logical channel number (`UInt8`), the length of the uncompressed data (`UInt16`) and the received data compressed via LZ4.
+    receivedCompressed      = 0xB3,
 
     /// Periodic message started to send ­– MUST include the (new) handle for the periodic message.
     periodicMessageStarted  = 0xB5,
@@ -200,8 +204,9 @@ public:
     PeriodicMessageHandle periodicMessage() const;
     ChannelProtocol protocol() const;
     uint32_t bitrate() const;
-    //FIXME: It's a copy...
     Bytes data() const;
+    Bytes compressedData() const;
+    uint16_t uncompressedLength() const;
     const Bytes& payload() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
@@ -224,6 +229,8 @@ public:
     static PDU closeChannel(const ChannelHandle handle);
     /// Creates a `send` PDU.
     static PDU send(const ChannelHandle handle, const Bytes data);
+    /// Creates a `sendCompressed` PDU.
+    static PDU sendCompressed(const ChannelHandle handle, const uint16_t uncompressedLength, const Bytes data);
     /// Creates a `setArbitration` PDU.
     static PDU setArbitration(const ChannelHandle handle, const Arbitration arbitration);
     /// Creates a `startPeriodicMessage` PDU.
@@ -257,6 +264,8 @@ public:
     static PDU channelClosed(const ChannelHandle handle);
     /// Creates a `received` PDU.
     static PDU received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes data);
+    /// Creates a `receivedCompressed` PDU.
+    static PDU receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const uint16_t uncompressedLength, const Bytes data);
     /// Creates a `periodicMessageStarted` PDU.
     static PDU periodicMessageStarted(const PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.

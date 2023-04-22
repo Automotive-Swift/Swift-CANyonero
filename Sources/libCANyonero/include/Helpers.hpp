@@ -6,6 +6,11 @@
 #include <iomanip>
 #include <vector>
 
+inline void vector_append_uint16(std::vector<uint8_t>& vec, uint16_t value) {
+    vec.push_back(static_cast<uint8_t>(value >> 8));
+    vec.push_back(static_cast<uint8_t>(value & 0xFF));
+}
+
 inline void vector_append_uint32(std::vector<uint8_t>& vec, uint32_t value) {
     vec.push_back(static_cast<uint8_t>(value >> 24));
     vec.push_back(static_cast<uint8_t>(value >> 16));
@@ -13,9 +18,10 @@ inline void vector_append_uint32(std::vector<uint8_t>& vec, uint32_t value) {
     vec.push_back(static_cast<uint8_t>(value & 0xFF));
 }
 
-inline void vector_append_uint16(std::vector<uint8_t>& vec, uint16_t value) {
-    vec.push_back(static_cast<uint8_t>(value >> 8));
-    vec.push_back(static_cast<uint8_t>(value & 0xFF));
+inline uint16_t vector_read_uint16(std::vector<uint8_t>::const_iterator& it) {
+    uint16_t val = (static_cast<uint16_t>(*it++) << 8);
+    val |= static_cast<uint16_t>(*it++);
+    return val;
 }
 
 inline uint32_t vector_read_uint32(std::vector<uint8_t>::const_iterator& it) {
