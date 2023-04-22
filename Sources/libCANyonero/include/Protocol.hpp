@@ -197,16 +197,27 @@ public:
     PDU(const Bytes& frame);
     const Bytes frame() const;
 
+    /// Returns the PDU type.
     PDUType type() const { return _type; }
+    /// Returns the information value of this PDU, iff the PDU is `information`.
     const Info information() const;
+    /// Returns the arbitration value of this PDU, iff the PDU is `setArbitration`.
     const Arbitration arbitration() const;
+    /// Returns the channel handle value of this PDU, iff the PDU contains one.
     ChannelHandle channel() const;
+    /// Returns the periodic message value of this PDU, iff the PDU contains one.
     PeriodicMessageHandle periodicMessage() const;
+    /// Returns the channel protocol value of this PDU, iff the PDU is `openChannel`.
     ChannelProtocol protocol() const;
+    /// Returns the channel bitrate value of this PDU, iff the PDU is `openChannel`.
     uint32_t bitrate() const;
+    /// Returns the hardware data value of this PDU, iff the PDU is `send` or `received`.
     Bytes data() const;
-    Bytes compressedData() const;
+    /// Returns the hardware data value of this PDU, iff the PDU is `sendCompressed` or `receivedCompressed`.
+    Bytes uncompressedData() const;
+    /// Returns the uncompressed length value of this PDU, iff the PDU is `sendCompressed` or `receivedCompressed`.
     uint16_t uncompressedLength() const;
+    /// Returns the complete payload of this PDU, i.e. the complete PDU minus the fixed header.
     const Bytes& payload() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
@@ -228,9 +239,9 @@ public:
     /// Creates a `closeChannel` PDU.
     static PDU closeChannel(const ChannelHandle handle);
     /// Creates a `send` PDU.
-    static PDU send(const ChannelHandle handle, const Bytes data);
-    /// Creates a `sendCompressed` PDU.
-    static PDU sendCompressed(const ChannelHandle handle, const uint16_t uncompressedLength, const Bytes data);
+    static PDU send(const ChannelHandle handle, const Bytes& data);
+    /// Creates a `sendCompressed` PDU. The payload will be compressed.
+    static PDU sendCompressed(const ChannelHandle handle, const Bytes& uncompressedData);
     /// Creates a `setArbitration` PDU.
     static PDU setArbitration(const ChannelHandle handle, const Arbitration arbitration);
     /// Creates a `startPeriodicMessage` PDU.
@@ -263,9 +274,9 @@ public:
     /// Creates a `channelClosed` PDU.
     static PDU channelClosed(const ChannelHandle handle);
     /// Creates a `received` PDU.
-    static PDU received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes data);
-    /// Creates a `receivedCompressed` PDU.
-    static PDU receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const uint16_t uncompressedLength, const Bytes data);
+    static PDU received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& data);
+    /// Creates a `receivedCompressed` PDU. Payload will be compressed using LZ4.
+    static PDU receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& uncompressedData);
     /// Creates a `periodicMessageStarted` PDU.
     static PDU periodicMessageStarted(const PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.

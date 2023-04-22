@@ -5,6 +5,8 @@
 
 #include <sstream>
 
+#include "lz4.h"
+
 /// Protocol Implementation
 namespace CANyonero {
 
@@ -85,7 +87,7 @@ uint32_t PDU::bitrate() const {
 Bytes PDU::data() const {
     switch (_type) {
         case PDUType::received:
-            /* fallthrough */
+            return Bytes(_payload.begin() + 6, _payload.end());
         case PDUType::send:
             return Bytes(_payload.begin() + 1, _payload.end());
         case PDUType::sendUpdateData:
@@ -95,12 +97,23 @@ Bytes PDU::data() const {
     }
 }
 
-Bytes PDU::compressedData() const {
+Bytes PDU::uncompressedData() const {
     switch (_type) {
-        case PDUType::receivedCompressed:
-            /* fallthrough */
-        case PDUType::sendCompressed:
+        case PDUType::receivedCompressed: {
+            auto length = uncompressedLength();
+            auto uncompressedData = new char[length];
+            // offset computes from channel (1), id (4), extension (1), uncompressed length (2) = 8
+            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 8), uncompressedData, _length - 8, length);
+            return Bytes(_payload.begin() + 3, _payload.end());
+        }
+
+        case PDUType::sendCompressed: {
+            auto length = uncompressedLength();
+            auto uncompressedData = new char[length];
+            // offset computes from channel (1), uncompressed length (2) = 3
+            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 3), uncompressedData, _length - 3, length);
             return Bytes(_payload.begin() + 1 + 2, _payload.end());
+        }
         default:
             assert(false);
     }
@@ -108,9 +121,13 @@ Bytes PDU::compressedData() const {
 
 uint16_t PDU::uncompressedLength() const {
     switch (_type) {
-        case PDUType::receivedCompressed:
-            /* fallthrough */
+        case PDUType::receivedCompressed: {
+            // offset computes from channel (1), id (4), extension (1) = 6
+            auto it = _payload.begin() + 6;
+            return vector_read_uint16(it);
+        }
         case PDUType::sendCompressed: {
+            // offset computes from channel (1)
             auto it = _payload.begin() + 1;
             return vector_read_uint16(it);
         }
@@ -179,16 +196,22 @@ PDU PDU::closeChannel(const ChannelHandle handle) {
     return PDU(PDUType::openChannel, payload);
 }
 
-PDU PDU::send(const ChannelHandle handle, const Bytes data) {
+PDU PDU::send(const ChannelHandle handle, const Bytes& data) {
     auto payload = Bytes(1, handle);
     payload.insert(payload.end(), data.begin(), data.end());
     return PDU(PDUType::send, payload);
 }
 
-PDU PDU::sendCompressed(const ChannelHandle handle, const uint16_t uncompressedLength, const Bytes data) {
+PDU PDU::sendCompressed(const ChannelHandle handle, const Bytes& uncompressedData) {
+    const uint16_t uncompressedLength = uncompressedData.size();
+    auto bound = LZ4_compressBound(uncompressedLength);
+    auto buffer = new char[bound];
+    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer, uncompressedLength, bound);
+
     auto payload = Bytes(1, handle);
     vector_append_uint16(payload, uncompressedLength);
-    payload.insert(payload.end(), data.begin(), data.end());
+    payload.insert(payload.end(), buffer, buffer + compressedLength);
+    delete[] buffer;
     return PDU(PDUType::sendCompressed, payload);
 }
 
@@ -268,7 +291,7 @@ PDU PDU::channelClosed(const ChannelHandle handle) {
     return PDU(PDUType::channelClosed, payload);
 }
 
-PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes data) {
+PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& data) {
     auto payload = Bytes(1, handle);
     vector_append_uint32(payload, id);
     payload.push_back(extension);
@@ -276,13 +299,19 @@ PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t e
     return PDU(PDUType::received, payload);
 }
 
-PDU PDU::receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const uint16_t uncompressedLength, const Bytes data) {
+PDU PDU::receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& uncompressedData) {
+    const uint16_t uncompressedLength = uncompressedData.size();
+    auto bound = LZ4_compressBound(uncompressedLength);
+    auto buffer = new char[bound];
+    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer, uncompressedLength, bound);
+
     auto payload = Bytes(1, handle);
     vector_append_uint32(payload, id);
     payload.push_back(extension);
     vector_append_uint16(payload, uncompressedLength);
-    payload.insert(payload.end(), data.begin(), data.end());
-    return PDU(PDUType::received, payload);
+    payload.insert(payload.end(), buffer, buffer + compressedLength);
+    delete[] buffer;
+    return PDU(PDUType::receivedCompressed, payload);
 }
 
 PDU PDU::periodicMessageStarted(const PeriodicMessageHandle handle) {

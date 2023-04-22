@@ -71,6 +71,6 @@ let package = Package(
         ),
         */
     ],
-    cLanguageStandard: .c18,
+    cLanguageStandard: .c99,
     cxxLanguageStandard: .cxx20
 )
