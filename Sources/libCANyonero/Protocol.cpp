@@ -104,18 +104,18 @@ Bytes PDU::uncompressedData() const {
     switch (_type) {
         case PDUType::receivedCompressed: {
             auto length = uncompressedLength();
-            auto uncompressedData = new char[length];
+            auto uncompressedData = std::make_unique<char[]>(length);
             // offset computes from channel (1), id (4), extension (1), uncompressed length (2) = 8
-            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 8), uncompressedData, _length - 8, length);
-            return Bytes(_payload.begin() + 3, _payload.end());
+            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 8), uncompressedData.get(), _length - 8, length);
+            return Bytes(uncompressedData.get(), uncompressedData.get() + length);
         }
 
         case PDUType::sendCompressed: {
             auto length = uncompressedLength();
-            auto uncompressedData = new char[length];
+            auto uncompressedData = std::make_unique<char[]>(length);
             // offset computes from channel (1), uncompressed length (2) = 3
-            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 3), uncompressedData, _length - 3, length);
-            return Bytes(_payload.begin() + 1 + 2, _payload.end());
+            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 3), uncompressedData.get(), _length - 3, length);
+            return Bytes(uncompressedData.get(), uncompressedData.get() + length);
         }
         default:
             assert(false);
@@ -145,8 +145,8 @@ const Bytes& PDU::payload() const {
 
 PDU::PDU(const Bytes& frame) {
     assert(frame.size() >= PDU::HEADER_SIZE);
-    uint16_t payloadLength = frame[2] << 8 | frame[3];
-    assert(frame.size() == PDU::HEADER_SIZE + payloadLength);
+    _length = frame[2] << 8 | frame[3];
+    assert(frame.size() == PDU::HEADER_SIZE + _length);
 
     _type = static_cast<PDUType>(frame[1]);
     _payload = Bytes(frame.begin() + 4, frame.end());
