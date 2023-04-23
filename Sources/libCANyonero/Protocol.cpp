@@ -61,6 +61,9 @@ ChannelHandle PDU::channel() const {
     assert(_type == PDUType::openChannel ||
            _type == PDUType::closeChannel ||
            _type == PDUType::send ||
+           _type == PDUType::sendCompressed ||
+           _type == PDUType::received ||
+           _type == PDUType::receivedCompressed ||
            _type == PDUType::setArbitration);
 
     return _payload[0];
