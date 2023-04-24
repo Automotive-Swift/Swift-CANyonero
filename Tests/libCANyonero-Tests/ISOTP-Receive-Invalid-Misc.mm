@@ -40,6 +40,24 @@ using namespace CANyonero::ISOTP;
     delete _isotp;
 }
 
+-(void)testUnexpectedFlowControlClear {
+    auto consecutive = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding, padding };
+    auto action = _isotp->didReceiveFrame(consecutive);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
+}
+
+-(void)testUnexpectedFlowControlWait {
+    auto consecutive = std::vector<uint8_t> { 0x31, 0x00, 0x00, padding, padding, padding, padding, padding };
+    auto action = _isotp->didReceiveFrame(consecutive);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
+}
+
+-(void)testUnexpectedFlowControlOverflow {
+    auto consecutive = std::vector<uint8_t> { 0x32, 0x00, 0x00, padding, padding, padding, padding, padding };
+    auto action = _isotp->didReceiveFrame(consecutive);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
+}
+
 -(void)testConsecutiveWithoutFirst {
     auto consecutive = std::vector<uint8_t> { 0x21, 0x07, padding, padding, padding, padding, padding, padding };
     auto action = _isotp->didReceiveFrame(consecutive);

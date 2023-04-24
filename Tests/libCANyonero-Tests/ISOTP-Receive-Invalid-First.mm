@@ -29,7 +29,7 @@ using namespace CANyonero::ISOTP;
     delete _isotp;
 }
 
--(void)testFirstTooSmall {
+-(void)testFirstPCITooSmall {
     auto frame = std::vector<uint8_t> { 0x10, 0x07, padding, padding, padding, padding, padding, padding };
     auto action = _isotp->didReceiveFrame(frame);
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);

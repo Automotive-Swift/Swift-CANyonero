@@ -35,7 +35,7 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
 }
 
--(void)testSingleTooSmall {
+-(void)testSingleNoPadding {
     auto frame = std::vector<uint8_t> { 0x01, 0x02, 0x03 };
     auto action = _isotp->didReceiveFrame(frame);
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);

@@ -280,30 +280,44 @@ private:
     Action parseFlowControlFrame(Bytes& bytes) {
         auto frame = Frame(bytes);
         if (frame.type() != Frame::Type::flowControl) { return { Action::Type::protocolViolation, "Unexpected frame type received while sending. Did expect FLOW CONTROL." }; }
+        
+        switch (frame.flowStatus()) {
 
-        uint16_t numberOfUnconfirmedFrames = frame.blockSize();
-        if (numberOfUnconfirmedFrames == 0) {
-            numberOfUnconfirmedFrames = ISOTP::maximumUnconfirmedBlocks;
-        }
-        auto nextFrames = std::vector<Frame> {};
-        for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
-            auto nextChunkSize = std::min(width - 1, static_cast<int>(sendingPayload.size()));
-            auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, nextChunkSize, width);
-            sendingPayload.erase(sendingPayload.begin(), sendingPayload.begin() + nextChunkSize);
-            nextFrames.insert(nextFrames.end(), nextFrame);
-
-            if (sendingPayload.empty()) {
-                reset();
-                break;
+            case Frame::FlowStatus::clearToSend: {
+                uint16_t numberOfUnconfirmedFrames = frame.blockSize();
+                if (numberOfUnconfirmedFrames == 0) {
+                    numberOfUnconfirmedFrames = ISOTP::maximumUnconfirmedBlocks;
+                }
+                auto nextFrames = std::vector<Frame> {};
+                for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
+                    auto nextChunkSize = std::min(width - 1, static_cast<int>(sendingPayload.size()));
+                    auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, nextChunkSize, width);
+                    sendingPayload.erase(sendingPayload.begin(), sendingPayload.begin() + nextChunkSize);
+                    nextFrames.insert(nextFrames.end(), nextFrame);
+                    
+                    if (sendingPayload.empty()) {
+                        reset();
+                        break;
+                    }
+                    
+                    sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
+                }
+                return {
+                    .type = Action::Type::writeFrames,
+                    .frames = nextFrames,
+                    .separationTime = txSeparationTime,
+                };
             }
+                
+            case Frame::FlowStatus::wait:
+                return { Action::Type::waitForMore };
 
-            sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
+            case Frame::FlowStatus::overflow:
+                return { Action::Type::protocolViolation, "Received FLOW CONTROL w/ status OVERFLOW." };
+
+            default:
+                return { Action::Type::protocolViolation, "Received FLOW CONTROL w/ invalid status." };
         }
-        return {
-            .type = Action::Type::writeFrames,
-            .frames = nextFrames,
-            .separationTime = txSeparationTime,
-        };
     }
 
     Action parseDataFrame(Bytes& bytes) {
