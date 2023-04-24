@@ -21,6 +21,7 @@ const uint8_t padding = 0xAA;
 
 struct Frame {
 
+    /// The Frame Type.
     enum class Type: uint8_t {
         single = 0x00,
         first = 0x10,
@@ -29,6 +30,7 @@ struct Frame {
         invalid = 0xFF
     };
 
+    /// The Flow Control Status.
     enum class FlowStatus: uint8_t {
         clearToSend = 0x00,
         wait = 0x01,
@@ -44,6 +46,7 @@ struct Frame {
     {
     }
 
+    /// Returns an FC.
     static Frame flowControl(FlowStatus status, uint8_t blockSize, uint8_t separationTime, uint8_t width) {
         uint8_t pci = uint8_t(Type::flowControl) | uint8_t(status);
         std::vector<uint8_t> vector { pci, blockSize, separationTime };
@@ -51,6 +54,7 @@ struct Frame {
         return Frame(vector);
     }
 
+    /// Returns an SF.
     static Frame single(Bytes& bytes, uint8_t width) {
         assert(bytes.size() <= 7);
         uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
@@ -60,6 +64,7 @@ struct Frame {
         return Frame(vector);
     }
 
+    /// Returns a FF.
     static Frame first(uint16_t pduLength, Bytes& bytes, uint8_t width) {
         uint8_t pciHi = uint8_t(Type::first) | uint8_t(pduLength >> 8);
         uint8_t pciLo = uint8_t(pduLength & 0xFF);
@@ -68,6 +73,7 @@ struct Frame {
         return Frame(vector);
     }
 
+    /// Returns a CF.
     static Frame consecutive(uint8_t sequenceNumber, Bytes& bytes, uint8_t count, uint8_t width) {
         assert(sequenceNumber <= 0x0F);
         assert(count);
@@ -79,6 +85,7 @@ struct Frame {
         return Frame(vector);
     }
 
+    /// Returns the frame type.
     Type type() {
         switch (bytes[0] & 0xF0) {
             case 0x00: return Type::single;
@@ -89,6 +96,7 @@ struct Frame {
         }
     }
 
+    /// Returns the FC status.
     FlowStatus flowStatus() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
         switch(bytes[0] & 0x0F) {
@@ -99,29 +107,44 @@ struct Frame {
         }
     }
 
+    /// Returns the PDU length for an SF.
     uint8_t singleLength() {
         assert((bytes[0] & 0xF0) == 0x00); // ensure this is a single frame
         return bytes[0] & 0x0F;
     }
 
+    /// Returns the PDU length for an FF.
     uint16_t firstLength() {
         assert((bytes[0] & 0xF0) == 0x10); // ensure this is a first frame
         return uint16_t((bytes[0] & 0x0F)) << 8 | bytes[1];
     }
 
+    /// Returns SN.
     uint8_t consecutiveSequenceNumber() {
         assert((bytes[0] & 0xF0) == 0x20); // ensure this is a consecutive frame
         return bytes[0] & 0x0F;
     }
 
+    /// Returns BS.
     uint8_t blockSize() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
         return bytes[1];
     }
 
+    /// Returns ST in millieconds.
     uint8_t separationTime() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
-        return bytes[2];
+        return separationTimeToMilliseconds(bytes[2]);
+    }
+    
+    static uint8_t separationTimeToMilliseconds(uint8_t stMin) {
+        // This is a simplification of ISO-15765-2:2016, but it's good enough:
+        // 1. Below 0x7F, it's milliseconds.
+        // 2. 0x80 - 0xF0 are reserved and therefore we can choose a default.
+        // 3. Between 0xF1 and 0xF9, it's microseconds * 100 – A precision that
+        // we will never reach on the MCUs we target, hence we ceil to 1ms.
+        // 4. 0xFA - 0xFF are reserved and therefore we can choose a default.
+        return (stMin <= 0x7F) ? stMin : 1;
     }
 };
 

@@ -22,6 +22,11 @@
     uint8_t buffer[100];
 
     auto compressed = ::LZ4_compress_default(string.c_str(), (char*)buffer, int(string.end() - string.begin()), sizeof(buffer));
+    
+    for (int i = 0; i < compressed; ++i) {
+        printf("%02X, ", buffer[i]);
+    }
+    printf("\n");
 }
 
 @end
