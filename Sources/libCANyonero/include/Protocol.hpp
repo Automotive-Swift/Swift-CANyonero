@@ -184,12 +184,13 @@ enum class PDUType: uint8_t {
 class PDU {
 
     static const size_t HEADER_SIZE = 4;
-    static const uint8_t ATT = 0x1F;
     PDUType _type;
     uint16_t _length;
     std::vector<uint8_t> _payload;
+    static const uint8_t ATT = 0x1F;
 
 public:
+
     PDU(const PDUType type): _type(type) {};
     PDU(const PDUType type, const std::vector<uint8_t> payload): _type(type), _payload(payload) {
         //printf("Creating packet with type %02X and payload length %d\n", uint8_t(_type), _payload.size());

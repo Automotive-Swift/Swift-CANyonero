@@ -164,10 +164,20 @@ const Bytes PDU::frame() const {
     return frame;
 }
 
+// Check whether there is a PDU in the `Bytes`.
+// Returns > 0, if a complete PDU is found.
+// Returns 0, if the contents looks like a PDU, but more data is needed.
+// Returns < 0, if there is garbage in the buffer.
+// If a negative value is returned, the caller SHOULD remove the offending bytes and immediately call this method again.
 int PDU::containsPDU(const Bytes& bytes) {
-    if (bytes.size() < PDU::HEADER_SIZE) { return -1; }
+
+    auto it = std::find(bytes.begin(), bytes.end(), 0x1F);
+    if (it == bytes.end()) { return -bytes.size(); } // ATT not found, remove everything.
+    if (it != bytes.begin()) { return std::distance(it, bytes.begin()); } // ATT found w/ leading garbage.
+
+    if (bytes.size() < PDU::HEADER_SIZE) { return -0; }
     uint16_t payloadLength = bytes[2] << 8 | bytes[3];
-    if (bytes.size() < PDU::HEADER_SIZE + payloadLength) { return -1; }
+    if (bytes.size() < PDU::HEADER_SIZE + payloadLength) { return -0; }
     return PDU::HEADER_SIZE + payloadLength;
 }
 
