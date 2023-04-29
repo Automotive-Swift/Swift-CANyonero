@@ -11,3 +11,13 @@ especially suited for ECU reprogramming.
 
 The hardware runs the proprietary CANyonerOS, an operating system based
 on FreeRTOS implementing the CANyonero communication protocol.
+
+## PDU Examples
+
+### Open Channel
+
+`1F 30 0005 00 0007A120` ­– Open ISOTP channel w/ Bitrate 500000.
+
+### Send Periodic Message
+
+`1F 02 000D 000007E0 00 000007E8 00 023E80`

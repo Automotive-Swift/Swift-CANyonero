@@ -77,7 +77,6 @@ PeriodicMessageHandle PDU::periodicMessage() const {
 
 ChannelProtocol PDU::protocol() const {
     assert(_type == PDUType::openChannel);
-
     return static_cast<ChannelProtocol>(_payload[0]);
 }
 
@@ -85,6 +84,12 @@ uint32_t PDU::bitrate() const {
     assert(_type == PDUType::openChannel);
     auto it = _payload.begin() + 1;
     return vector_read_uint32(it);
+}
+
+uint16_t PDU::milliseconds() const {
+    assert(_type == PDUType::startPeriodicMessage);
+    uint16_t interval = _payload[0];
+    return interval * 500;
 }
 
 Bytes PDU::data() const {
@@ -95,6 +100,8 @@ Bytes PDU::data() const {
             return Bytes(_payload.begin() + 1, _payload.end());
         case PDUType::sendUpdateData:
             return Bytes(_payload.begin(), _payload.end());
+        case PDUType::startPeriodicMessage:
+            return Bytes(_payload.begin() + 1 + sizeof(CANyonero::Arbitration), _payload.end());
         default:
             assert(false);
     }

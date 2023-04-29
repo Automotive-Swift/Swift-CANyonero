@@ -212,6 +212,8 @@ public:
     ChannelProtocol protocol() const;
     /// Returns the channel bitrate value of this PDU, iff the PDU is `openChannel`.
     uint32_t bitrate() const;
+    /// Returns the interval value of this PDU, iff the PDU is `startPeriodicMessage`.
+    uint16_t milliseconds() const;
     /// Returns the hardware data value of this PDU, iff the PDU is `send` or `received`.
     Bytes data() const;
     /// Returns the hardware data value of this PDU, iff the PDU is `sendCompressed` or `receivedCompressed`.
