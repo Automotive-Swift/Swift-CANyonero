@@ -56,6 +56,8 @@ struct Info {
 /// The Arbitration type.
 struct Arbitration {
 
+    static constexpr const size_t size = 4+4+4+1+1;
+
     /// Request (or Source).
     uint32_t request;
     /// Reply Pattern (or Destination)

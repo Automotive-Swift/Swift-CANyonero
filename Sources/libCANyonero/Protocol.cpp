@@ -101,7 +101,7 @@ Bytes PDU::data() const {
         case PDUType::sendUpdateData:
             return Bytes(_payload.begin(), _payload.end());
         case PDUType::startPeriodicMessage:
-            return Bytes(_payload.begin() + 1 + sizeof(CANyonero::Arbitration), _payload.end());
+            return Bytes(_payload.begin() + 1 + CANyonero::Arbitration::size, _payload.end());
         default:
             assert(false);
     }
