@@ -20,4 +20,4 @@ on FreeRTOS implementing the CANyonero communication protocol.
 
 ### Send Periodic Message
 
-`1F 02 000D 000007E0 00 000007E8 00 023E80`
+`1F 35 000E 02 000007E0 00 000007E8 00 023E80` ­– Send every 1 second `023E80` (UDS Tester Present, don't send response) to 0x7E0.
