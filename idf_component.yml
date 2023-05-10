@@ -1,0 +1,5 @@
+version: "0.0.1"
+description: CANyonero CAN Adapter Protocol Implementation
+url: https://www.github.com/Automotive-Swift/Swift-CANyonero
+dependencies:
+  idf: ">=5.0"
