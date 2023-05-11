@@ -3,6 +3,7 @@
 ///
 #include "Protocol.hpp"
 
+#include <memory>
 #include <sstream>
 
 #include "lz4.h"
@@ -179,8 +180,8 @@ const Bytes PDU::frame() const {
 int PDU::containsPDU(const Bytes& bytes) {
 
     auto it = std::find(bytes.begin(), bytes.end(), 0x1F);
-    if (it == bytes.end()) { return -bytes.size(); } // ATT not found, remove everything.
-    if (it != bytes.begin()) { return std::distance(it, bytes.begin()); } // ATT found w/ leading garbage.
+    if (it == bytes.end()) { return (int)-bytes.size(); } // ATT not found, remove everything.
+    if (it != bytes.begin()) { return (int)std::distance(it, bytes.begin()); } // ATT found w/ leading garbage.
 
     if (bytes.size() < PDU::HEADER_SIZE) { return -0; }
     uint16_t payloadLength = bytes[2] << 8 | bytes[3];
