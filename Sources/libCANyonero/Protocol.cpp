@@ -3,6 +3,7 @@
 ///
 #include "Protocol.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
 
