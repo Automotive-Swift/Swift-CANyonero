@@ -236,7 +236,12 @@ public:
 
     /// Call this for any incoming frame.
     Action didReceiveFrame(Bytes& bytes) {
-        if (bytes.size() != width) { return { Action::Type::protocolViolation, "Incoming frame does not match predefined width." }; }
+        if (bytes.size() != width) {
+            // Allow unpadded flow control which some ECUs are using (BMW 8HP TCU, I'm looking at you!)
+            if (!(bytes.size() == 3 && bytes[0] >= 0x30 && bytes[0] <= 0x32)) {
+                return { Action::Type::protocolViolation, "Incoming frame does not match predefined width." };
+            }
+        }
 
         switch (behavior) {
             case Behavior::strict: {
