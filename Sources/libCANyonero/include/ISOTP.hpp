@@ -23,19 +23,19 @@ struct Frame {
 
     /// The Frame Type.
     enum class Type: uint8_t {
-        single = 0x00,
-        first = 0x10,
+        single      = 0x00,
+        first       = 0x10,
         consecutive = 0x20,
         flowControl = 0x30,
-        invalid = 0xFF
+        invalid     = 0xFF
     };
 
     /// The Flow Control Status.
     enum class FlowStatus: uint8_t {
         clearToSend = 0x00,
-        wait = 0x01,
-        overflow = 0x02,
-        invalid = 0x0F,
+        wait        = 0x01,
+        overflow    = 0x02,
+        invalid     = 0x0F,
     };
 
     Bytes bytes;
@@ -92,7 +92,7 @@ struct Frame {
             case 0x10: return Type::first;
             case 0x20: return Type::consecutive;
             case 0x30: return Type::flowControl;
-            default: return Type::invalid;
+            default:   return Type::invalid;
         }
     }
 
@@ -103,7 +103,7 @@ struct Frame {
             case 0x00: return FlowStatus::clearToSend;
             case 0x01: return FlowStatus::wait;
             case 0x02: return FlowStatus::overflow;
-            default: return FlowStatus::invalid;
+            default:   return FlowStatus::invalid;
         }
     }
 
@@ -131,7 +131,7 @@ struct Frame {
         return bytes[1];
     }
 
-    /// Returns ST in millieconds.
+    /// Returns ST in milliseconds.
     uint8_t separationTime() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
         return separationTimeToMilliseconds(bytes[2]);
@@ -150,6 +150,13 @@ struct Frame {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
+/// An implementation of an ISO 15765-2 (ISOTP) protocol machine with an emphasis
+/// on a simple, but comprehensive and well testable API.
+///
+/// This implementation works with CAN 2.0 standard and extended addressing modes.
+/// NOTE: The implementation does not enforce any timings, so you
+/// should be safe to use this with whatever (slow) ECU you're talking to.
 class Transceiver {
 public:
     enum class Behavior {
@@ -200,21 +207,20 @@ public:
     uint16_t receivingPendingCounter;
     uint16_t receivingUnconfirmedFramesCounter;
 
-    // Don't call this constructor, it's only there to put a ``Transceiver`` in a container.
+    /// Create a ``Transceiver`` with a default configuration.
     Transceiver()
-        :behavior(Behavior::strict),
-        width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
+    :behavior(Behavior::defensive), width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
     {
     }
 
-    /// Create a new ``Transceiver`` with a configuration.
+    /// Create a new ``Transceiver`` with a custom configuration.
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint8_t rxSeparationTime = 0x00, uint8_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
         state = State::idle;
     }
 
-    /// Send a PDU
+    /// Send a PDU. Short (`size < width`) PDUs are passed through, longer PDUs launch the state machine.
     Action writePDU(Bytes& bytes) {
         if (bytes.size() > ISOTP::maximumTransferSize) { return { Action::Type::protocolViolation, "Exceeding maximum ISOTP transfer size." }; }
 
@@ -309,7 +315,7 @@ private:
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = nextFrames,
-                    .separationTime = frame.separationTime() + txSeparationTime,
+                    .separationTime = static_cast<uint8_t>(frame.separationTime() + txSeparationTime),
                 };
             }
                 
