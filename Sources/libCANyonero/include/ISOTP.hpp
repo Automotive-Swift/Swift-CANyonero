@@ -304,13 +304,12 @@ private:
                         reset();
                         break;
                     }
-                    
                     sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
                 }
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = nextFrames,
-                    .separationTime = txSeparationTime,
+                    .separationTime = frame.separationTime() + txSeparationTime,
                 };
             }
                 
