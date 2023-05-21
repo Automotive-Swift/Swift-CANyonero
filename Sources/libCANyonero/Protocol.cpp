@@ -90,7 +90,7 @@ uint32_t PDU::bitrate() const {
 
 std::pair<uint8_t, uint8_t> PDU::separationTimes() const {
     assert(_type == PDUType::openChannel);
-    uint8_t rxSeparationTime = _payload[2] >> 8;
+    uint8_t rxSeparationTime = _payload[2] >> 4;
     uint8_t txSeparationTime = _payload[2] & 0x0F;
     return std::make_pair(rxSeparationTime, txSeparationTime);
 }
@@ -217,7 +217,7 @@ PDU PDU::reset() {
 PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate, uint8_t rxSeparationTime, uint8_t txSeparationTime) {
     auto payload = Bytes(static_cast<uint8_t>(protocol));
     vector_append_uint32(payload, bitrate);
-    uint8_t separationTime = rxSeparationTime << 8 | txSeparationTime;
+    uint8_t separationTime = rxSeparationTime << 4 | txSeparationTime;
     payload.push_back(separationTime);
     return PDU(PDUType::openChannel, payload);
 }
