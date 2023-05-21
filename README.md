@@ -20,7 +20,7 @@ on FreeRTOS implementing the CANyonero communication protocol.
 
 ### Open Channel
 
-`1F 30 0005 00 0007A120` ­– Open ISOTP channel w/ Bitrate 500000.
+`1F 30 0005 00 0007A120 02` ­– Open ISOTP channel w/ Bitrate 500000, 0 milliseconds separation time for RX, 2 milliseconds separation time for TX.
 
 ### Send Periodic Message
 
