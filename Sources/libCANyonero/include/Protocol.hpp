@@ -226,7 +226,7 @@ public:
     Bytes uncompressedData() const;
     /// Returns the uncompressed length value of this PDU, iff the PDU is `sendCompressed` or `receivedCompressed`.
     uint16_t uncompressedLength() const;
-    /// Returns the complete payload of this PDU, i.e. the complete PDU minus the fixed header.
+    /// Returns the complete payload of this PDU, i.e. the complete PDU minus the fixed header.
     const Bytes& payload() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.

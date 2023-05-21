@@ -315,7 +315,7 @@ private:
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = nextFrames,
-                    .separationTime = static_cast<uint8_t>(frame.separationTime() + txSeparationTime),
+                    .separationTime = std::max(frame.separationTime(), txSeparationTime),
                 };
             }
                 

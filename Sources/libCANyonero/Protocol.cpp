@@ -90,8 +90,8 @@ uint32_t PDU::bitrate() const {
 
 std::pair<uint8_t, uint8_t> PDU::separationTimes() const {
     assert(_type == PDUType::openChannel);
-    uint8_t rxSeparationTime = _payload[2] >> 4;
-    uint8_t txSeparationTime = _payload[2] & 0x0F;
+    uint8_t rxSeparationTime = _payload[5] >> 4;
+    uint8_t txSeparationTime = _payload[5] & 0x0F;
     return std::make_pair(rxSeparationTime, txSeparationTime);
 }
 
