@@ -4,8 +4,8 @@ A Swift package for the CANyonero CANbus/ENET adapter protocol.
 
 ## Hardware
 
-This adapter is currently in development. For now, it's an ESP32-C3 based CANbus/ENET adapter
-especially suited for ECU reprogramming.
+Our proprietary CAN(fd)/ENET adapter is currently in preproduction phase
+and will soon be ready for release.
 
 ## Software
 
