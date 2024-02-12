@@ -198,7 +198,7 @@ public:
     uint8_t txSeparationTime;
 
     // State
-    State state = State::Idle;
+    State state = State::idle;
     Bytes sendingPayload;
     uint8_t sendingSequenceNumber = 0;
 
