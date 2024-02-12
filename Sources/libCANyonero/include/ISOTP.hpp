@@ -41,7 +41,7 @@ struct Frame {
     Bytes bytes;
 
     /// Creates a frame from its on-the-wire structure (exactly 7 or 8 bytes).
-    Frame(Bytes& bytes)
+    Frame(const Bytes& bytes)
     :bytes(bytes)
     {
     }
@@ -55,7 +55,7 @@ struct Frame {
     }
 
     /// Returns an SF.
-    static Frame single(Bytes& bytes, uint8_t width) {
+    static Frame single(const Bytes& bytes, uint8_t width) {
         assert(bytes.size() <= 7);
         uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
         auto vector = std::vector<uint8_t> { pci };
@@ -65,7 +65,7 @@ struct Frame {
     }
 
     /// Returns a FF.
-    static Frame first(uint16_t pduLength, Bytes& bytes, uint8_t width) {
+    static Frame first(uint16_t pduLength, const Bytes& bytes, uint8_t width) {
         uint8_t pciHi = uint8_t(Type::first) | uint8_t(pduLength >> 8);
         uint8_t pciLo = uint8_t(pduLength & 0xFF);
         auto vector = std::vector<uint8_t> { pciHi, pciLo };
@@ -74,7 +74,7 @@ struct Frame {
     }
 
     /// Returns a CF.
-    static Frame consecutive(uint8_t sequenceNumber, Bytes& bytes, uint8_t count, uint8_t width) {
+    static Frame consecutive(uint8_t sequenceNumber, const Bytes& bytes, uint8_t count, uint8_t width) {
         assert(sequenceNumber <= 0x0F);
         assert(count);
         assert(count <= width);
@@ -220,7 +220,7 @@ public:
     }
 
     /// Send a PDU. Short (`size < width`) PDUs are passed through, longer PDUs launch the state machine.
-    Action writePDU(Bytes& bytes) {
+    Action writePDU(const Bytes& bytes) {
         if (bytes.size() > ISOTP::maximumTransferSize) { return { Action::Type::protocolViolation, "Exceeding maximum ISOTP transfer size." }; }
 
         if (state != State::idle) { return { Action::Type::protocolViolation, "State machine not .idle" }; }
@@ -240,7 +240,7 @@ public:
     }
 
     /// Call this for any incoming frame.
-    Action didReceiveFrame(Bytes& bytes) {
+    Action didReceiveFrame(const Bytes& bytes) {
         if (bytes.size() != width) {
             // Allow unpadded flow control which some ECUs are using (BMW 8HP TCU, I'm looking at you!)
             if (!(bytes.size() == 3 && bytes[0] >= 0x30 && bytes[0] <= 0x32)) {
@@ -287,7 +287,7 @@ public:
     }
 
 private:
-    Action parseFlowControlFrame(Bytes& bytes) {
+    Action parseFlowControlFrame(const Bytes& bytes) {
         auto frame = Frame(bytes);
         if (frame.type() != Frame::Type::flowControl) { return { Action::Type::protocolViolation, "Unexpected frame type received while sending. Did expect FLOW CONTROL." }; }
         
@@ -329,7 +329,7 @@ private:
         }
     }
 
-    Action parseDataFrame(Bytes& bytes) {
+    Action parseDataFrame(const Bytes& bytes) {
         auto frame = Frame(bytes);
         switch (frame.type()) {
             case Frame::Type::single: {

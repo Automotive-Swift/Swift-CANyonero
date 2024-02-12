@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <sstream>
+#include <cassert>
 
 #include "lz4.h"
 
