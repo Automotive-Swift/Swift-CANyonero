@@ -10,9 +10,9 @@
 #import "ISOTP.hpp"
 
 std::vector<uint8_t> generate_random_vector() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<uint8_t> dis(0, 255);
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<uint8_t> dis(0, 255);
 
     std::vector<uint8_t> vec;
     uint8_t length = dis(gen) % 9;  // Generate a random length between 0 and 8
