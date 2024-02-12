@@ -198,14 +198,14 @@ public:
     uint8_t txSeparationTime;
 
     // State
-    State state;
+    State state = State::Idle;
     Bytes sendingPayload;
-    uint8_t sendingSequenceNumber;
+    uint8_t sendingSequenceNumber = 0;
 
     Bytes receivingPayload;
-    uint8_t receivingSequenceNumber;
-    uint16_t receivingPendingCounter;
-    uint16_t receivingUnconfirmedFramesCounter;
+    uint8_t receivingSequenceNumber = 0;
+    uint16_t receivingPendingCounter = 0;
+    uint16_t receivingUnconfirmedFramesCounter = 0;
 
     /// Create a ``Transceiver`` with a default configuration.
     Transceiver()
@@ -217,7 +217,6 @@ public:
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint8_t rxSeparationTime = 0x00, uint8_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
-        state = State::idle;
     }
 
     /// Send a PDU. Short (`size < width`) PDUs are passed through, longer PDUs launch the state machine.
