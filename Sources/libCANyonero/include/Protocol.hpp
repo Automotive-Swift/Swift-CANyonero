@@ -41,6 +41,11 @@ namespace CANyonero {
 /// as well as several error codes that can be used to indicate that an error occurred.
 ///
 
+/// The separation time type.
+typedef uint8_t SeparationTimeCode;
+
+/// The microseconds.
+typedef uint16_t Microseconds;
 
 /// The Info type
 struct Info {
@@ -76,10 +81,18 @@ struct Arbitration {
 
 /// The Channel protocol type.
 enum class ChannelProtocol: uint8_t {
-    /// Raw frame. Maximum length = 8 Byte.
+    /// Raw CAN frames. Maximum length = 8 Byte.
     raw                   = 0x00,
-    /// ISOTP (ISO 15765-2) frame. Maximum length = 4095.
+    /// ISOTP (ISO 15765-2) frames. Maximum length = 4095 Bytes.
     isotp                 = 0x01,
+    /// KLINE (ISO 9141)
+    kline                 = 0x02,
+    /// CAN FD frames. Maximum length = 64 Bytes.
+    can_fd                = 0x03,
+    /// ISOTP w/ CANFD. Maximum Length = 4 GBytes.
+    isotp_fd              = 0x04,
+    /// ENET frames. Maximum length = 4095 Bytes.
+    enet                  = 0x05,
 };
 
 /// Periodic message payload type.
@@ -105,8 +118,28 @@ enum class PDUType: uint8_t {
 
     /// *Automotive Communication Commands*
 
-    /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`), bitrate (`UInt32`) in bps, and STmin specification (`UInt8`) in ms.
-    /// STmin has a maximum of 0x0F (15) milliseconds for each direction and is encoded for RX in the high nibble, TX in the low nibble. See ``ChannelProtocol`` for available protocols.
+    /// OPEN ­– Requests opening a logical channel. MUST include protocol specification (`UInt8`), bitrate (`UInt32`) in bps, and STmin specification (`UInt16`) in µs.
+    /// The separation time is encoded for RX in the high nibble, TX in the low nibble, according to the following table:
+    /// Value | Separation Time (µs)
+    /// ----- | ---------------------
+    /// 0x00  | 0
+    /// 0x01  | 1000
+    /// 0x02  | 2000
+    /// 0x03  | 3000
+    /// 0x04  | 4000
+    /// 0x05  | 5000
+    /// 0x06  | 6000
+    /// 0x07  | 100
+    /// 0x08  | 200
+    /// 0x09  | 300
+    /// 0x0A  | 400
+    /// 0x0B  | 500
+    /// 0x0C  | 600
+    /// 0x0D  | 700
+    /// 0x0E  | 800
+    /// 0x0F  | 900
+    /// ----- | ---------------------
+    /// See ``ChannelProtocol`` for available protocols.
     openChannel             = 0x30,
     /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
     closeChannel            = 0x31,
@@ -216,8 +249,8 @@ public:
     ChannelProtocol protocol() const;
     /// Returns the channel bitrate value of this PDU, iff the PDU is `openChannel`.
     uint32_t bitrate() const;
-    /// Returns the STmin configuration for TX and RX, iff the PDU is `openChannel`.
-    std::pair<uint8_t, uint8_t> separationTimes() const;
+    /// Returns the separation times (in µs) for TX and RX, iff the PDU is `openChannel`.
+    std::pair<Microseconds, Microseconds> separationTimes() const;
     /// Returns the interval value of this PDU, iff the PDU is `startPeriodicMessage`.
     uint16_t milliseconds() const;
     /// Returns the hardware data value of this PDU, iff the PDU is `send` or `received`.
@@ -244,7 +277,7 @@ public:
     /// Creates a `readVoltage` PDU.
     static PDU readVoltage();
     /// Creates an `openChannel` PDU.
-    static PDU openChannel(const ChannelProtocol protocol, const uint32_t bitrate, const uint8_t rxSeparationTime, const uint8_t txSeparationTime);
+    static PDU openChannel(const ChannelProtocol protocol, const uint32_t bitrate, const SeparationTimeCode rxSeparationTime, const SeparationTimeCode txSeparationTime);
     /// Creates a `closeChannel` PDU.
     static PDU closeChannel(const ChannelHandle handle);
     /// Creates a `send` PDU.
@@ -309,6 +342,12 @@ public:
     static PDU errorNoResponse();
     /// Creates an `errorInvalidCommand` PDU.
     static PDU errorInvalidCommand();
+
+    //
+    // Helpers
+    //
+    static SeparationTimeCode separationTimeCodeFromMicroseconds(const Microseconds microseconds);
+    static Microseconds microsecondsFromSeparationTimeCode(const SeparationTimeCode separationTimeCode);
 };
 
 };

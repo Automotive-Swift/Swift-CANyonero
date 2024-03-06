@@ -89,10 +89,12 @@ uint32_t PDU::bitrate() const {
     return vector_read_uint32(it);
 }
 
-std::pair<uint8_t, uint8_t> PDU::separationTimes() const {
+std::pair<uint16_t, uint16_t> PDU::separationTimes() const {
     assert(_type == PDUType::openChannel);
-    uint8_t rxSeparationTime = _payload[5] >> 4;
-    uint8_t txSeparationTime = _payload[5] & 0x0F;
+    SeparationTimeCode rxSeparation = _payload[5] >> 4;
+    SeparationTimeCode txSeparation = _payload[5] & 0x0F;
+    auto rxSeparationTime = microsecondsFromSeparationTimeCode(rxSeparation);
+    auto txSeparationTime = microsecondsFromSeparationTimeCode(txSeparation);
     return std::make_pair(rxSeparationTime, txSeparationTime);
 }
 
@@ -390,6 +392,48 @@ PDU PDU::errorNoResponse() {
 
 PDU PDU::errorInvalidCommand() {
     return PDU(PDUType::errorInvalidCommand);
+}
+
+//MARK: - Utilities
+SeparationTimeCode PDU::separationTimeCodeFromMicroseconds(const Microseconds microseconds) {
+    if (microseconds < 100) { return 0; }
+    if (microseconds < 200) { return 0x07; }
+    if (microseconds < 300) { return 0x08; }
+    if (microseconds < 400) { return 0x09; }
+    if (microseconds < 500) { return 0x0A; }
+    if (microseconds < 600) { return 0x0B; }
+    if (microseconds < 700) { return 0x0C; }
+    if (microseconds < 800) { return 0x0D; }
+    if (microseconds < 900) { return 0x0E; }
+    if (microseconds < 1000) { return 0x0F; }
+    if (microseconds < 2000) { return 0x01; }
+    if (microseconds < 3000) { return 0x02; }
+    if (microseconds < 4000) { return 0x03; }
+    if (microseconds < 5000) { return 0x04; }
+    if (microseconds < 6000) { return 0x05; }
+    return 0x06;
+}
+
+Microseconds PDU::microsecondsFromSeparationTimeCode(const SeparationTimeCode separationTimeCode) {
+    switch (separationTimeCode) {
+        case 0x00: return 0;
+        case 0x01: return 1000;
+        case 0x02: return 2000;
+        case 0x03: return 3000;
+        case 0x04: return 4000;
+        case 0x05: return 5000;
+        case 0x06: return 6000;
+        case 0x07: return 100;
+        case 0x08: return 200;
+        case 0x09: return 300;
+        case 0x0A: return 400;
+        case 0x0B: return 500;
+        case 0x0C: return 600;
+        case 0x0D: return 700;
+        case 0x0E: return 800;
+        case 0x0F: return 900;
+        default: return 6000;
+    }
 }
 
 };
