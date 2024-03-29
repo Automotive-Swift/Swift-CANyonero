@@ -131,20 +131,48 @@ struct Frame {
         return bytes[1];
     }
 
-    /// Returns ST in milliseconds.
-    uint8_t separationTime() {
+    /// Returns ST in microseconds.
+    uint16_t separationTime() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
-        return separationTimeToMilliseconds(bytes[2]);
+        return separationTimeToMicroseconds(bytes[2]);
     }
     
-    static uint8_t separationTimeToMilliseconds(uint8_t stMin) {
-        // This is a simplification of ISO-15765-2:2016, but it's good enough:
-        // 1. Below 0x7F, it's milliseconds.
-        // 2. 0x80 - 0xF0 are reserved and therefore we can choose a default.
-        // 3. Between 0xF1 and 0xF9, it's microseconds * 100 – A precision that
-        // we will never reach on the MCUs we target, hence we ceil to 1ms.
-        // 4. 0xFA - 0xFF are reserved and therefore we can choose a default.
-        return (stMin <= 0x7F) ? stMin : 1;
+    static uint16_t separationTimeToMicroseconds(SeparationTime stMin) {
+        // Conversion as defined by ISO-15765-2:2016:
+        // 1. Up to (and including) 0x7F, it's milliseconds.
+        if (stMin < 0x80) { return stMin * 1000; }
+        // 2. 0x80 - 0xF0 are reserved and therefore we can choose a default (0ms).
+        if (stMin < 0xF1) { return 0; }
+        // 3. Between 0xF1 and 0xF9, it's microseconds * 100.
+        if (stMin < 0xFA) { return 100 * (stMin - 0xF0); }
+        // 4. 0xFA - 0xFF are reserved and therefore we can choose a default (0ms).
+        return 0;
+    }
+
+    static SeparationTime microsecondsToSeparationTime(uint16_t microseconds) {
+        // Simplified conversion as defined by ISO-15765-2:2016. We only
+        // support inter frame times up to 10 milliseconds. Moreover, since we
+        // can't achieve true microsecond granularity, we round.
+        if (microseconds < 50) { return 0; }
+        if (microseconds < 150) { return 0xF1; }
+        if (microseconds < 250) { return 0xF2; }
+        if (microseconds < 350) { return 0xF3; }
+        if (microseconds < 450) { return 0xF4; }
+        if (microseconds < 550) { return 0xF5; }
+        if (microseconds < 650) { return 0xF6; }
+        if (microseconds < 750) { return 0xF7; }
+        if (microseconds < 850) { return 0xF8; }
+        if (microseconds < 950) { return 0xF9; }
+        if (microseconds < 1500) { return 1; }
+        if (microseconds < 2500) { return 2; }
+        if (microseconds < 3500) { return 3; }
+        if (microseconds < 4500) { return 4; }
+        if (microseconds < 5500) { return 5; }
+        if (microseconds < 6500) { return 6; }
+        if (microseconds < 7500) { return 7; }
+        if (microseconds < 8500) { return 8; }
+        if (microseconds < 9500) { return 9; }
+        return 10;
     }
 };
 
@@ -188,14 +216,14 @@ public:
         std::string error;
         Bytes data;
         std::vector<Frame> frames;
-        uint8_t separationTime;
+        uint16_t separationTime;
     };
 
     Behavior behavior;
     uint8_t width;
     uint8_t blockSize;
-    uint8_t rxSeparationTime;
-    uint8_t txSeparationTime;
+    uint16_t rxSeparationTime;
+    uint16_t txSeparationTime;
 
     // State
     State state = State::idle;
@@ -214,7 +242,7 @@ public:
     }
 
     /// Create a new ``Transceiver`` with a custom configuration.
-    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint8_t rxSeparationTime = 0x00, uint8_t txSeparationTime = 0x00)
+    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
     }

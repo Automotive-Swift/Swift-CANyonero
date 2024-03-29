@@ -67,6 +67,7 @@ namespace CANyonero {
     typedef uint8_t PeriodicMessageHandle;
     typedef std::vector<uint8_t> Bytes;
     using StdVectorOfUInt8 = std::vector<uint8_t>;
+    using SeparationTime = uint8_t;
 }
 
 #endif
