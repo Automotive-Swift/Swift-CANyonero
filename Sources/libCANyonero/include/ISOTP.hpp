@@ -242,6 +242,8 @@ public:
     }
 
     /// Create a new ``Transceiver`` with a custom configuration.
+    /// The rxSeparationTime and txSeparationTime are in microseconds.
+    /// NOTE: txSeparationTime is only considered, if it is larger than the one reported in the respective flow.
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
     :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
@@ -342,6 +344,8 @@ private:
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = nextFrames,
+                    // NOTE: We are taking the maximum separation time from the received flow control frame
+                    // and the separation time configured for this transceiver.
                     .separationTime = std::max(frame.separationTime(), txSeparationTime),
                 };
             }
