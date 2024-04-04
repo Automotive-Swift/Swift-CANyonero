@@ -255,7 +255,7 @@ PDU PDU::setArbitration(const ChannelHandle handle, const Arbitration arbitratio
     return PDU(PDUType::setArbitration, payload);
 }
 
-PDU PDU::startPeriodicMessage(const uint8_t interval, const Arbitration arbitration, const Bytes data) {
+PDU PDU::startPeriodicMessage(const uint8_t interval, const Arbitration arbitration, const Bytes& data) {
     auto payload = Bytes(1, interval);
     arbitration.to_vector(payload);
     payload.insert(payload.end(), data.begin(), data.end());
@@ -276,7 +276,7 @@ PDU PDU::prepareForUpdate() {
     return PDU(PDUType::prepareForUpdate);
 }
 
-PDU PDU::sendUpdateData(const Bytes data) {
+PDU PDU::sendUpdateData(const Bytes& data) {
     return PDU(PDUType::sendUpdateData, data);
 }
 

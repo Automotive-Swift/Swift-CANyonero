@@ -239,7 +239,7 @@ class PDU {
 public:
 
     PDU(const PDUType type): _type(type) {};
-    PDU(const PDUType type, const std::vector<uint8_t> payload): _type(type), _payload(payload) {
+    PDU(const PDUType type, const std::vector<uint8_t>& payload): _type(type), _payload(payload) {
         //printf("Creating packet with type %02X and payload length %d\n", uint8_t(_type), _payload.size());
     };
     PDU(const Bytes& frame);
@@ -297,13 +297,13 @@ public:
     /// Creates a `setArbitration` PDU.
     static PDU setArbitration(const ChannelHandle handle, const Arbitration arbitration);
     /// Creates a `startPeriodicMessage` PDU.
-    static PDU startPeriodicMessage(const uint8_t timeout, const Arbitration arbitration, const Bytes data);
+    static PDU startPeriodicMessage(const uint8_t timeout, const Arbitration arbitration, const Bytes& data);
     /// Creates a `endPeriodicMessage` PDU.
     static PDU endPeriodicMessage(const PeriodicMessageHandle handle);
     /// Creates a `prepareForUpdate` PDU.
     static PDU prepareForUpdate();
     /// Creates a `sendUpdateData` PDU.
-    static PDU sendUpdateData(const Bytes data);
+    static PDU sendUpdateData(const Bytes& data);
     /// Creates a `commitUpdate` PDU.
     static PDU commitUpdate();
     /// Creates a `reset` PDU.
