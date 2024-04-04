@@ -165,6 +165,11 @@ enum class PDUType: uint8_t {
     /// REBOOT ­– Reset.
     reset                   = 0x43,
 
+    /// *RPC commands*
+
+    /// RPC CALL ­– Call a "method". MUST include the stringified JSON payload.
+    rpcCall                 = 0x50,
+
     /// *Positive Replies*
 
     /// Generic OK.
@@ -201,6 +206,9 @@ enum class PDUType: uint8_t {
     /// Update completed.
     updateCompleted         = 0xC2,
 
+    /// RPC call response ­– MUST include the stringified JSON payload
+    rpcResponse             = 0xD0,
+
     /// *Negative Replies*
 
     /// An unspecified error has occured, e.g., a protocol violation.
@@ -213,6 +221,8 @@ enum class PDUType: uint8_t {
     errorInvalidPeriodic    = 0xE3,
     /// No response received.
     errorNoResponse         = 0xE4,
+    /// Invalid RPC call sent.
+    errorInvalidRPC         = 0xE5,
     /// Invalid command sent.
     errorInvalidCommand     = 0xEF,
 };
@@ -298,6 +308,8 @@ public:
     static PDU commitUpdate();
     /// Creates a `reset` PDU.
     static PDU reset();
+    /// Creates a `rpcCall` PDU.
+    static PDU rpcCall(const std::string& string);
 
     //
     // Adapter -> Tester
@@ -329,6 +341,8 @@ public:
     static PDU updateDataReceived();
     /// Creates an `updateCompleted` PDU.
     static PDU updateCompleted();
+    /// Creates a `rpcResponse` PDU.
+    static PDU rpcResponse(const std::string& string);
 
     /// Creates an `errorUnspecified` PDU.
     static PDU errorUnspecified();
@@ -340,6 +354,8 @@ public:
     static PDU errorInvalidPeriodic();
     /// Creates an `errorNoResponse` PDU.
     static PDU errorNoResponse();
+    /// Creates an `errorInvalidRPC` PDU.
+    static PDU errorInvalidRPC();
     /// Creates an `errorInvalidCommand` PDU.
     static PDU errorInvalidCommand();
 

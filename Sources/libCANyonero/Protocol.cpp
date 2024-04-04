@@ -267,6 +267,11 @@ PDU PDU::endPeriodicMessage(const PeriodicMessageHandle handle) {
     return PDU(PDUType::endPeriodicMessage, payload);
 }
 
+PDU PDU::rpcCall(const std::string& string) {
+    auto payload = Bytes(string.begin(), string.end());
+    return PDU(PDUType::rpcCall, payload);
+}
+
 PDU PDU::prepareForUpdate() {
     return PDU(PDUType::prepareForUpdate);
 }
@@ -368,6 +373,11 @@ PDU PDU::updateDataReceived() {
 
 PDU PDU::updateCompleted() {
     return PDU(PDUType::updateCompleted);
+}
+
+PDU PDU::rpcResponse(const std::string& string) {
+    auto payload = Bytes(string.begin(), string.end());
+    return PDU(PDUType::rpcResponse, payload);
 }
 
 PDU PDU::errorUnspecified() {
