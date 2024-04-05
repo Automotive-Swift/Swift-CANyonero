@@ -396,6 +396,10 @@ PDU PDU::errorInvalidPeriodic() {
     return PDU(PDUType::errorInvalidPeriodic);
 }
 
+PDU PDU::errorInvalidRPC() {
+    return PDU(PDUType::errorInvalidRPC);
+}
+
 PDU PDU::errorNoResponse() {
     return PDU(PDUType::errorNoResponse);
 }
