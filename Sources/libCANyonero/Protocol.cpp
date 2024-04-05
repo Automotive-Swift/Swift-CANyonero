@@ -162,6 +162,11 @@ const Bytes& PDU::payload() const {
     return _payload;
 }
 
+std::string PDU::filename() const {
+    assert(_type == PDUType::rpcSendBinary);
+    return std::string(reinterpret_cast<const char*>(_payload.data()), _payload.size());
+}
+
 PDU::PDU(const Bytes& frame) {
     assert(frame.size() >= PDU::HEADER_SIZE);
     _length = frame[2] << 8 | frame[3];
@@ -378,6 +383,10 @@ PDU PDU::updateCompleted() {
 PDU PDU::rpcResponse(const std::string& string) {
     auto payload = Bytes(string.begin(), string.end());
     return PDU(PDUType::rpcResponse, payload);
+}
+
+PDU PDU::rpcBinaryResponse(const Bytes& data) {
+    return PDU(PDUType::rpcBinaryResponse, data);
 }
 
 PDU PDU::errorUnspecified() {

@@ -169,6 +169,8 @@ enum class PDUType: uint8_t {
 
     /// RPC CALL ­– Call a "method". MUST include the stringified JSON payload.
     rpcCall                 = 0x50,
+    /// RPC SEND BINARY – Request the sending of a binary payload. MUST include the filename.
+    rpcSendBinary           = 0x51,
 
     /// *Positive Replies*
 
@@ -206,8 +208,10 @@ enum class PDUType: uint8_t {
     /// Update completed.
     updateCompleted         = 0xC2,
 
-    /// RPC call response ­– MUST include the stringified JSON payload
+    /// RPC call response ­– MUST include the stringified JSON payload.
     rpcResponse             = 0xD0,
+    /// RPC binary response ­– MUST include the binary payload.
+    rpcBinaryResponse       = 0xD1,
 
     /// *Negative Replies*
 
@@ -271,6 +275,8 @@ public:
     uint16_t uncompressedLength() const;
     /// Returns the complete payload of this PDU, i.e. the complete PDU minus the fixed header.
     const Bytes& payload() const;
+    /// Returns the filename of the PDU, iff the PDU is `rpcSendBinary`.
+    std::string filename() const;
 
     /// Returns a negative value, if we need to more data to form a valid PDU.
     /// Returns the number of consumed data, if there is enough data to create the PDU.
@@ -310,6 +316,8 @@ public:
     static PDU reset();
     /// Creates a `rpcCall` PDU.
     static PDU rpcCall(const std::string& string);
+    /// Creates a `rpcSendBinary` PDU.
+    static PDU rpcSendBinary(const std::string& filename);
 
     //
     // Adapter -> Tester
@@ -343,6 +351,8 @@ public:
     static PDU updateCompleted();
     /// Creates a `rpcResponse` PDU.
     static PDU rpcResponse(const std::string& string);
+    /// Creates a `rpcBinaryResponse` PDU.
+    static PDU rpcBinaryResponse(const Bytes& binary);
 
     /// Creates an `errorUnspecified` PDU.
     static PDU errorUnspecified();
