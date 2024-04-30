@@ -149,7 +149,7 @@ enum class PDUType: uint8_t {
     setArbitration          = 0x34,
     /// START PERIODIC ­MESSAGE – Begin with sending a periodic message out-of-band. MUST include the ``PeriodicMessage`` structure.
     startPeriodicMessage    = 0x35,
-    /// END PERIODIC MESSAGE ­– End with sending a periodic message out-of-band. MUST include a valid handle received from `startPeriodicMessage`.
+    /// END PERIODIC MESSAGE ­– End with sending a periodic message out-of-band. MUST include a valid handle received from `startPeriodicMessage or `0` (for all).
     endPeriodicMessage      = 0x36,
     /// SEND COMPRESSED ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`), the uncompressed size (`UInt16`), and the LZ4-compressed payload (`[UInt8]`). The maximum data length is specific to the channel protocol.
     sendCompressed          = 0x37,
