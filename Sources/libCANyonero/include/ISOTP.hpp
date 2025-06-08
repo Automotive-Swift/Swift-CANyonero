@@ -42,7 +42,7 @@ struct Frame {
 
     /// Creates a frame from its on-the-wire structure (exactly 7 or 8 bytes).
     Frame(const Bytes& bytes)
-    :bytes(bytes)
+        :bytes(bytes)
     {
     }
 
@@ -183,61 +183,62 @@ struct Frame {
 /// on a simple, but comprehensive and well testable API.
 ///
 /// This implementation works with CAN 2.0 standard and extended addressing modes.
-/// NOTE: The implementation does not enforce any timings, so you
-/// should be safe to use this with whatever (slow) ECU you're talking to.
+///
+/// The implementation does not enforce any timings, so you should be safe to use this
+/// with whatever (slow) ECU you're talking to. To allow for maximum ISO 15765-2 compatibility,
+/// you have to configure the transceiver with the ``Behavior::strict`` mode.
+/// You will also have to implement a watchdog mechanism that resets the state machine
+/// whenever it is expecting frames and has not received any for a certain period of time.
+/// ISO 15765-2 recommends a timeout of 1000ms for this watchdog.
+///
 class Transceiver {
 public:
+    /// The behavior of the transceiver.
     enum class Behavior {
         defensive,
         strict,
     };
-
+    /// The mode of the transceiver.
     enum class Mode {
         standard,
         extended,
     };
-
+    /// The current state of the transceiver.
     enum class State {
         idle,
         sending,
         receiving,
     };
-
+    /// The required action on behalf of the transceiver's client.
     struct Action {
 
         enum class Type {
+            /// Data complete, you can now send it to the upper layer.
             process,
+            /// Write frames to the CAN bus.
             writeFrames,
+            /// Wait for more frames to arrive.
             waitForMore,
+            /// Abort the current operation and try again. With the ``defensive`` behavior,
+            /// this should usually not happen, as the protocol machine itself will try to recover from protocol violations.
             protocolViolation,
         };
 
+        /// The type of action to perform.
         Type type;
+        /// An optional error message in case of a protocol violation.
         std::string error;
+        /// Data to process (if type is ``process``).
         Bytes data;
+        /// Frames to write to the CAN bus (if type is ``writeFrames``).
         std::vector<Frame> frames;
+        /// Separation time in microseconds (if type is ``writeFrames``).
         uint16_t separationTime;
     };
 
-    Behavior behavior;
-    uint8_t width;
-    uint8_t blockSize;
-    uint16_t rxSeparationTime;
-    uint16_t txSeparationTime;
-
-    // State
-    State state = State::idle;
-    Bytes sendingPayload;
-    uint8_t sendingSequenceNumber = 0;
-
-    Bytes receivingPayload;
-    uint8_t receivingSequenceNumber = 0;
-    uint16_t receivingPendingCounter = 0;
-    uint16_t receivingUnconfirmedFramesCounter = 0;
-
     /// Create a ``Transceiver`` with a default configuration.
     Transceiver()
-    :behavior(Behavior::defensive), width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
+        :behavior(Behavior::defensive), width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
     {
     }
 
@@ -245,7 +246,7 @@ public:
     /// The rxSeparationTime and txSeparationTime are in microseconds.
     /// NOTE: txSeparationTime is only considered, if it is larger than the one reported in the respective flow.
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
-    :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
+        :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
     }
 
@@ -315,6 +316,25 @@ public:
         }
         assert(false);
     }
+
+    /// Returns the current state.
+    State currentState() const { return state; }
+
+private:
+    Behavior behavior;
+    uint8_t width;
+    uint8_t blockSize;
+    uint16_t rxSeparationTime;
+    uint16_t txSeparationTime;
+
+    State state = State::idle;
+    Bytes sendingPayload;
+    uint8_t sendingSequenceNumber = 0;
+
+    Bytes receivingPayload;
+    uint8_t receivingSequenceNumber = 0;
+    uint16_t receivingPendingCounter = 0;
+    uint16_t receivingUnconfirmedFramesCounter = 0;
 
 private:
     Action parseFlowControlFrame(const Bytes& bytes) {
