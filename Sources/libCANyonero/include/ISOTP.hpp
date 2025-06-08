@@ -317,8 +317,20 @@ public:
         assert(false);
     }
 
-    /// Returns the current state.
-    State currentState() const { return state; }
+    /// Returns the state.
+    State machineState() const { return state; }
+
+    /// Resets the state machine to its initial state.
+    /// Clients should only call this, if the watchdog has triggered or if they want to abort the current operation.
+    void reset() {
+        state = State::idle;
+        sendingPayload.clear();
+        sendingSequenceNumber = 0;
+        receivingPayload.clear();
+        receivingSequenceNumber = 0;
+        receivingPendingCounter = 0;
+        receivingUnconfirmedFramesCounter = 0;
+    }
 
 private:
     Behavior behavior;
@@ -452,16 +464,6 @@ private:
                 return { Action::Type::protocolViolation, "Unexpected frame type received. Did expect SINGLE, FIRST, or CONSECUTIVE." };
 
         }
-    }
-
-    void reset() {
-        state = State::idle;
-        sendingPayload.clear();
-        sendingSequenceNumber = 0;
-        receivingPayload.clear();
-        receivingSequenceNumber = 0;
-        receivingPendingCounter = 0;
-        receivingUnconfirmedFramesCounter = 0;
     }
 };
 #pragma GCC diagnostic push
