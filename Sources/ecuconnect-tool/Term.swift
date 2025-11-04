@@ -100,6 +100,183 @@ fileprivate class REPL {
         let secondLine = " \("->", color: .red)  \(ascii, color: .green)"
         print(firstLine)
         print(secondLine)
+
+        if let interpretation = interpretResponse(message.bytes) {
+            print(" \("ℹ︎", color: .cyan)  \(interpretation)")
+        }
+    }
+
+    func interpretResponse(_ bytes: [UInt8]) -> String? {
+        guard !bytes.isEmpty else { return nil }
+
+        let sid = bytes[0]
+
+        // Negative response (0x7F)
+        if sid == UDS.NegativeResponse {
+            guard bytes.count >= 3 else { return "Negative Response (incomplete)" }
+            let requestedService = bytes[1]
+            let nrc = UDS.NegativeResponseCode(rawValue: bytes[2]) ?? .undefined
+            let serviceName = serviceIdName(requestedService)
+            let nrcDescription = negativeResponseCodeDescription(nrc)
+            return "❌ Negative Response to \(serviceName): \(nrcDescription)"
+        }
+
+        // Positive OBD2 responses (0x41-0x4A = service 0x01-0x0A + 0x40)
+        if sid >= 0x41 && sid <= 0x4A {
+            let service = sid - 0x40
+            let serviceName = obd2ServiceName(service)
+
+            if service == 0x01 || service == 0x02 {
+                // Mode 01 (current data) or Mode 02 (freeze frame)
+                if bytes.count >= 2 {
+                    let pid = bytes[1]
+                    let pidName = obd2PidName(pid)
+                    return "✓ \(serviceName) - \(pidName)"
+                }
+                return "✓ \(serviceName)"
+            } else if service == 0x09 {
+                // Mode 09 (vehicle information)
+                if bytes.count >= 2 {
+                    let infotype = bytes[1]
+                    let infoName = obd2Mode09Name(infotype)
+                    return "✓ \(serviceName) - \(infoName)"
+                }
+                return "✓ \(serviceName)"
+            } else {
+                return "✓ \(serviceName)"
+            }
+        }
+
+        // Positive UDS responses (service ID + 0x40)
+        if sid >= 0x50 {
+            let requestedService = sid - 0x40
+            let serviceName = serviceIdName(requestedService)
+            return "✓ Positive Response to \(serviceName)"
+        }
+
+        return nil
+    }
+
+    func serviceIdName(_ sid: UInt8) -> String {
+        switch sid {
+        // OBD2 Services
+        case 0x01: return "Show Current Data"
+        case 0x02: return "Show Freeze Frame Data"
+        case 0x03: return "Show Stored DTCs"
+        case 0x04: return "Clear DTCs"
+        case 0x05: return "O2 Sensor Monitoring"
+        case 0x06: return "On-Board Monitoring"
+        case 0x07: return "Show Pending DTCs"
+        case 0x08: return "Control On-Board System"
+        case 0x09: return "Request Vehicle Information"
+        case 0x0A: return "Permanent DTCs"
+
+        // UDS Services
+        case 0x10: return "Diagnostic Session Control"
+        case 0x11: return "ECU Reset"
+        case 0x14: return "Clear Diagnostic Information"
+        case 0x19: return "Read DTC Information"
+        case 0x22: return "Read Data By Identifier"
+        case 0x23: return "Read Memory By Address"
+        case 0x24: return "Read Scaling Data By Identifier"
+        case 0x27: return "Security Access"
+        case 0x28: return "Communication Control"
+        case 0x2E: return "Write Data By Identifier"
+        case 0x2F: return "Input/Output Control By Identifier"
+        case 0x31: return "Routine Control"
+        case 0x34: return "Request Download"
+        case 0x35: return "Request Upload"
+        case 0x36: return "Transfer Data"
+        case 0x37: return "Request Transfer Exit"
+        case 0x3E: return "Tester Present"
+        case 0x85: return "Control DTC Setting"
+
+        default: return "Service 0x\(String(format: "%02X", sid))"
+        }
+    }
+
+    func obd2ServiceName(_ service: UInt8) -> String {
+        switch service {
+        case 0x01: return "Mode 01: Current Data"
+        case 0x02: return "Mode 02: Freeze Frame Data"
+        case 0x03: return "Mode 03: Stored DTCs"
+        case 0x04: return "Mode 04: Clear DTCs"
+        case 0x09: return "Mode 09: Vehicle Information"
+        default: return "Mode 0x\(String(format: "%02X", service))"
+        }
+    }
+
+    func obd2PidName(_ pid: UInt8) -> String {
+        switch pid {
+        case 0x00: return "Supported PIDs [01-20]"
+        case 0x01: return "Monitor Status"
+        case 0x02: return "Freeze DTC"
+        case 0x03: return "Fuel System Status"
+        case 0x04: return "Calculated Engine Load"
+        case 0x05: return "Engine Coolant Temperature"
+        case 0x06: return "Short Term Fuel Trim Bank 1"
+        case 0x0C: return "Engine RPM"
+        case 0x0D: return "Vehicle Speed"
+        case 0x0F: return "Intake Air Temperature"
+        case 0x10: return "MAF Air Flow Rate"
+        case 0x11: return "Throttle Position"
+        case 0x1C: return "OBD Standards Compliance"
+        case 0x1F: return "Engine Run Time"
+        case 0x20: return "Supported PIDs [21-40]"
+        case 0x21: return "Distance with MIL On"
+        case 0x2F: return "Fuel Tank Level"
+        case 0x33: return "Barometric Pressure"
+        case 0x40: return "Supported PIDs [41-60]"
+        case 0x42: return "Control Module Voltage"
+        case 0x46: return "Ambient Air Temperature"
+        case 0x51: return "Fuel Type"
+        case 0x60: return "Supported PIDs [61-80]"
+        default: return "PID 0x\(String(format: "%02X", pid))"
+        }
+    }
+
+    func obd2Mode09Name(_ infotype: UInt8) -> String {
+        switch infotype {
+        case 0x00: return "Supported Info Types"
+        case 0x01: return "VIN Message Count"
+        case 0x02: return "Vehicle Identification Number (VIN)"
+        case 0x03: return "Calibration ID Message Count"
+        case 0x04: return "Calibration IDs"
+        case 0x05: return "Calibration Verification Numbers Message Count"
+        case 0x06: return "Calibration Verification Numbers (CVN)"
+        case 0x08: return "In-use Performance Tracking Message Count"
+        case 0x09: return "ECU Name Message Count"
+        case 0x0A: return "ECU Name"
+        default: return "Info Type 0x\(String(format: "%02X", infotype))"
+        }
+    }
+
+    func negativeResponseCodeDescription(_ nrc: UDS.NegativeResponseCode) -> String {
+        switch nrc {
+        case .generalReject: return "General Reject"
+        case .serviceNotSupported: return "Service Not Supported"
+        case .subFunctionNotSupported: return "Sub-Function Not Supported"
+        case .incorrectMessageLengthOrInvalidFormat: return "Incorrect Message Length or Invalid Format"
+        case .responseTooLong: return "Response Too Long"
+        case .busyRepeatRequest: return "Busy - Repeat Request"
+        case .conditionsNotCorrect: return "Conditions Not Correct"
+        case .requestSequenceError: return "Request Sequence Error"
+        case .requestOutOfRange: return "Request Out of Range"
+        case .securityAccessDenied: return "Security Access Denied"
+        case .invalidKey: return "Invalid Key"
+        case .exceedNumberOfAttempts: return "Exceeded Number of Attempts"
+        case .requiredTimeDelayNotExpired: return "Required Time Delay Not Expired"
+        case .requestCorrectlyReceivedResponsePending: return "Request Correctly Received - Response Pending"
+        case .subFunctionNotSupportedInActiveSession: return "Sub-Function Not Supported in Active Session"
+        case .serviceNotSupportedInActiveSession: return "Service Not Supported in Active Session"
+        case .rpmTooHigh: return "RPM Too High"
+        case .rpmTooLow: return "RPM Too Low"
+        case .engineIsRunning: return "Engine Is Running"
+        case .engineIsNotRunning: return "Engine Is Not Running"
+        case .voltageTooHigh: return "Voltage Too High"
+        case .voltageTooLow: return "Voltage Too Low"
+        default: return "NRC 0x\(String(format: "%02X", nrc.rawValue))"
+        }
     }
 
     func parseAddressing(_ input: String) -> Automotive.Addressing? {
