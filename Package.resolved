@@ -14,17 +14,80 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tsolomko/BitByteData",
       "state" : {
-        "revision" : "b4b41619522aacd7aae7b02fa8360833e796a03d",
-        "version" : "2.0.2"
+        "revision" : "cdcdc5177ad536cfb11b95c620f926a81014b7fe",
+        "version" : "2.0.4"
+      }
+    },
+    {
+      "identity" : "chalk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mxcl/Chalk",
+      "state" : {
+        "branch" : "master",
+        "revision" : "a8faed684d73ece2aa224a491164838f90e9938d"
       }
     },
     {
       "identity" : "cornucopiacore",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Cornucopia-Swift/CornucopiaCore.git",
+      "location" : "https://github.com/Cornucopia-Swift/CornucopiaCore",
       "state" : {
         "branch" : "master",
-        "revision" : "539f2c81ae1ee2b36836ece117f6b094c80891d3"
+        "revision" : "f6f0afd41468b7cfb15b02e235c6a408c77c6ebb"
+      }
+    },
+    {
+      "identity" : "cornucopiastreams",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Cornucopia-Swift/CornucopiaStreams",
+      "state" : {
+        "branch" : "master",
+        "revision" : "62eb6a159934eae5b95977cdad8864b17f332857"
+      }
+    },
+    {
+      "identity" : "foundationbandaid",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mickeyl/FoundationBandAid",
+      "state" : {
+        "branch" : "master",
+        "revision" : "163e98760ce824d9c880684ec1014228795ef8c3"
+      }
+    },
+    {
+      "identity" : "linenoise-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/andybest/linenoise-swift",
+      "state" : {
+        "branch" : "master",
+        "revision" : "cbf0a35c6e159e4fe6a03f76c8a17ef08e907b0e"
+      }
+    },
+    {
+      "identity" : "nimble",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Quick/Nimble.git",
+      "state" : {
+        "revision" : "7a46a5fc86cb917f69e3daf79fcb045283d8f008",
+        "version" : "8.1.2"
+      }
+    },
+    {
+      "identity" : "progress.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jkandzi/Progress.swift",
+      "state" : {
+        "branch" : "master",
+        "revision" : "fed6598735d7982058690acf8f52a0a5fdaeb3e0"
+      }
+    },
+    {
+      "identity" : "socket.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mickeyl/Socket.swift",
+      "state" : {
+        "branch" : "noTLS",
+        "revision" : "b9f1ffbecb321d47aeef2a124fa6ae746685cc52"
       }
     },
     {
@@ -32,8 +95,35 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tsolomko/SWCompression",
       "state" : {
-        "revision" : "cd39ca0a3b269173bab06f68b182b72fa690765c",
-        "version" : "4.8.5"
+        "revision" : "390e0b0af8dd19a600005a242a89e570ff482e09",
+        "version" : "4.8.6"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
+        "version" : "1.6.2"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "40d25bbb2fc5b557a9aa8512210bded327c0f60d",
+        "version" : "1.5.0"
+      }
+    },
+    {
+      "identity" : "swift-automotive",
+      "kind" : "remoteSourceControl",
+      "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
+      "state" : {
+        "branch" : "master",
+        "revision" : "ce510b4b103c50e37ae00e18964afa3799c19a4d"
       }
     },
     {
@@ -41,8 +131,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto",
       "state" : {
-        "revision" : "ddb07e896a2a8af79512543b1c7eb9797f8898a5",
-        "version" : "1.1.7"
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     }
   ],
