@@ -26,13 +26,13 @@ fileprivate class REPL {
     private var lastAddressing: Automotive.Addressing?
     private var payloadProtocol: Automotive.PayloadProtocol
 
-    static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdef:,").inverted
+    static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdef:,/").inverted
 
     init(defaultAddressing: Automotive.Addressing? = nil, channelProtocol: ECUconnect.ChannelProtocol) {
         self.lastAddressing = defaultAddressing
         self.payloadProtocol = channelProtocol == .isotp ? .uds : .raw
         if let addressing = defaultAddressing {
-            print("Default addressing: \(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)")
+            print("Default addressing: \(Self.describe(addressing))")
         }
     }
 
@@ -58,7 +58,7 @@ fileprivate class REPL {
                 }
 
                 guard trimmed.rangeOfCharacter(from: Self.allowedCharacterSet) == nil else {
-                    print("SyntaxError: Invalid characters (allowed: 0-9, A-F, a-f, :, ,)")
+                    print("SyntaxError: Invalid characters (allowed: 0-9, A-F, a-f, :, ,, /)")
                     continue
                 }
 
@@ -68,7 +68,7 @@ fileprivate class REPL {
                         self.lineNoise.addHistory(trimmed)
                         print("")
                     } else {
-                        print("SyntaxError: Invalid addressing format. Use :7df,7e8 (send,reply)")
+                        print("SyntaxError: Invalid addressing format. Use :7df,7e8 or :18DA33F1/10,18DAF110/20 (send[/ea],reply[/rea])")
                     }
                 } else {
                     guard let addressing = lastAddressing else {
@@ -283,24 +283,40 @@ fileprivate class REPL {
         let components = input.components(separatedBy: ",")
         guard components.count == 2 else { return nil }
 
-        var sendId = components[0].CC_trimmed()
-        var replyId = components[1].CC_trimmed()
-
-        if sendId.count % 2 == 1 {
-            sendId = "0" + sendId
-        }
-        if replyId.count % 2 == 1 {
-            replyId = "0" + replyId
-        }
-
-        guard let send = UInt32(sendId, radix: 16),
-              let reply = UInt32(replyId, radix: 16) else {
+        guard let send = parseAddressComponent(components[0]),
+              let reply = parseAddressComponent(components[1]) else {
             return nil
         }
 
-        let addressing = Automotive.Addressing.unicast(id: send, reply: reply)
+        let addressing = Automotive.Addressing.unicast(id: send.id, ea: send.ext, reply: reply.id, rea: reply.ext)
         lastAddressing = addressing
         return addressing
+    }
+
+    private func parseAddressComponent(_ component: String) -> (id: Automotive.Header, ext: Automotive.HeaderExtension)? {
+        let trimmed = component.CC_trimmed()
+        guard !trimmed.isEmpty else { return nil }
+
+        let parts = trimmed.split(separator: "/")
+        guard parts.count <= 2 else { return nil }
+
+        guard let id = Self.parseHex(String(parts[0]), as: Automotive.Header.self) else { return nil }
+        var ext: Automotive.HeaderExtension = 0
+        if parts.count == 2 {
+            guard let parsedExt = Self.parseHex(String(parts[1]), as: Automotive.HeaderExtension.self) else { return nil }
+            ext = parsedExt
+        }
+        return (id, ext)
+    }
+
+    private static func parseHex<T: FixedWidthInteger & UnsignedInteger>(_ text: String, as type: T.Type) -> T? {
+        guard !text.isEmpty else { return nil }
+        _ = type
+        var normalized = text
+        if normalized.count % 2 == 1 {
+            normalized = "0" + normalized
+        }
+        return T(normalized, radix: 16)
     }
 
     func parseMessage(_ input: String, addressing: Automotive.Addressing) -> Automotive.Message? {
@@ -314,6 +330,27 @@ fileprivate class REPL {
         guard !bytes.isEmpty else { return nil }
 
         return Automotive.Message(addressing: addressing, payloadProtocol: self.payloadProtocol, bytes: bytes)
+    }
+
+    private static func formatted(header: Automotive.Header, ext: Automotive.HeaderExtension) -> String {
+        let base = "\(header, radix: .hex)"
+        guard ext != 0 else { return base }
+        return "\(base)/\(String(format: "%02X", Int(ext)))"
+    }
+
+    static func describe(_ addressing: Automotive.Addressing) -> String {
+        switch addressing {
+        case let .unicast(id, ea, reply, rea):
+            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+        case let .multicast(id, ea, pattern, _):
+            return "\(formatted(header: id, ext: ea)) -> \(pattern, radix: .hex)"
+        case let .broadcast(id, ea, reply, rea):
+            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+        case let .oneshot(id, ea, reply, rea):
+            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+        default:
+            return "\(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)"
+        }
     }
 
     enum Command {
@@ -363,6 +400,7 @@ struct Term: ParsableCommand {
                 print("\(channelProto == .passthrough ? "Passthrough" : "ISOTP") channel opened at \(bps) bps.")
                 print("Commands:")
                 print("  :7df,7e8    - Set addressing (send to 7df, expect reply from 7e8)")
+                print("  :18DA33F1/10,18DAF110/20 - Include CAN extended addressing bytes (EA/REA)")
                 print("  0902        - Send hex data with current addressing")
                 print("  quit        - Exit")
                 print("")
@@ -374,7 +412,7 @@ struct Term: ParsableCommand {
 
                     switch command {
                     case .setAddressing(let addressing):
-                        print("Addressing set to: \(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)")
+                        print("Addressing set to: \(REPL.describe(addressing))")
 
                     case .sendMessage(let message):
                         do {
