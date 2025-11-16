@@ -159,123 +159,123 @@ fileprivate class REPL {
 
     func serviceIdName(_ sid: UInt8) -> String {
         switch sid {
-        // OBD2 Services
-        case 0x01: return "Show Current Data"
-        case 0x02: return "Show Freeze Frame Data"
-        case 0x03: return "Show Stored DTCs"
-        case 0x04: return "Clear DTCs"
-        case 0x05: return "O2 Sensor Monitoring"
-        case 0x06: return "On-Board Monitoring"
-        case 0x07: return "Show Pending DTCs"
-        case 0x08: return "Control On-Board System"
-        case 0x09: return "Request Vehicle Information"
-        case 0x0A: return "Permanent DTCs"
+            // OBD2 Services
+            case 0x01: return "Show Current Data"
+            case 0x02: return "Show Freeze Frame Data"
+            case 0x03: return "Show Stored DTCs"
+            case 0x04: return "Clear DTCs"
+            case 0x05: return "O2 Sensor Monitoring"
+            case 0x06: return "On-Board Monitoring"
+            case 0x07: return "Show Pending DTCs"
+            case 0x08: return "Control On-Board System"
+            case 0x09: return "Request Vehicle Information"
+            case 0x0A: return "Permanent DTCs"
 
-        // UDS Services
-        case 0x10: return "Diagnostic Session Control"
-        case 0x11: return "ECU Reset"
-        case 0x14: return "Clear Diagnostic Information"
-        case 0x19: return "Read DTC Information"
-        case 0x22: return "Read Data By Identifier"
-        case 0x23: return "Read Memory By Address"
-        case 0x24: return "Read Scaling Data By Identifier"
-        case 0x27: return "Security Access"
-        case 0x28: return "Communication Control"
-        case 0x2E: return "Write Data By Identifier"
-        case 0x2F: return "Input/Output Control By Identifier"
-        case 0x31: return "Routine Control"
-        case 0x34: return "Request Download"
-        case 0x35: return "Request Upload"
-        case 0x36: return "Transfer Data"
-        case 0x37: return "Request Transfer Exit"
-        case 0x3E: return "Tester Present"
-        case 0x85: return "Control DTC Setting"
+            // UDS Services
+            case 0x10: return "Diagnostic Session Control"
+            case 0x11: return "ECU Reset"
+            case 0x14: return "Clear Diagnostic Information"
+            case 0x19: return "Read DTC Information"
+            case 0x22: return "Read Data By Identifier"
+            case 0x23: return "Read Memory By Address"
+            case 0x24: return "Read Scaling Data By Identifier"
+            case 0x27: return "Security Access"
+            case 0x28: return "Communication Control"
+            case 0x2E: return "Write Data By Identifier"
+            case 0x2F: return "Input/Output Control By Identifier"
+            case 0x31: return "Routine Control"
+            case 0x34: return "Request Download"
+            case 0x35: return "Request Upload"
+            case 0x36: return "Transfer Data"
+            case 0x37: return "Request Transfer Exit"
+            case 0x3E: return "Tester Present"
+            case 0x85: return "Control DTC Setting"
 
-        default: return "Service 0x\(String(format: "%02X", sid))"
+            default: return "Service 0x\(String(format: "%02X", sid))"
         }
     }
 
     func obd2ServiceName(_ service: UInt8) -> String {
         switch service {
-        case 0x01: return "Mode 01: Current Data"
-        case 0x02: return "Mode 02: Freeze Frame Data"
-        case 0x03: return "Mode 03: Stored DTCs"
-        case 0x04: return "Mode 04: Clear DTCs"
-        case 0x09: return "Mode 09: Vehicle Information"
-        default: return "Mode 0x\(String(format: "%02X", service))"
+            case 0x01: return "Mode 01: Current Data"
+            case 0x02: return "Mode 02: Freeze Frame Data"
+            case 0x03: return "Mode 03: Stored DTCs"
+            case 0x04: return "Mode 04: Clear DTCs"
+            case 0x09: return "Mode 09: Vehicle Information"
+            default: return "Mode 0x\(String(format: "%02X", service))"
         }
     }
 
     func obd2PidName(_ pid: UInt8) -> String {
         switch pid {
-        case 0x00: return "Supported PIDs [01-20]"
-        case 0x01: return "Monitor Status"
-        case 0x02: return "Freeze DTC"
-        case 0x03: return "Fuel System Status"
-        case 0x04: return "Calculated Engine Load"
-        case 0x05: return "Engine Coolant Temperature"
-        case 0x06: return "Short Term Fuel Trim Bank 1"
-        case 0x0C: return "Engine RPM"
-        case 0x0D: return "Vehicle Speed"
-        case 0x0F: return "Intake Air Temperature"
-        case 0x10: return "MAF Air Flow Rate"
-        case 0x11: return "Throttle Position"
-        case 0x1C: return "OBD Standards Compliance"
-        case 0x1F: return "Engine Run Time"
-        case 0x20: return "Supported PIDs [21-40]"
-        case 0x21: return "Distance with MIL On"
-        case 0x2F: return "Fuel Tank Level"
-        case 0x33: return "Barometric Pressure"
-        case 0x40: return "Supported PIDs [41-60]"
-        case 0x42: return "Control Module Voltage"
-        case 0x46: return "Ambient Air Temperature"
-        case 0x51: return "Fuel Type"
-        case 0x60: return "Supported PIDs [61-80]"
-        default: return "PID 0x\(String(format: "%02X", pid))"
+            case 0x00: return "Supported PIDs [01-20]"
+            case 0x01: return "Monitor Status"
+            case 0x02: return "Freeze DTC"
+            case 0x03: return "Fuel System Status"
+            case 0x04: return "Calculated Engine Load"
+            case 0x05: return "Engine Coolant Temperature"
+            case 0x06: return "Short Term Fuel Trim Bank 1"
+            case 0x0C: return "Engine RPM"
+            case 0x0D: return "Vehicle Speed"
+            case 0x0F: return "Intake Air Temperature"
+            case 0x10: return "MAF Air Flow Rate"
+            case 0x11: return "Throttle Position"
+            case 0x1C: return "OBD Standards Compliance"
+            case 0x1F: return "Engine Run Time"
+            case 0x20: return "Supported PIDs [21-40]"
+            case 0x21: return "Distance with MIL On"
+            case 0x2F: return "Fuel Tank Level"
+            case 0x33: return "Barometric Pressure"
+            case 0x40: return "Supported PIDs [41-60]"
+            case 0x42: return "Control Module Voltage"
+            case 0x46: return "Ambient Air Temperature"
+            case 0x51: return "Fuel Type"
+            case 0x60: return "Supported PIDs [61-80]"
+            default: return "PID 0x\(String(format: "%02X", pid))"
         }
     }
 
     func obd2Mode09Name(_ infotype: UInt8) -> String {
         switch infotype {
-        case 0x00: return "Supported Info Types"
-        case 0x01: return "VIN Message Count"
-        case 0x02: return "Vehicle Identification Number (VIN)"
-        case 0x03: return "Calibration ID Message Count"
-        case 0x04: return "Calibration IDs"
-        case 0x05: return "Calibration Verification Numbers Message Count"
-        case 0x06: return "Calibration Verification Numbers (CVN)"
-        case 0x08: return "In-use Performance Tracking Message Count"
-        case 0x09: return "ECU Name Message Count"
-        case 0x0A: return "ECU Name"
-        default: return "Info Type 0x\(String(format: "%02X", infotype))"
+            case 0x00: return "Supported Info Types"
+            case 0x01: return "VIN Message Count"
+            case 0x02: return "Vehicle Identification Number (VIN)"
+            case 0x03: return "Calibration ID Message Count"
+            case 0x04: return "Calibration IDs"
+            case 0x05: return "Calibration Verification Numbers Message Count"
+            case 0x06: return "Calibration Verification Numbers (CVN)"
+            case 0x08: return "In-use Performance Tracking Message Count"
+            case 0x09: return "ECU Name Message Count"
+            case 0x0A: return "ECU Name"
+            default: return "Info Type 0x\(String(format: "%02X", infotype))"
         }
     }
 
     func negativeResponseCodeDescription(_ nrc: UDS.NegativeResponseCode) -> String {
         switch nrc {
-        case .generalReject: return "General Reject"
-        case .serviceNotSupported: return "Service Not Supported"
-        case .subFunctionNotSupported: return "Sub-Function Not Supported"
-        case .incorrectMessageLengthOrInvalidFormat: return "Incorrect Message Length or Invalid Format"
-        case .responseTooLong: return "Response Too Long"
-        case .busyRepeatRequest: return "Busy - Repeat Request"
-        case .conditionsNotCorrect: return "Conditions Not Correct"
-        case .requestSequenceError: return "Request Sequence Error"
-        case .requestOutOfRange: return "Request Out of Range"
-        case .securityAccessDenied: return "Security Access Denied"
-        case .invalidKey: return "Invalid Key"
-        case .exceedNumberOfAttempts: return "Exceeded Number of Attempts"
-        case .requiredTimeDelayNotExpired: return "Required Time Delay Not Expired"
-        case .requestCorrectlyReceivedResponsePending: return "Request Correctly Received - Response Pending"
-        case .subFunctionNotSupportedInActiveSession: return "Sub-Function Not Supported in Active Session"
-        case .serviceNotSupportedInActiveSession: return "Service Not Supported in Active Session"
-        case .rpmTooHigh: return "RPM Too High"
-        case .rpmTooLow: return "RPM Too Low"
-        case .engineIsRunning: return "Engine Is Running"
-        case .engineIsNotRunning: return "Engine Is Not Running"
-        case .voltageTooHigh: return "Voltage Too High"
-        case .voltageTooLow: return "Voltage Too Low"
-        default: return "NRC 0x\(String(format: "%02X", nrc.rawValue))"
+            case .generalReject: return "General Reject"
+            case .serviceNotSupported: return "Service Not Supported"
+            case .subFunctionNotSupported: return "Sub-Function Not Supported"
+            case .incorrectMessageLengthOrInvalidFormat: return "Incorrect Message Length or Invalid Format"
+            case .responseTooLong: return "Response Too Long"
+            case .busyRepeatRequest: return "Busy - Repeat Request"
+            case .conditionsNotCorrect: return "Conditions Not Correct"
+            case .requestSequenceError: return "Request Sequence Error"
+            case .requestOutOfRange: return "Request Out of Range"
+            case .securityAccessDenied: return "Security Access Denied"
+            case .invalidKey: return "Invalid Key"
+            case .exceedNumberOfAttempts: return "Exceeded Number of Attempts"
+            case .requiredTimeDelayNotExpired: return "Required Time Delay Not Expired"
+            case .requestCorrectlyReceivedResponsePending: return "Request Correctly Received - Response Pending"
+            case .subFunctionNotSupportedInActiveSession: return "Sub-Function Not Supported in Active Session"
+            case .serviceNotSupportedInActiveSession: return "Service Not Supported in Active Session"
+            case .rpmTooHigh: return "RPM Too High"
+            case .rpmTooLow: return "RPM Too Low"
+            case .engineIsRunning: return "Engine Is Running"
+            case .engineIsNotRunning: return "Engine Is Not Running"
+            case .voltageTooHigh: return "Voltage Too High"
+            case .voltageTooLow: return "Voltage Too Low"
+            default: return "NRC 0x\(String(format: "%02X", nrc.rawValue))"
         }
     }
 
@@ -340,16 +340,16 @@ fileprivate class REPL {
 
     static func describe(_ addressing: Automotive.Addressing) -> String {
         switch addressing {
-        case let .unicast(id, ea, reply, rea):
-            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
-        case let .multicast(id, ea, pattern, _):
-            return "\(formatted(header: id, ext: ea)) -> \(pattern, radix: .hex)"
-        case let .broadcast(id, ea, reply, rea):
-            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
-        case let .oneshot(id, ea, reply, rea):
-            return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
-        default:
-            return "\(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)"
+            case let .unicast(id, ea, reply, rea):
+                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+            case let .multicast(id, ea, pattern, _):
+                return "\(formatted(header: id, ext: ea)) -> \(pattern, radix: .hex)"
+            case let .broadcast(id, ea, reply, rea):
+                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+            case let .oneshot(id, ea, reply, rea):
+                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+            default:
+                return "\(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)"
         }
     }
 
@@ -379,12 +379,12 @@ struct Term: ParsableCommand {
 
         let channelProto: ECUconnect.ChannelProtocol
         switch proto.lowercased() {
-        case "passthrough", "raw":
-            channelProto = .passthrough
-        case "isotp":
-            channelProto = .isotp
-        default:
-            throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough' or 'isotp'.")
+            case "passthrough", "raw":
+                channelProto = .passthrough
+            case "isotp":
+                channelProto = .isotp
+            default:
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough' or 'isotp'.")
         }
 
         Task {
@@ -399,10 +399,10 @@ struct Term: ParsableCommand {
                 try await adapter.openChannel(proto: channelProto, bitrate: bps)
                 print("\(channelProto == .passthrough ? "Passthrough" : "ISOTP") channel opened at \(bps) bps.")
                 print("Commands:")
-                print("  :7df,7e8    - Set addressing (send to 7df, expect reply from 7e8)")
-                print("  :18DA33F1/10,18DAF110/20 - Include CAN extended addressing bytes (EA/REA)")
-                print("  0902        - Send hex data with current addressing")
-                print("  quit        - Exit")
+                print("  :7df,7e8       - Set addressing (send to 7df, expect reply from 7e8)")
+                print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
+                print("  0902           - Send hex data with current addressing")
+                print("  quit           - Exit")
                 print("")
 
                 let repl = REPL(defaultAddressing: .unicast(id: 0x7DF, reply: 0x7E8), channelProtocol: channelProto)
@@ -411,16 +411,16 @@ struct Term: ParsableCommand {
                     let command = try repl.read()
 
                     switch command {
-                    case .setAddressing(let addressing):
-                        print("Addressing set to: \(REPL.describe(addressing))")
+                        case .setAddressing(let addressing):
+                            print("Addressing set to: \(REPL.describe(addressing))")
 
-                    case .sendMessage(let message):
-                        do {
-                            let response = try await adapter.sendMessageReceiveSingle(message)
-                            repl.write(response)
-                        } catch {
-                            print("Error: \(error)")
-                        }
+                        case .sendMessage(let message):
+                            do {
+                                let response = try await adapter.sendMessageReceiveSingle(message)
+                                repl.write(response)
+                            } catch {
+                                print("Error: \(error)")
+                            }
                     }
                 }
 
@@ -442,3 +442,4 @@ struct Term: ParsableCommand {
         RunLoop.current.run()
     }
 }
+
