@@ -242,8 +242,8 @@ class PDU {
 
 public:
 
-    PDU(const PDUType type): _type(type) {};
-    PDU(const PDUType type, const std::vector<uint8_t>& payload): _type(type), _payload(payload) {
+    PDU(const PDUType type): _type(type), _length(0) {};
+    PDU(const PDUType type, const std::vector<uint8_t>& payload): _type(type), _length(static_cast<uint16_t>(payload.size())), _payload(payload) {
         //printf("Creating packet with type %02X and payload length %d\n", uint8_t(_type), _payload.size());
     };
     PDU(const Bytes& frame);

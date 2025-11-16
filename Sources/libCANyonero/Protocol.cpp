@@ -223,7 +223,7 @@ PDU PDU::reset() {
 }
 
 PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate, uint8_t rxSeparationTime, uint8_t txSeparationTime) {
-    auto payload = Bytes(static_cast<uint8_t>(protocol));
+    auto payload = Bytes(1, static_cast<uint8_t>(protocol));
     vector_append_uint32(payload, bitrate);
     uint8_t separationTime = rxSeparationTime << 4 | txSeparationTime;
     payload.push_back(separationTime);
@@ -232,7 +232,7 @@ PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate, uint8_t r
 
 PDU PDU::closeChannel(const ChannelHandle handle) {
     auto payload = Bytes(1, handle);
-    return PDU(PDUType::openChannel, payload);
+    return PDU(PDUType::closeChannel, payload);
 }
 
 PDU PDU::send(const ChannelHandle handle, const Bytes& data) {
