@@ -4,6 +4,7 @@
 #import <XCTest/XCTest.h>
 
 #include <algorithm>
+#include <string>
 
 #import "Protocol.hpp"
 
@@ -87,6 +88,72 @@ using namespace CANyonero;
     auto ping = CANyonero::PDU::ping({ 0xDE, 0xAD, 0xBE, 0xEF });
     auto frame = ping.frame();
     XCTAssertEqual(CANyonero::PDU::containsPDU(frame), frame.size());
+}
+
+- (void)testSetArbitrationRoundTrip {
+    CANyonero::Arbitration arbitration;
+    arbitration.request = 0x7DF;
+    arbitration.requestExtension = 0x01;
+    arbitration.replyPattern = 0x7E8;
+    arbitration.replyMask = 0x7F8;
+    arbitration.replyExtension = 0x02;
+
+    auto pdu = CANyonero::PDU::setArbitration(0x05, arbitration);
+    XCTAssertEqual(pdu.type(), CANyonero::PDUType::setArbitration);
+    XCTAssertEqual(pdu.channel(), 0x05);
+
+    auto parsed = pdu.arbitration();
+    XCTAssertEqual(parsed.request, arbitration.request);
+    XCTAssertEqual(parsed.requestExtension, arbitration.requestExtension);
+    XCTAssertEqual(parsed.replyPattern, arbitration.replyPattern);
+    XCTAssertEqual(parsed.replyMask, arbitration.replyMask);
+    XCTAssertEqual(parsed.replyExtension, arbitration.replyExtension);
+}
+
+- (void)testStartPeriodicMessageDataAndTiming {
+    CANyonero::Arbitration arbitration;
+    arbitration.request = 0x6F1;
+    arbitration.requestExtension = 0x00;
+    arbitration.replyPattern = 0x612;
+    arbitration.replyMask = 0x7FF;
+    arbitration.replyExtension = 0x00;
+    CANyonero::Bytes payload = { 0x22, 0xF1, 0x90 };
+
+    auto pdu = CANyonero::PDU::startPeriodicMessage(4, arbitration, payload);
+    XCTAssertEqual(pdu.type(), CANyonero::PDUType::startPeriodicMessage);
+    XCTAssertEqual(pdu.milliseconds(), 2000);
+
+    auto parsedArb = pdu.arbitration();
+    XCTAssertEqual(parsedArb.request, arbitration.request);
+    XCTAssertEqual(parsedArb.replyPattern, arbitration.replyPattern);
+
+    auto extractedData = pdu.data();
+    XCTAssertEqual(extractedData, payload);
+}
+
+- (void)testInfoPayloadParsing {
+    auto infoPdu = CANyonero::PDU::info("Vendor", "Model", "HW", "SN123", "FW1.0");
+    auto info = infoPdu.information();
+    XCTAssertEqual(info.vendor, "Vendor");
+    XCTAssertEqual(info.model, "Model");
+    XCTAssertEqual(info.hardware, "HW");
+    XCTAssertEqual(info.serial, "SN123");
+    XCTAssertEqual(info.firmware, "FW1.0");
+}
+
+- (void)testRpcSendBinaryFilename {
+    auto pdu = CANyonero::PDU::rpcSendBinary("update.bin");
+    XCTAssertEqual(pdu.type(), CANyonero::PDUType::rpcSendBinary);
+    XCTAssertEqual(pdu.filename(), "update.bin");
+}
+
+- (void)testContainsPDUWithLeadingGarbage {
+    auto pong = CANyonero::PDU::pong({ 0xAA });
+    auto frame = pong.frame();
+    CANyonero::Bytes withGarbage = { 0x00, 0xFF };
+    withGarbage.insert(withGarbage.end(), frame.begin(), frame.end());
+
+    XCTAssertEqual(CANyonero::PDU::containsPDU(withGarbage), -2);
 }
 
 @end

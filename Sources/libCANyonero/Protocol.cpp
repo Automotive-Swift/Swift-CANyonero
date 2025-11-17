@@ -277,6 +277,11 @@ PDU PDU::rpcCall(const std::string& string) {
     return PDU(PDUType::rpcCall, payload);
 }
 
+PDU PDU::rpcSendBinary(const std::string& filename) {
+    auto payload = Bytes(filename.begin(), filename.end());
+    return PDU(PDUType::rpcSendBinary, payload);
+}
+
 PDU PDU::prepareForUpdate() {
     return PDU(PDUType::prepareForUpdate);
 }
