@@ -37,6 +37,14 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(action.data, expected);
 }
 
+-(void)testSingleShortUnpadded {
+    auto single = std::vector<uint8_t>{ 0x02, 0x3E, 0x00 };
+    auto action = _isotp->didReceiveFrame(single);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::process);
+    auto expected = std::vector<uint8_t> { 0x3E, 0x00 };
+    XCTAssertEqual(action.data, expected);
+}
+
 -(void)testSingleMax {
     auto single = std::vector<uint8_t>{ 0x07, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37 };
     auto action = _isotp->didReceiveFrame(single);

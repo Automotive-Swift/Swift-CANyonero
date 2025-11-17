@@ -64,6 +64,16 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
 }
 
+-(void)testConsecutiveTruncatedWidth {
+    auto first = std::vector<uint8_t> { 0x10, 0x08, padding, padding, padding, padding, padding, padding };
+    auto action = _isotp->didReceiveFrame(first);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::writeFrames);
+
+    auto consecutive = std::vector<uint8_t> { 0x21, 0x01, 0x02 };
+    auto action2 = _isotp->didReceiveFrame(consecutive);
+    XCTAssertEqual(action2.type, Transceiver::Action::Type::protocolViolation);
+}
+
 -(void)testBrokenSequenceNumbers {
     auto first = std::vector<uint8_t> { 0x10, 0xFF, padding, padding, padding, padding, padding, padding };
     auto action = _isotp->didReceiveFrame(first);

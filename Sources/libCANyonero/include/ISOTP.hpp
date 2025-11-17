@@ -272,11 +272,9 @@ public:
 
     /// Call this for any incoming frame.
     Action didReceiveFrame(const Bytes& bytes) {
-        if (bytes.size() != width) {
-            // Allow unpadded flow control which some ECUs are using (BMW 8HP TCU, I'm looking at you!)
-            if (!(bytes.size() == 3 && bytes[0] >= 0x30 && bytes[0] <= 0x32)) {
-                return { Action::Type::protocolViolation, "Incoming frame does not match predefined width." };
-            }
+        if (bytes.empty()) { return { Action::Type::protocolViolation, "Incoming frame is empty." }; }
+        if (bytes.size() > width) {
+            return { Action::Type::protocolViolation, "Incoming frame exceeds predefined width." };
         }
 
         switch (behavior) {
@@ -350,6 +348,9 @@ private:
 
 private:
     Action parseFlowControlFrame(const Bytes& bytes) {
+        if (bytes.size() < 3) {
+            return { Action::Type::protocolViolation, "Received FLOW CONTROL shorter than minimum length 3." };
+        }
         auto frame = Frame(bytes);
         if (frame.type() != Frame::Type::flowControl) { return { Action::Type::protocolViolation, "Unexpected frame type received while sending. Did expect FLOW CONTROL." }; }
         
@@ -413,6 +414,7 @@ private:
 
             case Frame::Type::first: {
                 if (state != State::idle) { return { Action::Type::protocolViolation, "Did receive FIRST while we're not idle." }; }
+                if (bytes.size() != width) { return { Action::Type::protocolViolation, "Did receive FIRST that does not use full width." }; }
 
                 auto pduLength = frame.firstLength();
                 if (pduLength < 8) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < 8." }; }
@@ -433,6 +435,7 @@ private:
 
             case Frame::Type::consecutive: {
                 if (state != State::receiving) { return { Action::Type::protocolViolation, "Did receive CONSECUTIVE while we're not receiving." }; }
+                if (bytes.size() != width) { return { Action::Type::protocolViolation, "Did receive CONSECUTIVE that does not use full width." }; }
 
                 if (frame.consecutiveSequenceNumber() != receivingSequenceNumber) { return { Action::Type::protocolViolation, "Did receive CONSECUTIVE with unexpected sequence number." }; }
                 receivingSequenceNumber = (receivingSequenceNumber + 1) & 0x0F;

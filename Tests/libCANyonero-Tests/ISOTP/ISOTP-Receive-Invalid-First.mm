@@ -35,4 +35,10 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
 }
 
+-(void)testFirstTruncatedWidth {
+    auto frame = std::vector<uint8_t> { 0x10, 0x08, 0x31, 0x32, 0x33, 0x34 }; // DLC smaller than required
+    auto action = _isotp->didReceiveFrame(frame);
+    XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
+}
+
 @end
