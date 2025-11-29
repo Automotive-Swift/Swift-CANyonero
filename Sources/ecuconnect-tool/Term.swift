@@ -30,7 +30,14 @@ fileprivate class REPL {
 
     init(defaultAddressing: Automotive.Addressing? = nil, channelProtocol: ECUconnect.ChannelProtocol) {
         self.lastAddressing = defaultAddressing
-        self.payloadProtocol = channelProtocol == .isotp ? .uds : .raw
+        switch channelProtocol {
+            case .isotp:
+                self.payloadProtocol = .uds
+            case .kline:
+                self.payloadProtocol = .kwp
+            default:
+                self.payloadProtocol = .raw
+        }
         if let addressing = defaultAddressing {
             print("Default addressing: \(Self.describe(addressing))")
         }
@@ -369,7 +376,7 @@ struct Term: ParsableCommand {
     @Argument(help: "Bitrate")
     var bitrate: Int = 500000
 
-    @Option(name: .shortAndLong, help: "Channel protocol (passthrough or isotp)")
+    @Option(name: .shortAndLong, help: "Channel protocol (passthrough, isotp, or kline)")
     var proto: String = "passthrough"
 
     mutating func run() throws {
@@ -383,8 +390,18 @@ struct Term: ParsableCommand {
                 channelProto = .passthrough
             case "isotp":
                 channelProto = .isotp
+            case "kline":
+                channelProto = .kline
             default:
-                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough' or 'isotp'.")
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough', 'isotp', or 'kline'.")
+        }
+
+        let defaultAddressing: Automotive.Addressing
+        switch channelProto {
+            case .kline:
+                defaultAddressing = .broadcast(id: 0x33, reply: 0xF1)
+            default:
+                defaultAddressing = .unicast(id: 0x7DF, reply: 0x7E8)
         }
 
         Task {
@@ -397,15 +414,22 @@ struct Term: ParsableCommand {
                 print("Reported system voltage is \(voltage)V.")
 
                 try await adapter.openChannel(proto: channelProto, bitrate: bps)
-                print("\(channelProto == .passthrough ? "Passthrough" : "ISOTP") channel opened at \(bps) bps.")
+                let channelDescription: String
+                switch channelProto {
+                    case .passthrough: channelDescription = "Passthrough"
+                    case .isotp: channelDescription = "ISOTP"
+                    case .kline: channelDescription = "KLine"
+                    default: channelDescription = "\(channelProto)"
+                }
+                print("\(channelDescription) channel opened at \(bps) bps.")
                 print("Commands:")
-                print("  :7df,7e8       - Set addressing (send to 7df, expect reply from 7e8)")
+                print("  :REQ,REPLY     - Set addressing (e.g. :7df,7e8 or :33,F1)")
                 print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
                 print("  0902           - Send hex data with current addressing")
                 print("  quit           - Exit")
                 print("")
 
-                let repl = REPL(defaultAddressing: .unicast(id: 0x7DF, reply: 0x7E8), channelProtocol: channelProto)
+                let repl = REPL(defaultAddressing: defaultAddressing, channelProtocol: channelProto)
 
                 while true {
                     let command = try repl.read()
@@ -442,4 +466,3 @@ struct Term: ParsableCommand {
         RunLoop.current.run()
     }
 }
-
