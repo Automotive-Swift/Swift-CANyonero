@@ -10,15 +10,6 @@
       }
     },
     {
-      "identity" : "bitbytedata",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tsolomko/BitByteData",
-      "state" : {
-        "revision" : "cdcdc5177ad536cfb11b95c620f926a81014b7fe",
-        "version" : "2.0.4"
-      }
-    },
-    {
       "identity" : "chalk",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mxcl/Chalk",
@@ -33,7 +24,7 @@
       "location" : "https://github.com/Cornucopia-Swift/CornucopiaCore",
       "state" : {
         "branch" : "master",
-        "revision" : "f6f0afd41468b7cfb15b02e235c6a408c77c6ebb"
+        "revision" : "7998bbde15fd772729cafa920935ae1774bafda6"
       }
     },
     {
@@ -91,15 +82,6 @@
       }
     },
     {
-      "identity" : "swcompression",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tsolomko/SWCompression",
-      "state" : {
-        "revision" : "390e0b0af8dd19a600005a242a89e570ff482e09",
-        "version" : "4.8.6"
-      }
-    },
-    {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
@@ -123,7 +105,7 @@
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
         "branch" : "master",
-        "revision" : "ce510b4b103c50e37ae00e18964afa3799c19a4d"
+        "revision" : "97a5a92ab9840aad34db7ab8f5c141f0e9195301"
       }
     },
     {
