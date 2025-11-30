@@ -51,6 +51,12 @@ struct Frame {
 
 /// A small KWP transceiver that merges chained frames, strips repeated
 /// service/PID and sequence bytes, and validates basic structure.
+///
+/// Sequence number detection is done retroactively: when a second frame
+/// arrives and we detect that byte[2] of frame 1 was 0x01 and byte[2] of
+/// frame 2 is 0x02, we recognize this as a multi-frame sequence and strip
+/// the sequence bytes. This avoids false positives when 0x01 appears as
+/// regular data in single-frame responses.
 class Transceiver {
 public:
     enum class State { idle, receiving };
@@ -73,6 +79,8 @@ public:
         baseService = 0;
         basePid = 0;
         haveBase = false;
+        firstFrameHadPotentialSeq = false;
+        sequenceMode = false;
         expectedSeq = 0;
         buffer.clear();
     }
@@ -105,38 +113,53 @@ public:
         }
 
         if (!haveBase && payloadLen >= 2) {
+            // First frame: record service+PID, buffer all remaining data
             baseService = payload[0];
             basePid = payload[1];
             haveBase = true;
             append(baseService);
             append(basePid);
-            size_t copyStart = payloadLen >= 3 ? 3 : 2;
-            appendPayload(payload, payloadLen, copyStart);
-            if (payloadLen >= 3) {
-                expectedSeq = static_cast<uint8_t>(payload[2] + 1);
+            // Remember if byte[2] was 0x01 (potential sequence start)
+            firstFrameHadPotentialSeq = (payloadLen >= 3 && payload[2] == 0x01);
+            appendPayload(payload, payloadLen, 2);
+            state = State::receiving;
+        } else if (haveBase) {
+            if (payloadLen >= 2) {
+                if (payload[0] != baseService || payload[1] != basePid) {
+                    return violation("Base service/PID mismatch.");
+                }
+            }
+
+            // Retroactive sequence detection on second frame
+            if (!sequenceMode && firstFrameHadPotentialSeq && payloadLen >= 3 && payload[2] == 0x02) {
+                // Confirmed: this is a multi-frame sequence starting at 0x01
+                // Remove the 0x01 that was buffered from first frame
+                if (buffer.size() > 2 && buffer[2] == 0x01) {
+                    buffer.erase(buffer.begin() + 2);
+                }
+                sequenceMode = true;
+                expectedSeq = 0x03;
+                appendPayload(payload, payloadLen, 3);
+            } else if (sequenceMode) {
+                // Already in sequence mode, validate sequence number
+                if (payloadLen >= 3) {
+                    if (payload[2] != expectedSeq) {
+                        return violation("Sequence number mismatch.");
+                    }
+                    expectedSeq = static_cast<uint8_t>(payload[2] + 1);
+                    appendPayload(payload, payloadLen, 3);
+                } else {
+                    appendPayload(payload, payloadLen, 2);
+                }
+            } else {
+                // Not in sequence mode, treat byte[2] as data
+                appendPayload(payload, payloadLen, 2);
             }
             state = State::receiving;
         } else {
-            if (haveBase) {
-                if (payloadLen >= 2) {
-                    if (payload[0] != baseService || payload[1] != basePid) {
-                        return violation("Base service/PID mismatch.");
-                    }
-                }
-                if (payloadLen >= 3 && expectedSeq != 0 && payload[2] != expectedSeq) {
-                    return violation("Sequence number mismatch.");
-                }
-                if (payloadLen >= 3) {
-                    expectedSeq = static_cast<uint8_t>(payload[2] + 1);
-                }
-                size_t copyStart = payloadLen >= 3 ? 3 : (payloadLen >= 2 ? 2 : 0);
-                appendPayload(payload, payloadLen, copyStart);
-                state = State::receiving;
-            } else {
-                // No base discovered; just append payload.
-                appendPayload(payload, payloadLen, 0);
-                state = State::receiving;
-            }
+            // No base discovered; just append payload
+            appendPayload(payload, payloadLen, 0);
+            state = State::receiving;
         }
 
         if (expectedLength > 0 && buffer.size() >= expectedLength) {
@@ -161,6 +184,8 @@ private:
     uint8_t baseService = 0;
     uint8_t basePid = 0;
     bool haveBase = false;
+    bool firstFrameHadPotentialSeq = false;
+    bool sequenceMode = false;
     uint8_t expectedSeq = 0;
     Bytes buffer;
 

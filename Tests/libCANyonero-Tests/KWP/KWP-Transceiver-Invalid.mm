@@ -42,14 +42,20 @@ static uint8_t checksum(const std::vector<uint8_t>& frame) {
 }
 
 -(void)testSequenceMismatch {
-    auto f1 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x02, 0xAA, 0x00 };
+    // First frame with potential seq=0x01
+    auto f1 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x01, 0xAA, 0x00 };
     f1.back() = checksum(f1);
-    auto f2 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0x01, 0x05, 0x00 }; // seq jumps to 0x05
+    // Second frame has seq=0x02, confirming sequence mode
+    auto f2 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x02, 0xBB, 0x00 };
     f2.back() = checksum(f2);
+    // Third frame should have seq=0x03, but has 0x05 instead
+    auto f3 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0x01, 0x05, 0x00 };
+    f3.back() = checksum(f3);
 
     Transceiver kwp(0xF1, 0x10);
     XCTAssertEqual(kwp.feed(f1).type, Transceiver::Action::Type::waitForMore);
-    auto action = kwp.feed(f2);
+    XCTAssertEqual(kwp.feed(f2).type, Transceiver::Action::Type::waitForMore);
+    auto action = kwp.feed(f3);
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
 }
 
