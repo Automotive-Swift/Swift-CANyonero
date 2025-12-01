@@ -6,25 +6,25 @@
 
 #import <vector>
 
-#import "KWP.hpp"
+#import "KLine.hpp"
 
-using namespace CANyonero::KWP;
+using namespace CANyonero::KLine;
 using CANyonero::Bytes;
 
-static uint8_t checksum(const std::vector<uint8_t>& frame) {
+static uint8_t calcChecksum(const std::vector<uint8_t>& frame) {
     uint8_t sum = 0;
     for (size_t i = 0; i + 1 < frame.size(); ++i) { sum = static_cast<uint8_t>(sum + frame[i]); }
     return sum;
 }
 
-@interface KWP_Transceiver_Invalid : XCTestCase
+@interface KLine_Transceiver_Invalid : XCTestCase
 @end
 
-@implementation KWP_Transceiver_Invalid
+@implementation KLine_Transceiver_Invalid
 
 -(void)testChecksumInvalid {
     auto frame = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0xF1, 0x90, 0x00 };
-    frame.back() = checksum(frame) + 1; // corrupt
+    frame.back() = calcChecksum(frame) + 1; // corrupt
 
     Transceiver kwp(0xF1, 0x10);
     auto action = kwp.feed(frame);
@@ -44,13 +44,13 @@ static uint8_t checksum(const std::vector<uint8_t>& frame) {
 -(void)testSequenceMismatch {
     // First frame with potential seq=0x01
     auto f1 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x01, 0xAA, 0x00 };
-    f1.back() = checksum(f1);
+    f1.back() = calcChecksum(f1);
     // Second frame has seq=0x02, confirming sequence mode
     auto f2 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x02, 0xBB, 0x00 };
-    f2.back() = checksum(f2);
+    f2.back() = calcChecksum(f2);
     // Third frame should have seq=0x03, but has 0x05 instead
     auto f3 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0x01, 0x05, 0x00 };
-    f3.back() = checksum(f3);
+    f3.back() = calcChecksum(f3);
 
     Transceiver kwp(0xF1, 0x10);
     XCTAssertEqual(kwp.feed(f1).type, Transceiver::Action::Type::waitForMore);
@@ -61,9 +61,9 @@ static uint8_t checksum(const std::vector<uint8_t>& frame) {
 
 -(void)testBaseMismatch {
     auto f1 = std::vector<uint8_t>{ 0x84, 0xF1, 0x10, 0x62, 0x01, 0x02, 0xAA, 0x00 };
-    f1.back() = checksum(f1);
+    f1.back() = calcChecksum(f1);
     auto f2 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x6F, 0x01, 0x03, 0x00 }; // different service
-    f2.back() = checksum(f2);
+    f2.back() = calcChecksum(f2);
 
     Transceiver kwp(0xF1, 0x10);
     XCTAssertEqual(kwp.feed(f1).type, Transceiver::Action::Type::waitForMore);
@@ -73,7 +73,7 @@ static uint8_t checksum(const std::vector<uint8_t>& frame) {
 
 -(void)testUnexpectedAddress {
     auto frame = std::vector<uint8_t>{ 0x83, 0x01, 0x02, 0x62, 0xF1, 0x90, 0x00 };
-    frame.back() = checksum(frame);
+    frame.back() = calcChecksum(frame);
 
     Transceiver kwp(0xF1, 0x10);
     auto action = kwp.feed(frame);

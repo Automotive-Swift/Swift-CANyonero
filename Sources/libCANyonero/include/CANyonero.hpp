@@ -8,6 +8,7 @@
 
 #include "Protocol.hpp"
 #include "ISOTP.hpp"
+#include "KLine.hpp"
 #include "lz4.h"
 
 #endif
