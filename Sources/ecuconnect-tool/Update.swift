@@ -46,14 +46,18 @@ struct Update: ParsableCommand {
         Task {
             do {
                 let delegate = Delegate()
-                guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
+                let adapter = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
+                    guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
+                    return adapter
+                }
                 let info = try await adapter.identify()
                 let voltage = try await adapter.readSystemVoltage()
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
-                print("Requesting update firmware...")
-                try await adapter.prepareUpdate()
+                try await Cornucopia.Core.Spinner.run("Preparing firmware update") {
+                    try await adapter.prepareUpdate()
+                }
                 let bytes = Array(data)
                 for chunk in Progress(bytes.chunked(into: 4000)) {
                     try await adapter.sendUpdateData(chunk)
@@ -63,10 +67,10 @@ struct Update: ParsableCommand {
                 try await adapter.reset()
                 adapter.shutdown()
 
-                print("Waiting to reconnect...")
-                try await Task.CC_sleep(seconds: 3)
-
-                let nextInfo = try await adapter.identify()
+                let nextInfo = try await Cornucopia.Core.Spinner.run("Waiting to reconnect") {
+                    try await Task.CC_sleep(seconds: 3)
+                    return try await adapter.identify()
+                }
                 print("Connected to ECUconnect: \(nextInfo).")
                 Foundation.exit(0)
 

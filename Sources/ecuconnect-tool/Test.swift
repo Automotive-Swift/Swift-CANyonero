@@ -38,13 +38,18 @@ struct Test: ParsableCommand {
         Task {
             do {
                 let delegate = Delegate()
-                guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
+                let adapter = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
+                    guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
+                    return adapter
+                }
                 let info = try await adapter.identify()
                 let voltage = try await adapter.readSystemVoltage()
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
-                let channel = try await adapter.openChannel(proto: .isotp, bitrate: 500000)
+                let channel = try await Cornucopia.Core.Spinner.run("Opening channel") {
+                    try await adapter.openChannel(proto: .isotp, bitrate: 500000)
+                }
                 print("Channel #\(channel) opened.")
 
                 while true {

@@ -407,13 +407,18 @@ struct Term: ParsableCommand {
         Task {
             do {
                 let delegate = Delegate()
-                guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
-                let info = try await adapter.identify()
-                let voltage = try await adapter.readSystemVoltage()
+                let (adapter, info, voltage) = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
+                    guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
+                    let info = try await adapter.identify()
+                    let voltage = try await adapter.readSystemVoltage()
+                    return (adapter, info, voltage)
+                }
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
-                try await adapter.openChannel(proto: channelProto, bitrate: bps)
+                try await Cornucopia.Core.Spinner.run("Opening channel") {
+                    try await adapter.openChannel(proto: channelProto, bitrate: bps)
+                }
                 let channelDescription: String
                 switch channelProto {
                     case .passthrough: channelDescription = "Passthrough"
