@@ -64,21 +64,21 @@ static uint8_t calcChecksum(const std::vector<uint8_t>& frame) {
     XCTAssertEqual(action.type, Transceiver::Action::Type::protocolViolation);
 }
 
--(void)testISO9141KeepsSequenceBytes {
-    // A pair of frames that would trigger sequence stripping in KWP mode.
-    auto f1 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0x01, 0x01, 0xAA, 0x00 };
+-(void)testISO9141StripsRepeatedHeadersAndSequence {
+    // ISO 9141 responses sometimes repeat service/PID and sequence indices per frame.
+    // Expect the transceiver to merge and strip those repetitions.
+    auto f1 = std::vector<uint8_t>{ 0x48, 0x6B, 0x11, 0x49, 0x02, 0x01, 0xAA, 0x00 };
     f1.back() = calcChecksum(f1);
-    auto f2 = std::vector<uint8_t>{ 0x83, 0xF1, 0x10, 0x62, 0x01, 0x02, 0xBB, 0x00 };
+    auto f2 = std::vector<uint8_t>{ 0x48, 0x6B, 0x11, 0x49, 0x02, 0x02, 0xBB, 0x00 };
     f2.back() = calcChecksum(f2);
 
-    // In ISO 9141 mode, the sequence markers must be retained.
-    Transceiver iso(0x83, 0xF1, 0, ProtocolMode::iso9141);
+    Transceiver iso(0x48, 0x6B, 0, ProtocolMode::iso9141);
     XCTAssertEqual(iso.feed(f1).type, Transceiver::Action::Type::waitForMore);
     XCTAssertEqual(iso.feed(f2).type, Transceiver::Action::Type::waitForMore);
 
     auto finalAction = iso.finalize();
     XCTAssertEqual(finalAction.type, Transceiver::Action::Type::process);
-    auto expected = std::vector<uint8_t>{ 0x62, 0x01, 0x01, 0xAA, 0x62, 0x01, 0x02, 0xBB };
+    auto expected = std::vector<uint8_t>{ 0x49, 0x02, 0xAA, 0xBB };
     XCTAssertEqual(finalAction.data, expected);
 }
 

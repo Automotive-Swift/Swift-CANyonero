@@ -165,6 +165,12 @@ public:
         }
 
         if (mode == ProtocolMode::iso9141) {
+            if (!haveBase && payloadLen >= 2) {
+                baseService = payload[0];
+                basePid = payload[1];
+                haveBase = true;
+                firstFrameHadPotentialSeq = (payloadLen >= 3 && payload[2] == 0x01);
+            }
             appendPayload(payload, payloadLen, 0);
             state = State::receiving;
             if (expectedLength > 0 && buffer.size() >= expectedLength) {
@@ -252,6 +258,37 @@ private:
     Bytes buffer;
 
 private:
+    Bytes sanitizeBuffer(const Bytes& in) const {
+        if (in.size() < 2 || !haveBase) { return in; }
+
+        Bytes out;
+        out.reserve(in.size());
+        out.push_back(in[0]); // service
+        out.push_back(in[1]); // pid
+
+        size_t idx = 2;
+
+        // Drop a leading sequence byte (0x01) that was still present when we could not trim it earlier.
+        if (idx < in.size() && (sequenceMode || firstFrameHadPotentialSeq)) {
+            // Sequence bytes are typically > 0, but we accept 0 as well (some ECUs use 0-based).
+            ++idx;
+        }
+
+        while (idx < in.size()) {
+            // If we encounter a repeated service/pid, skip it and a following sequence byte.
+            if (idx + 1 < in.size() && in[idx] == baseService && in[idx + 1] == basePid) {
+                idx += 2;
+                if (idx < in.size() && (sequenceMode || firstFrameHadPotentialSeq)) {
+                    ++idx; // skip sequence indicator
+                }
+                continue;
+            }
+            out.push_back(in[idx++]);
+        }
+
+        return out;
+    }
+
     void append(uint8_t byte) {
         buffer.push_back(byte);
     }
@@ -262,7 +299,8 @@ private:
     }
 
     Action finalizeInternal() {
-        Action action{ Action::Type::process, {}, buffer };
+        Bytes output = sanitizeBuffer(buffer);
+        Action action{ Action::Type::process, {}, output };
         reset();
         return action;
     }
