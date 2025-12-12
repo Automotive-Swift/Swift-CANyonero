@@ -91,8 +91,10 @@ enum class ChannelProtocol: uint8_t {
     can_fd                = 0x03,
     /// ISOTP w/ CANFD. Maximum Length = 4 GBytes.
     isotp_fd              = 0x04,
+    /// Raw CAN frames with automatic Flow Control for ISOTP First Frames. Maximum length = 8 Byte.
+    raw_with_fc           = 0x05,
     /// ENET frames. Maximum length = 4095 Bytes.
-    enet                  = 0x05,
+    enet                  = 0x06,
 };
 
 /// Periodic message payload type.
