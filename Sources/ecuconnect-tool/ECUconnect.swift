@@ -9,6 +9,7 @@ struct ECUconnectCommand: ParsableCommand {
         abstract: "A tool for the ECUconnect OBD2 adapter.",
         version: "0.5.0",
         subcommands: [
+            Benchmark.self,
             Monitor.self,
             Ping.self,
             Raw.self,
