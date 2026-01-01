@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace CANyonero {
 
@@ -251,7 +252,7 @@ public:
     }
 
     /// Send a PDU. Short (`size < width`) PDUs are passed through, longer PDUs launch the state machine.
-    Action writePDU(const Bytes& bytes) {
+    Action writePDU(Bytes bytes) {
         if (bytes.size() > ISOTP::maximumTransferSize) { return { Action::Type::protocolViolation, "Exceeding maximum ISOTP transfer size." }; }
 
         if (state != State::idle) { return { Action::Type::protocolViolation, "State machine not .idle" }; }
@@ -265,7 +266,13 @@ public:
         // Content large enough to require multiple frames. Send first frame and proceeding state machine to `.sending`.
         auto frame = Frame::first(bytes.size(), bytes, width);
         state = State::sending;
-        sendingPayload = Bytes(bytes.begin() + width - 2, bytes.end());
+        const auto firstPayload = static_cast<size_t>(width - 2);
+        if (bytes.size() > firstPayload) {
+            bytes.erase(bytes.begin(), bytes.begin() + firstPayload);
+        } else {
+            bytes.clear();
+        }
+        sendingPayload = std::move(bytes);
         sendingSequenceNumber = 0x01;
         return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
     }

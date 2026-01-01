@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <cassert>
+#include <new>
 
 #include "lz4.h"
 
@@ -123,21 +124,49 @@ Bytes PDU::uncompressedData() const {
     switch (_type) {
         case PDUType::receivedCompressed: {
             auto length = uncompressedLength();
-            auto uncompressedData = std::make_unique<char[]>(length);
+            if (length == 0) { return {}; }
+            if (_length < 8) { return {}; }
+            const size_t compressedLength = _length - 8;
+            Bytes output;
+            try {
+                output.resize(length);
+            } catch (const std::bad_alloc&) {
+                return {};
+            }
             // offset computes from channel (1), id (4), extension (1), uncompressed length (2) = 8
-            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 8), uncompressedData.get(), _length - 8, length);
-            return Bytes(uncompressedData.get(), uncompressedData.get() + length);
+            int decoded = LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 8),
+                                              reinterpret_cast<char*>(output.data()),
+                                              static_cast<int>(compressedLength),
+                                              static_cast<int>(length));
+            if (decoded != static_cast<int>(length)) {
+                output.clear();
+            }
+            return output;
         }
 
         case PDUType::sendCompressed: {
             auto length = uncompressedLength();
-            auto uncompressedData = std::make_unique<char[]>(length);
+            if (length == 0) { return {}; }
+            if (_length < 3) { return {}; }
+            const size_t compressedLength = _length - 3;
+            Bytes output;
+            try {
+                output.resize(length);
+            } catch (const std::bad_alloc&) {
+                return {};
+            }
             // offset computes from channel (1), uncompressed length (2) = 3
-            LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 3), uncompressedData.get(), _length - 3, length);
-            return Bytes(uncompressedData.get(), uncompressedData.get() + length);
+            int decoded = LZ4_decompress_safe(reinterpret_cast<const char*>(_payload.data() + 3),
+                                              reinterpret_cast<char*>(output.data()),
+                                              static_cast<int>(compressedLength),
+                                              static_cast<int>(length));
+            if (decoded != static_cast<int>(length)) {
+                output.clear();
+            }
+            return output;
         }
         default:
-            assert(false);
+            return {};
     }
 }
 
