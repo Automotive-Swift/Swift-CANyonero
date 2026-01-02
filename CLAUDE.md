@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Commit Rules
+
+Never include credits, signatures, or attribution in commit messages. No "Generated with", "Co-Authored-By", or similar footers.
+
 ## Build and Test Commands
 
 ### Building the Package
