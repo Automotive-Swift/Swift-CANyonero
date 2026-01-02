@@ -236,11 +236,11 @@ enum class PDUType: uint8_t {
 /// Encapsulates a PDU on the wire.
 class PDU {
 
-    static const size_t HEADER_SIZE = 4;
+    static constexpr size_t HEADER_SIZE = 4;
     PDUType _type;
     uint16_t _length;
     std::vector<uint8_t> _payload;
-    static const uint8_t ATT = 0x1F;
+    static constexpr uint8_t ATT = 0x1F;
 
 public:
 
