@@ -34,6 +34,7 @@ inline uint32_t vector_read_uint32(std::vector<uint8_t>::const_iterator& it) {
 
 inline std::vector<uint8_t> vector_drop_first(std::vector<uint8_t>& vec, size_t n) {
     std::vector<uint8_t> removed_elements;
+    removed_elements.reserve(n);
     for (int i = 0; i < n; i++) {
         removed_elements.push_back(vec[i]);
     }
@@ -43,7 +44,9 @@ inline std::vector<uint8_t> vector_drop_first(std::vector<uint8_t>& vec, size_t 
 
 template<typename T>
 inline std::vector<T> operator+(const std::vector<T>& vec1, const std::vector<T>& vec2) {
-    std::vector<T> result = vec1;
+    std::vector<T> result;
+    result.reserve(vec1.size() + vec2.size());
+    result.insert(result.end(), vec1.begin(), vec1.end());
     result.insert(result.end(), vec2.begin(), vec2.end());
     return result;
 }

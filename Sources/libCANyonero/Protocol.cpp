@@ -207,12 +207,13 @@ PDU::PDU(const Bytes& frame) {
 
 const Bytes PDU::frame() const {
 
-    std::vector<uint8_t> frame = {
-        PDU::ATT,
-        static_cast<uint8_t>(_type),
-        static_cast<uint8_t>(_payload.size() >> 8),
-        static_cast<uint8_t>(_payload.size() & 0xff),
-    };
+    std::vector<uint8_t> frame;
+    frame.reserve(4 + _payload.size());
+    frame.push_back(PDU::ATT);
+    frame.push_back(static_cast<uint8_t>(_type));
+    frame.push_back(static_cast<uint8_t>(_payload.size() >> 8));
+    frame.push_back(static_cast<uint8_t>(_payload.size() & 0xff));
+
     frame.insert(frame.end(), _payload.begin(), _payload.end());
     return frame;
 }
@@ -273,13 +274,13 @@ PDU PDU::send(const ChannelHandle handle, const Bytes& data) {
 PDU PDU::sendCompressed(const ChannelHandle handle, const Bytes& uncompressedData) {
     const uint16_t uncompressedLength = uncompressedData.size();
     auto bound = LZ4_compressBound(uncompressedLength);
-    auto buffer = new char[bound];
-    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer, uncompressedLength, bound);
+    std::vector<char> buffer(bound);
+    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer.data(), uncompressedLength, bound);
 
     auto payload = Bytes(1, handle);
+    payload.reserve(3 + compressedLength);
     vector_append_uint16(payload, uncompressedLength);
-    payload.insert(payload.end(), buffer, buffer + compressedLength);
-    delete[] buffer;
+    payload.insert(payload.end(), buffer.begin(), buffer.begin() + compressedLength);
     return PDU(PDUType::sendCompressed, payload);
 }
 
@@ -334,21 +335,17 @@ PDU PDU::pong(const Bytes payload) {
 
 PDU PDU::info(const std::string vendor, const std::string model, const std::string hardware, const std::string serial, const std::string firmware) {
     std::vector<uint8_t> payload;
-    std::vector<uint8_t> vendor_bytes(vendor.begin(), vendor.end());
-    std::vector<uint8_t> model_bytes(model.begin(), model.end());
-    std::vector<uint8_t> hardware_bytes(hardware.begin(), hardware.end());
-    std::vector<uint8_t> serial_bytes(serial.begin(), serial.end());
-    std::vector<uint8_t> firmware_bytes(firmware.begin(), firmware.end());
+    payload.reserve(vendor.size() + model.size() + hardware.size() + serial.size() + firmware.size() + 5);
 
-    payload.insert(payload.end(), vendor_bytes.begin(), vendor_bytes.end());
+    payload.insert(payload.end(), vendor.begin(), vendor.end());
     payload.push_back('\n');
-    payload.insert(payload.end(), model_bytes.begin(), model_bytes.end());
+    payload.insert(payload.end(), model.begin(), model.end());
     payload.push_back('\n');
-    payload.insert(payload.end(), hardware_bytes.begin(), hardware_bytes.end());
+    payload.insert(payload.end(), hardware.begin(), hardware.end());
     payload.push_back('\n');
-    payload.insert(payload.end(), serial_bytes.begin(), serial_bytes.end());
+    payload.insert(payload.end(), serial.begin(), serial.end());
     payload.push_back('\n');
-    payload.insert(payload.end(), firmware_bytes.begin(), firmware_bytes.end());
+    payload.insert(payload.end(), firmware.begin(), firmware.end());
 
     return PDU(PDUType::info, payload);
 }
@@ -380,15 +377,15 @@ PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t e
 PDU PDU::receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& uncompressedData) {
     const uint16_t uncompressedLength = uncompressedData.size();
     auto bound = LZ4_compressBound(uncompressedLength);
-    auto buffer = new char[bound];
-    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer, uncompressedLength, bound);
+    std::vector<char> buffer(bound);
+    auto compressedLength = LZ4_compress_default(reinterpret_cast<const char*>(uncompressedData.data()), buffer.data(), uncompressedLength, bound);
 
     auto payload = Bytes(1, handle);
+    payload.reserve(8 + compressedLength);
     vector_append_uint32(payload, id);
     payload.push_back(extension);
     vector_append_uint16(payload, uncompressedLength);
-    payload.insert(payload.end(), buffer, buffer + compressedLength);
-    delete[] buffer;
+    payload.insert(payload.end(), buffer.begin(), buffer.begin() + compressedLength);
     return PDU(PDUType::receivedCompressed, payload);
 }
 
