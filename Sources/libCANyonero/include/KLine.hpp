@@ -200,10 +200,7 @@ public:
             // Retroactive sequence detection on second frame
             if (!sequenceMode && firstFrameHadPotentialSeq && payloadLen >= 3 && payload[2] == 0x02) {
                 // Confirmed: this is a multi-frame sequence starting at 0x01
-                // Remove the 0x01 that was buffered from first frame
-                if (buffer.size() > 2 && buffer[2] == 0x01) {
-                    buffer.erase(buffer.begin() + 2);
-                }
+                // The 0x01 in buffer[2] will be stripped by sanitizeBuffer() on finalize
                 sequenceMode = true;
                 expectedSeq = 0x03;
                 appendPayload(payload, payloadLen, 3);
