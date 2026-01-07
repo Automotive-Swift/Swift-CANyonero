@@ -26,7 +26,7 @@ fileprivate class REPL {
     private var lastAddressing: Automotive.Addressing?
     private var payloadProtocol: Automotive.PayloadProtocol
 
-    static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdef:,/").inverted
+    static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdefxX:,/").inverted
 
     init(defaultAddressing: Automotive.Addressing? = nil, channelProtocol: ECUconnect.ChannelProtocol) {
         self.lastAddressing = defaultAddressing
