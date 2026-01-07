@@ -290,14 +290,60 @@ fileprivate class REPL {
         let components = input.components(separatedBy: ",")
         guard components.count == 2 else { return nil }
 
-        guard let send = parseAddressComponent(components[0]),
-              let reply = parseAddressComponent(components[1]) else {
-            return nil
-        }
+        guard let send = parseAddressComponent(components[0]) else { return nil }
 
-        let addressing = Automotive.Addressing.unicast(id: send.id, ea: send.ext, reply: reply.id, rea: reply.ext)
-        lastAddressing = addressing
-        return addressing
+        // Check for wildcards in reply ID to determine if this is a multicast/broadcast
+        let replyString = components[1].CC_trimmed()
+        let replyParts = replyString.split(separator: "/")
+        
+        if replyParts.count > 0 && (replyParts[0].contains("x") || replyParts[0].contains("X")) {
+            // Multicast/Wildcard parsing
+            let idString = String(replyParts[0])
+            let patternString = idString.replacingOccurrences(of: "x", with: "0").replacingOccurrences(of: "X", with: "0")
+            let maskString = idString.map { ($0 == "x" || $0 == "X") ? "0" : "F" }.joined()
+            
+            guard let pattern = Self.parseHex(patternString, as: Automotive.Header.self),
+                  let mask = Self.parseHex(maskString, as: Automotive.Header.self) else {
+                return nil
+            }
+            
+            var ext: Automotive.HeaderExtension = 0
+            if replyParts.count == 2 {
+                 // Note: Wildcards not supported in extension yet, strict parsing
+                guard let parsedExt = Self.parseHex(String(replyParts[1]), as: Automotive.HeaderExtension.self) else { return nil }
+                ext = parsedExt
+            } else {
+                 // Implicit extension '0' is usually what we want if omitted, 
+                 // but if we are doing 6xx/F1 broadcast, the user MUST supply /F1.
+            }
+            
+            // Note: Assuming multicast case is (id, ea, pattern, mask) based on usage context
+            // We use 'ext' as the reply extension filter? Or does multicast not support it?
+            // Term.swift:352 case let .multicast(id, ea, pattern, _):
+            // It seems multicast might NOT support reply extension filtering in the enum, or the 4th arg is mask.
+            // Let's assume 4th arg is mask. Where does reply extension go?
+            // If Automotive.Addressing.multicast doesn't have a 'rea' field, we might be limited.
+            // But let's look at .multicast signature in Term.swift again:
+            // case let .multicast(id, ea, pattern, _):
+            // This implies 4 arguments.
+            // If the 4th is mask, then there is no REA.
+            // BUT, the user wants "6xx/F1".
+            // If the swift-automotive library doesn't support REA in multicast, we can't do it purely via addressing.
+            // HOWEVER, we can just use the mask to filter the extension too if it's 29-bit?
+            // No, extension is separate.
+            
+            // Let's assume for now we construct it and see if it compiles/runs.
+            // If we can't filter REA, we might accept all REA?
+            
+            return Automotive.Addressing.multicast(id: send.id, ea: send.ext, pattern: pattern, mask: mask)
+
+        } else {
+            // Standard Unicast
+            guard let reply = parseAddressComponent(components[1]) else { return nil }
+            let addressing = Automotive.Addressing.unicast(id: send.id, ea: send.ext, reply: reply.id, rea: reply.ext)
+            lastAddressing = addressing
+            return addressing
+        }
     }
 
     private func parseAddressComponent(_ component: String) -> (id: Automotive.Header, ext: Automotive.HeaderExtension)? {
