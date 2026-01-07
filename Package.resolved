@@ -86,8 +86,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
       "state" : {
-        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
-        "version" : "1.6.2"
+        "revision" : "c5d11a805e765f52ba34ec7284bd4fcd6ba68615",
+        "version" : "1.7.0"
       }
     },
     {
@@ -105,7 +105,7 @@
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
         "branch" : "master",
-        "revision" : "29aaea087a6fca97972a7f63ecca3c032207ead2"
+        "revision" : "2008cef57afc1f16b1aa75886c5da77044747de6"
       }
     },
     {

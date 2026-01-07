@@ -85,6 +85,11 @@ All tests use XCTest framework and are written in Objective-C++ (.mm files).
 - Maximum PDU length: `0x10003` (header + max payload)
 - ISOTP max transfer: `0xFFF` (4095 bytes)
 
+## Adapter/Firmware Validation Notes
+
+- Some CAN controllers (e.g. MCP251XFD) reject invalid 11-bit acceptance masks (e.g. `0xF00`) with `ERR__FILTER_TOO_LARGE`.
+- Firmware should validate `setArbitration` inputs and return a hardware/invalid-command error if the filter cannot be applied, instead of logging and proceeding.
+
 ## Compilation Flags
 
 The project enforces strict compilation with `-Werror` and `-pedantic` flags for C++ code, ensuring high code quality standards.

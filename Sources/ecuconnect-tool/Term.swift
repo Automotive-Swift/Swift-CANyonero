@@ -303,8 +303,11 @@ fileprivate class REPL {
             let maskString = idString.map { ($0 == "x" || $0 == "X") ? "0" : "F" }.joined()
             
             guard let pattern = Self.parseHex(patternString, as: Automotive.Header.self),
-                  let mask = Self.parseHex(maskString, as: Automotive.Header.self) else {
+                  var mask = Self.parseHex(maskString, as: Automotive.Header.self) else {
                 return nil
+            }
+            if pattern <= 0x7FF {
+                mask &= 0x7FF
             }
             
             var ext: Automotive.HeaderExtension = 0
@@ -317,25 +320,10 @@ fileprivate class REPL {
                  // but if we are doing 6xx/F1 broadcast, the user MUST supply /F1.
             }
             
-            // Note: Assuming multicast case is (id, ea, pattern, mask) based on usage context
-            // We use 'ext' as the reply extension filter? Or does multicast not support it?
-            // Term.swift:352 case let .multicast(id, ea, pattern, _):
-            // It seems multicast might NOT support reply extension filtering in the enum, or the 4th arg is mask.
-            // Let's assume 4th arg is mask. Where does reply extension go?
-            // If Automotive.Addressing.multicast doesn't have a 'rea' field, we might be limited.
-            // But let's look at .multicast signature in Term.swift again:
-            // case let .multicast(id, ea, pattern, _):
-            // This implies 4 arguments.
-            // If the 4th is mask, then there is no REA.
-            // BUT, the user wants "6xx/F1".
-            // If the swift-automotive library doesn't support REA in multicast, we can't do it purely via addressing.
-            // HOWEVER, we can just use the mask to filter the extension too if it's 29-bit?
-            // No, extension is separate.
-            
-            // Let's assume for now we construct it and see if it compiles/runs.
-            // If we can't filter REA, we might accept all REA?
-            
-            return Automotive.Addressing.multicast(id: send.id, ea: send.ext, pattern: pattern, mask: mask)
+            // Use reply extension when provided; wildcards are still not supported there.
+            let addressing = Automotive.Addressing.multicast(id: send.id, ea: send.ext, pattern: pattern, mask: mask, rea: ext)
+            lastAddressing = addressing
+            return addressing
 
         } else {
             // Standard Unicast
@@ -395,8 +383,8 @@ fileprivate class REPL {
         switch addressing {
             case let .unicast(id, ea, reply, rea):
                 return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
-            case let .multicast(id, ea, pattern, _):
-                return "\(formatted(header: id, ext: ea)) -> \(pattern, radix: .hex)"
+            case let .multicast(id, ea, pattern, _, rea):
+                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: pattern, ext: rea))"
             case let .broadcast(id, ea, reply, rea):
                 return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
             case let .oneshot(id, ea, reply, rea):
@@ -491,8 +479,18 @@ struct Term: ParsableCommand {
 
                         case .sendMessage(let message):
                             do {
-                                let response = try await adapter.sendMessageReceiveSingle(message)
-                                repl.write(response)
+                                switch message.addressing {
+                                    case .oneshot(_, _, _, _):
+                                        try await adapter.sendMessageReceiveNothing(message)
+                                    case .multicast(_, _, _, _, _), .broadcast(_, _, _, _):
+                                        let responses = try await adapter.sendMessageReceiveMultiple(message)
+                                        for response in responses {
+                                            repl.write(response)
+                                        }
+                                    default:
+                                        let response = try await adapter.sendMessageReceiveSingle(message)
+                                        repl.write(response)
+                                }
                             } catch {
                                 print("Error: \(error)")
                             }
