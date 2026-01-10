@@ -121,7 +121,7 @@ using namespace CANyonero::ISOTP;
     auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding, padding };
     auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
     XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
-    XCTAssertEqual(secondAction.frames.size(), 585);
+    XCTAssertEqual(secondAction.frames.size(), maximumUnconfirmedBlocksStandard);
 
     uint8_t sequenceNumber = 0x01;
     for (auto& consecutive: secondAction.frames) {

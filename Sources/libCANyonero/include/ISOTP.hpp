@@ -8,6 +8,7 @@
 #include "Helpers.hpp"
 
 #include <algorithm>
+#include <deque>
 #include <string>
 #include <vector>
 #include <utility>
@@ -16,9 +17,18 @@ namespace CANyonero {
 
 namespace ISOTP {
 
-const size_t maximumTransferSize = 0xFFF; // 4095 bytes
-const size_t maximumUnconfirmedBlocks = 1000; // 586 + n ;-)
-const uint8_t padding = 0xAA;
+constexpr size_t maximumTransferSize = 0xFFF; // 4095 bytes
+constexpr uint8_t standardFrameWidth = 8;
+constexpr uint8_t extendedFrameWidth = 7;
+constexpr uint8_t padding = 0xAA;
+
+constexpr size_t maxUnconfirmedBlocksForWidth(uint8_t width) {
+    const size_t payloadPerFrame = static_cast<size_t>(width - 1);
+    return (maximumTransferSize / payloadPerFrame) + 1;
+}
+
+constexpr size_t maximumUnconfirmedBlocksStandard = maxUnconfirmedBlocksForWidth(standardFrameWidth);
+constexpr size_t maximumUnconfirmedBlocksExtended = maxUnconfirmedBlocksForWidth(extendedFrameWidth);
 
 struct Frame {
 
@@ -232,14 +242,14 @@ public:
         /// Data to process (if type is ``process``).
         Bytes data;
         /// Frames to write to the CAN bus (if type is ``writeFrames``).
-        std::vector<Frame> frames;
+        std::deque<Frame> frames;
         /// Separation time in microseconds (if type is ``writeFrames``).
         uint16_t separationTime;
     };
 
     /// Create a ``Transceiver`` with a default configuration.
     Transceiver()
-        :behavior(Behavior::defensive), width(8), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
+        :behavior(Behavior::defensive), width(standardFrameWidth), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
     {
     }
 
@@ -247,7 +257,7 @@ public:
     /// The rxSeparationTime and txSeparationTime are in microseconds.
     /// NOTE: txSeparationTime is only considered, if it is larger than the one reported in the respective flow.
     Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
-        :behavior(behavior), width(mode == Mode::standard ? 8 : 7), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
+        :behavior(behavior), width(mode == Mode::standard ? standardFrameWidth : extendedFrameWidth), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
     }
 
@@ -366,9 +376,9 @@ private:
             case Frame::FlowStatus::clearToSend: {
                 uint16_t numberOfUnconfirmedFrames = frame.blockSize();
                 if (numberOfUnconfirmedFrames == 0) {
-                    numberOfUnconfirmedFrames = ISOTP::maximumUnconfirmedBlocks;
+                    numberOfUnconfirmedFrames = ISOTP::maxUnconfirmedBlocksForWidth(width);
                 }
-                auto nextFrames = std::vector<Frame> {};
+                auto nextFrames = std::deque<Frame> {};
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
                     auto nextChunkSize = std::min(width - 1, static_cast<int>(sendingPayload.size()));
                     auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, nextChunkSize, width);
@@ -429,7 +439,7 @@ private:
                 receivingPendingCounter = pduLength - (width - 2);
                 receivingUnconfirmedFramesCounter = blockSize;
                 if (receivingUnconfirmedFramesCounter == 0) {
-                    receivingUnconfirmedFramesCounter = ISOTP::maximumUnconfirmedBlocks;
+                    receivingUnconfirmedFramesCounter = ISOTP::maxUnconfirmedBlocksForWidth(width);
                 }
                 state = State::receiving;
                 receivingSequenceNumber = 0x01;
