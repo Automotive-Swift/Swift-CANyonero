@@ -177,13 +177,14 @@ struct Benchmark: ParsableCommand {
                     }
 
                     let averagePing = sumPing / Double(pingCount)
-                    let bandwidth = payloadSize > 0 ? (Double(payloadSize) / averagePing) : 0.0
+                    // ECUconnect ping echoes the full payload; count both directions for round-trip throughput.
+                    let roundTripBandwidth = payloadSize > 0 ? (Double(payloadSize) * 2.0 / averagePing) : 0.0
                     let result = BenchmarkResult(
                         payloadSize: payloadSize,
                         average: averagePing,
                         minimum: minimumPing,
                         maximum: maximumPing,
-                        bandwidthBytesPerSecond: bandwidth
+                        bandwidthBytesPerSecond: roundTripBandwidth
                     )
                     results.append(result)
                     totalDuration += sumPing
@@ -193,18 +194,18 @@ struct Benchmark: ParsableCommand {
                     let avgStr = String(format: "avg %7.2f ms", averagePing * 1000)
                     let minStr = String(format: "min %7.2f ms", minimumPing * 1000)
                     let maxStr = String(format: "max %7.2f ms", maximumPing * 1000)
-                    let bwStr = "avg bw \(formatRate(bandwidth))"
+                    let bwStr = "avg rt bw \(formatRate(roundTripBandwidth))"
                     print("\(sizeStr, color: .cyan)  \(avgStr, color: .yellow)  \(minStr, color: .green)  \(maxStr, color: .red)  \(bwStr, color: .magenta)")
                     fflush(stdout)
                 }
 
                 let overallAverageLatency = totalDuration / Double(totalCount)
                 if let best = results.max(by: { $0.bandwidthBytesPerSecond < $1.bandwidthBytesPerSecond }) {
-                    print("Max avg bandwidth: \(formatRate(best.bandwidthBytesPerSecond), color: .magenta) @ \(String(best.payloadSize), color: .cyan) bytes")
+                    print("Max avg rt bandwidth: \(formatRate(best.bandwidthBytesPerSecond), color: .magenta) @ \(String(best.payloadSize), color: .cyan) bytes")
                 }
                 if let recommended = recommendPayloadSize(results) {
                     let recLine = String(
-                        format: "Recommended payload size: %d bytes (avg bw %@, avg latency %.2f ms)",
+                        format: "Recommended payload size: %d bytes (avg rt bw %@, avg latency %.2f ms)",
                         recommended.payloadSize,
                         formatRate(recommended.bandwidthBytesPerSecond),
                         recommended.average * 1000

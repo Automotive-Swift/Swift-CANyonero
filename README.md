@@ -44,6 +44,8 @@ swift run ecuconnect-tool term --channel-protocol isotp --addressing :7df,7e8
 
 The tool uses the Swift bindings in this package so it is a convenient way to validate PDUs, poll ECU information, or keep a periodic tester-present running without writing your own app.
 
+The `benchmark` subcommand uses ECUconnect `ping`, which echoes the full payload and verifies it byte-for-byte; reported bandwidth is round-trip (payload out + payload back).
+
 ## PDU Examples
 
 ### Request Information

@@ -379,16 +379,22 @@ fileprivate class REPL {
         return "\(base)/\(String(format: "%02X", Int(ext)))"
     }
 
+    private static func formattedMask(_ mask: Automotive.Header) -> String {
+        let value = UInt32(mask)
+        let hex = value <= 0x7FF ? String(format: "%03X", value) : String(format: "%08X", value)
+        return "0x\(hex)"
+    }
+
     static func describe(_ addressing: Automotive.Addressing) -> String {
         switch addressing {
             case let .unicast(id, ea, reply, rea):
-                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
-            case let .multicast(id, ea, pattern, _, rea):
-                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: pattern, ext: rea))"
+                return "unicast \(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+            case let .multicast(id, ea, pattern, mask, rea):
+                return "multicast \(formatted(header: id, ext: ea)) -> \(formatted(header: pattern, ext: rea)) mask=\(formattedMask(mask))"
             case let .broadcast(id, ea, reply, rea):
-                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+                return "broadcast \(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
             case let .oneshot(id, ea, reply, rea):
-                return "\(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
+                return "oneshot \(formatted(header: id, ext: ea)) -> \(formatted(header: reply, ext: rea))"
             default:
                 return "\(addressing.id, radix: .hex) -> \(addressing.reply, radix: .hex)"
         }
