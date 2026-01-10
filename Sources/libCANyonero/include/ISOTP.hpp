@@ -27,8 +27,17 @@ constexpr size_t maxUnconfirmedBlocksForWidth(uint8_t width) {
     return (maximumTransferSize / payloadPerFrame) + 1;
 }
 
+constexpr size_t consecutiveFramesForMaxTransfer(uint8_t width) {
+    const size_t firstFramePayload = static_cast<size_t>(width - 2);
+    const size_t cfPayload = static_cast<size_t>(width - 1);
+    const size_t remaining = maximumTransferSize - firstFramePayload;
+    return (remaining + cfPayload - 1) / cfPayload;
+}
+
 constexpr size_t maximumUnconfirmedBlocksStandard = maxUnconfirmedBlocksForWidth(standardFrameWidth);
 constexpr size_t maximumUnconfirmedBlocksExtended = maxUnconfirmedBlocksForWidth(extendedFrameWidth);
+constexpr size_t maxConsecutiveFramesStandard = consecutiveFramesForMaxTransfer(standardFrameWidth);
+constexpr size_t maxConsecutiveFramesExtended = consecutiveFramesForMaxTransfer(extendedFrameWidth);
 
 struct Frame {
 
@@ -86,12 +95,18 @@ struct Frame {
 
     /// Returns a CF.
     static Frame consecutive(uint8_t sequenceNumber, const Bytes& bytes, uint8_t count, uint8_t width) {
+        return consecutive(sequenceNumber, bytes, 0, count, width);
+    }
+
+    /// Returns a CF starting at the specified offset.
+    static Frame consecutive(uint8_t sequenceNumber, const Bytes& bytes, size_t offset, uint8_t count, uint8_t width) {
         assert(sequenceNumber <= 0x0F);
         assert(count);
         assert(count <= width);
+        assert(offset + count <= bytes.size());
         uint8_t pci = uint8_t(Type::consecutive) | uint8_t(sequenceNumber);
         auto vector = std::vector<uint8_t> { pci };
-        vector.insert(vector.end(), bytes.begin(), bytes.begin() + count);
+        vector.insert(vector.end(), bytes.begin() + offset, bytes.begin() + offset + count);
         vector.resize(width, ISOTP::padding);
         return Frame(vector);
     }
@@ -277,12 +292,8 @@ public:
         auto frame = Frame::first(bytes.size(), bytes, width);
         state = State::sending;
         const auto firstPayload = static_cast<size_t>(width - 2);
-        if (bytes.size() > firstPayload) {
-            bytes.erase(bytes.begin(), bytes.begin() + firstPayload);
-        } else {
-            bytes.clear();
-        }
         sendingPayload = std::move(bytes);
+        sendingPayloadOffset = std::min(firstPayload, sendingPayload.size());
         sendingSequenceNumber = 0x01;
         return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
     }
@@ -340,6 +351,7 @@ public:
     void reset() {
         state = State::idle;
         sendingPayload.clear();
+        sendingPayloadOffset = 0;
         sendingSequenceNumber = 0;
         receivingPayload.clear();
         receivingSequenceNumber = 0;
@@ -356,6 +368,7 @@ private:
 
     State state = State::idle;
     Bytes sendingPayload;
+    size_t sendingPayloadOffset = 0;
     uint8_t sendingSequenceNumber = 0;
 
     Bytes receivingPayload;
@@ -378,14 +391,23 @@ private:
                 if (numberOfUnconfirmedFrames == 0) {
                     numberOfUnconfirmedFrames = ISOTP::maxUnconfirmedBlocksForWidth(width);
                 }
+                if (sendingPayloadOffset > sendingPayload.size()) {
+                    reset();
+                    return { Action::Type::protocolViolation, "Sending payload offset exceeds payload size." };
+                }
                 auto nextFrames = std::deque<Frame> {};
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
-                    auto nextChunkSize = std::min(width - 1, static_cast<int>(sendingPayload.size()));
-                    auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, nextChunkSize, width);
-                    sendingPayload.erase(sendingPayload.begin(), sendingPayload.begin() + nextChunkSize);
+                    const auto remaining = sendingPayload.size() - sendingPayloadOffset;
+                    if (remaining == 0) {
+                        reset();
+                        break;
+                    }
+                    auto nextChunkSize = static_cast<uint8_t>(std::min<size_t>(width - 1, remaining));
+                    auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, sendingPayloadOffset, nextChunkSize, width);
+                    sendingPayloadOffset += nextChunkSize;
                     nextFrames.insert(nextFrames.end(), nextFrame);
                     
-                    if (sendingPayload.empty()) {
+                    if (sendingPayloadOffset >= sendingPayload.size()) {
                         reset();
                         break;
                     }

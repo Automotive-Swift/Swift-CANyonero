@@ -105,6 +105,38 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(frame2.bytes, expected2);
 }
 
+-(void)testFlowControlSmallBlocksMultiple {
+    auto isotp = Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, 0x01, 0, 0);
+    std::vector<uint8_t> pdu(16);
+    std::iota(pdu.begin(), pdu.end(), 0);
+
+    auto firstAction = isotp.writePDU(pdu);
+    XCTAssertEqual(firstAction.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(firstAction.frames.size(), 1);
+    auto firstFrame = firstAction.frames[0];
+    XCTAssertEqual(firstFrame.type(), Frame::Type::first);
+    auto expectedFirst = std::vector<uint8_t>{ 0x10, 0x10, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
+    XCTAssertEqual(firstFrame.bytes, expectedFirst);
+
+    auto flowControl = std::vector<uint8_t> { 0x30, 0x01, 0x00, padding, padding, padding, padding, padding };
+    auto secondAction = isotp.didReceiveFrame(flowControl);
+    XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(secondAction.frames.size(), 1);
+    auto secondFrame = secondAction.frames[0];
+    XCTAssertEqual(secondFrame.type(), Frame::Type::consecutive);
+    auto expectedSecond = std::vector<uint8_t>{ 0x21, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C };
+    XCTAssertEqual(secondFrame.bytes, expectedSecond);
+
+    auto thirdAction = isotp.didReceiveFrame(flowControl);
+    XCTAssertEqual(thirdAction.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(thirdAction.frames.size(), 1);
+    auto thirdFrame = thirdAction.frames[0];
+    XCTAssertEqual(thirdFrame.type(), Frame::Type::consecutive);
+    auto expectedThird = std::vector<uint8_t>{ 0x22, 0x0D, 0x0E, 0x0F, padding, padding, padding, padding };
+    XCTAssertEqual(thirdFrame.bytes, expectedThird);
+    XCTAssertEqual(isotp.machineState(), Transceiver::State::idle);
+}
+
 -(void)testMaxPayloadNoFlowControl {
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
@@ -121,7 +153,7 @@ using namespace CANyonero::ISOTP;
     auto flowControlBytes = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding, padding };
     auto secondAction = _isotp->didReceiveFrame(flowControlBytes);
     XCTAssertEqual(secondAction.type, Transceiver::Action::Type::writeFrames);
-    XCTAssertEqual(secondAction.frames.size(), maximumUnconfirmedBlocksStandard);
+    XCTAssertEqual(secondAction.frames.size(), maxConsecutiveFramesStandard);
 
     uint8_t sequenceNumber = 0x01;
     for (auto& consecutive: secondAction.frames) {
