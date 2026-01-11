@@ -63,6 +63,24 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(secondAction.data, pdu);
 }
 
+-(void)testFirstFrameLengthSeven {
+    auto first = std::vector<uint8_t> { 0x10, 0x07, 0x62, 0xF1, 0x86, 0x03, 0x00 };
+    auto firstAction = _isotp->didReceiveFrame(first);
+    XCTAssertEqual(firstAction.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(firstAction.frames.size(), 1);
+    auto frame = firstAction.frames[0];
+    XCTAssertEqual(frame.type(), Frame::Type::flowControl);
+    XCTAssertEqual(frame.bytes.size(), 7);
+    auto expected = std::vector<uint8_t> { 0x30, 0x00, 0x00, padding, padding, padding, padding };
+    XCTAssertEqual(frame.bytes, expected);
+
+    auto consecutive = std::vector<uint8_t> { 0x21, 0x01, 0x02, padding, padding, padding, padding };
+    auto secondAction = _isotp->didReceiveFrame(consecutive);
+    XCTAssertEqual(secondAction.type, Transceiver::Action::Type::process);
+    auto pdu = std::vector<uint8_t> { 0x62, 0xF1, 0x86, 0x03, 0x00, 0x01, 0x02 };
+    XCTAssertEqual(secondAction.data, pdu);
+}
+
 -(void)testMaxPayloadNoFlowControl {
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
