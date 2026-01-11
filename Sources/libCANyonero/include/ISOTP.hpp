@@ -456,7 +456,7 @@ private:
                 if (bytes.size() != width) { return { Action::Type::protocolViolation, "Did receive FIRST that does not use full width." }; }
 
                 auto pduLength = frame.firstLength();
-                if (pduLength < 8) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < 8." }; }
+                if (pduLength < width) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < frame width." }; }
                 receivingPayload = std::vector<uint8_t>(bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - (width - 2);
                 receivingUnconfirmedFramesCounter = blockSize;
