@@ -236,13 +236,21 @@ enum class PDUType: uint8_t {
 /// Encapsulates a PDU on the wire.
 class PDU {
 
+private:
     static constexpr size_t HEADER_SIZE = 4;
+    static constexpr uint8_t ATT = 0x1F;
     PDUType _type;
     uint16_t _length;
     std::vector<uint8_t> _payload;
-    static constexpr uint8_t ATT = 0x1F;
+    static int containsPDU(const Bytes& bytes);
 
 public:
+    /// Returns true when a buffered frame indicates a payload length that exceeds the limit.
+    static bool exceedsMaxPduSize(const Bytes& bytes, size_t maxPduSize);
+    /// Returns > 0 when a complete PDU is found, 0 when more data is needed, < 0 for leading garbage.
+    static int scanBuffer(const Bytes& bytes);
+    /// Rewrites a valid PING frame into a PONG frame in-place.
+    static bool tryRewritePingToPong(Bytes& frame);
 
     PDU(const PDUType type): _type(type), _length(0) {};
     PDU(const PDUType type, const std::vector<uint8_t>& payload): _type(type), _length(static_cast<uint16_t>(payload.size())), _payload(payload) {
@@ -279,10 +287,6 @@ public:
     const Bytes& payload() const;
     /// Returns the filename of the PDU, iff the PDU is `rpcSendBinary`.
     std::string filename() const;
-
-    /// Returns a negative value, if we need to more data to form a valid PDU.
-    /// Returns the number of consumed data, if there is enough data to create the PDU.
-    static int containsPDU(const Bytes& bytes);
 
     //
     // Tester -> Adapter

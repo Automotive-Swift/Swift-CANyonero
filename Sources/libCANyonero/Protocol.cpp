@@ -235,6 +235,27 @@ int PDU::containsPDU(const Bytes& bytes) {
     return PDU::HEADER_SIZE + payloadLength;
 }
 
+bool PDU::exceedsMaxPduSize(const Bytes& bytes, size_t maxPduSize) {
+    if (bytes.size() < PDU::HEADER_SIZE) { return false; }
+    if (bytes[0] != PDU::ATT) { return false; }
+    const size_t payloadLength = (static_cast<size_t>(bytes[2]) << 8) | bytes[3];
+    return PDU::HEADER_SIZE + payloadLength > maxPduSize;
+}
+
+int PDU::scanBuffer(const Bytes& bytes) {
+    return containsPDU(bytes);
+}
+
+bool PDU::tryRewritePingToPong(Bytes& frame) {
+    if (frame.size() < PDU::HEADER_SIZE) { return false; }
+    if (frame[0] != PDU::ATT) { return false; }
+    const uint16_t payloadLength = static_cast<uint16_t>(frame[2] << 8 | frame[3]);
+    if (frame.size() != PDU::HEADER_SIZE + payloadLength) { return false; }
+    if (frame[1] != static_cast<uint8_t>(PDUType::ping)) { return false; }
+    frame[1] = static_cast<uint8_t>(PDUType::pong);
+    return true;
+}
+
 //MARK: - Tester -> Adapter PDU Construction
 PDU PDU::ping(std::vector<uint8_t> payload) {
     return PDU(PDUType::ping, payload);

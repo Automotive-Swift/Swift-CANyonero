@@ -80,14 +80,14 @@ using namespace CANyonero;
 
 - (void)testContainsPDUScenarios {
     CANyonero::Bytes garbage = { 0x00, 0x00, 0x00 };
-    XCTAssertEqual(CANyonero::PDU::containsPDU(garbage), -3);
+    XCTAssertEqual(CANyonero::PDU::scanBuffer(garbage), -3);
 
     CANyonero::Bytes partial = { 0x1F, 0x10 };
-    XCTAssertEqual(CANyonero::PDU::containsPDU(partial), 0);
+    XCTAssertEqual(CANyonero::PDU::scanBuffer(partial), 0);
 
     auto ping = CANyonero::PDU::ping({ 0xDE, 0xAD, 0xBE, 0xEF });
     auto frame = ping.frame();
-    XCTAssertEqual(CANyonero::PDU::containsPDU(frame), frame.size());
+    XCTAssertEqual(CANyonero::PDU::scanBuffer(frame), frame.size());
 }
 
 - (void)testSetArbitrationRoundTrip {
@@ -153,7 +153,7 @@ using namespace CANyonero;
     CANyonero::Bytes withGarbage = { 0x00, 0xFF };
     withGarbage.insert(withGarbage.end(), frame.begin(), frame.end());
 
-    XCTAssertEqual(CANyonero::PDU::containsPDU(withGarbage), -2);
+    XCTAssertEqual(CANyonero::PDU::scanBuffer(withGarbage), -2);
 }
 
 @end
