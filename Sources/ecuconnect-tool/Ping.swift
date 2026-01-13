@@ -28,7 +28,7 @@ struct Ping: ParsableCommand {
 
     @OptionGroup() var parentOptions: ECUconnectCommand.Options
 
-    @Argument(help: "PayloadSize (0...4096)")
+    @Argument(help: "PayloadSize (0...65535)")
     var payloadSize: Int = 512
 
     @Option(name: .short, help: "Count")
@@ -39,6 +39,11 @@ struct Ping: ParsableCommand {
         let url: URL = URL(string: parentOptions.url)!
         let ps = payloadSize
         let count = numberOfPings
+        let protocolPayloadCap = Int(UInt16.max)
+        guard ps >= 0 else { throw ValidationError("Payload size must be >= 0.") }
+        guard ps <= protocolPayloadCap else {
+            throw ValidationError("Payload size \(ps) exceeds protocol maximum of \(protocolPayloadCap) bytes.")
+        }
 
         Task {
             var count = count

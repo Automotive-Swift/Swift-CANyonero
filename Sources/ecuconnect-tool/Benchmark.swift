@@ -88,7 +88,7 @@ struct Benchmark: ParsableCommand {
     @Option(name: .short, help: "Pings per payload size")
     var numberOfPings: Int = 32
 
-    @Option(name: .customLong("sizes"), parsing: .upToNextOption, help: "Payload sizes in bytes (space-separated). If omitted, a default range is used (BLE cap 5000 bytes, TCP cap 16384 bytes).")
+    @Option(name: .customLong("sizes"), parsing: .upToNextOption, help: "Payload sizes in bytes (space-separated). If omitted, a default range is used (BLE cap 5000 bytes, TCP cap 16384 bytes). Protocol max is 65535 bytes.")
     var payloadSizes: [Int] = []
 
     @Flag(name: .long, help: "Allow payload sizes exceeding transport caps (may cause failures).")
@@ -102,6 +102,7 @@ struct Benchmark: ParsableCommand {
         let isBLE = isBLELink(url)
         let tcpPayloadCap = 16384
         let isTCP = isTCPLink(url)
+        let protocolPayloadCap = Int(UInt16.max)
         let defaultMaxPayload = isBLE ? blePayloadCap : (isTCP ? tcpPayloadCap : 4096)
         var sizes = payloadSizes.isEmpty ? defaultPayloadSizes(maxPayloadSize: defaultMaxPayload) : payloadSizes
         sizes = Array(Set(sizes)).sorted()
@@ -110,6 +111,9 @@ struct Benchmark: ParsableCommand {
         guard pingCount > 0 else { throw ValidationError("Count must be greater than 0.") }
         guard !sizes.isEmpty else { throw ValidationError("Payload sizes are empty.") }
         if sizes.contains(where: { $0 < 0 }) { throw ValidationError("Payload sizes must be >= 0.") }
+        if let firstTooLarge = sizes.first(where: { $0 > protocolPayloadCap }) {
+            throw ValidationError("Payload size \(firstTooLarge) exceeds protocol maximum of \(protocolPayloadCap) bytes.")
+        }
         if isBLE {
             if let firstTooLarge = sizes.first(where: { $0 > blePayloadCap }) {
                 if force {
