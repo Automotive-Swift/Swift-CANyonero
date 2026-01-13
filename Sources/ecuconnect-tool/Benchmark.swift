@@ -91,6 +91,9 @@ struct Benchmark: ParsableCommand {
     @Option(name: .customLong("sizes"), parsing: .upToNextOption, help: "Payload sizes in bytes (space-separated). If omitted, a default range is used (BLE cap 5000 bytes, TCP cap 16384 bytes).")
     var payloadSizes: [Int] = []
 
+    @Flag(name: .long, help: "Allow payload sizes exceeding transport caps (may cause failures).")
+    var force: Bool = false
+
     mutating func run() throws {
 
         let url: URL = URL(string: parentOptions.url)!
@@ -109,12 +112,20 @@ struct Benchmark: ParsableCommand {
         if sizes.contains(where: { $0 < 0 }) { throw ValidationError("Payload sizes must be >= 0.") }
         if isBLE {
             if let firstTooLarge = sizes.first(where: { $0 > blePayloadCap }) {
-                throw ValidationError("Payload size \(firstTooLarge) exceeds BLE cap of \(blePayloadCap) bytes.")
+                if force {
+                    print("\("Warning:", color: .yellow) Payload size \(firstTooLarge) exceeds BLE cap of \(blePayloadCap) bytes.")
+                } else {
+                    throw ValidationError("Payload size \(firstTooLarge) exceeds BLE cap of \(blePayloadCap) bytes. Use --force to override.")
+                }
             }
         }
         if isTCP {
             if let firstTooLarge = sizes.first(where: { $0 > tcpPayloadCap }) {
-                throw ValidationError("Payload size \(firstTooLarge) exceeds TCP cap of \(tcpPayloadCap) bytes.")
+                if force {
+                    print("\("Warning:", color: .yellow) Payload size \(firstTooLarge) exceeds TCP cap of \(tcpPayloadCap) bytes.")
+                } else {
+                    throw ValidationError("Payload size \(firstTooLarge) exceeds TCP cap of \(tcpPayloadCap) bytes. Use --force to override.")
+                }
             }
         }
 
