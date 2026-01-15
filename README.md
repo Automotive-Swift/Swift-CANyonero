@@ -71,6 +71,14 @@ The tool uses the Swift bindings in this package so it is a convenient way to va
 
 The `benchmark` subcommand uses ECUconnect `ping`, which echoes the full payload and verifies it byte-for-byte; reported bandwidth is round-trip (payload out + payload back).
 
+Python users can also use the rebuilt CLI in `python/ecuconnect_tool` (default WiFi endpoint `192.168.42.42:129`, override with `--endpoint` for mocks):
+
+```bash
+python -m pip install -e ./python/ecuconnect_tool
+ecuconnect-tool info
+ecuconnect-tool test --can-interface can0 --busload 20 --duration 5
+```
+
 ## PDU Examples
 
 ### Request Information
