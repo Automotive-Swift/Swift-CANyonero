@@ -117,6 +117,7 @@ Bytes PDU::data() const {
             return Bytes(_payload.begin() + 1 + CANyonero::Arbitration::size, _payload.end());
         default:
             assert(false);
+            return {};
     }
 }
 
@@ -184,6 +185,7 @@ uint16_t PDU::uncompressedLength() const {
         }
         default:
             assert(false);
+            return 0;
     }
 }
 
