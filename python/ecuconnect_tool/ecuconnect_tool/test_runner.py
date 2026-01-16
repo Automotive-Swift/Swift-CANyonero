@@ -133,6 +133,25 @@ def _run_direction(
                 duplicates += 1
             else:
                 received.add(seq)
+        # Drain any remaining items from the queue after stop is signaled
+        drain_deadline = time.perf_counter() + 0.5
+        empty_count = 0
+        while time.perf_counter() < drain_deadline:
+            payload = receive_iter(0.05)
+            if payload is None:
+                empty_count += 1
+                # Only exit after several consecutive empty results
+                if empty_count >= 3:
+                    break
+                continue
+            empty_count = 0
+            seq = _parse_seq(payload, run_id, direction_marker)
+            if seq is None:
+                continue
+            if seq in received:
+                duplicates += 1
+            else:
+                received.add(seq)
 
     receiver = threading.Thread(target=receiver_loop, name=f"{name}-rx", daemon=True)
     receiver.start()
@@ -143,9 +162,11 @@ def _run_direction(
         send_fn(payload)
         if interval > 0:
             _sleep_until(start + (seq + 1) * interval)
-    _sleep_until(time.perf_counter() + settle_time)
+    # Dynamic settle time: at least 1 second, plus extra time for high PPS
+    effective_settle = max(settle_time, 1.0 + expected / max(pps, 1) * 0.05)
+    _sleep_until(time.perf_counter() + effective_settle)
     stop.set()
-    receiver.join(timeout=1.0)
+    receiver.join(timeout=2.0)
 
     elapsed = max(time.perf_counter() - start, 0.001)
     received_count = len(received)
