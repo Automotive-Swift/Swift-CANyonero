@@ -17,7 +17,6 @@ from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient
 from .test_runner import (
     open_channel_with_retry,
     run_ecuconnect_test,
-    run_isotp_test,
 )
 
 app = typer.Typer(help="ECUconnect tool (Python) for CANyonero adapters", add_completion=False)
@@ -930,13 +929,17 @@ def test(
     duration: float = typer.Option(5.0, help="Duration per direction (seconds)."),
     settle: float = typer.Option(1.0, help="Settle time after sending (seconds)."),
     loss_threshold: float = typer.Option(2.0, help="Maximum loss percentage allowed."),
+    ecu_tx_boost: float = typer.Option(
+        1.2, help="ECU->CAN rate boost factor to compensate for TCP overhead."
+    ),
+    rr_count: int = typer.Option(100, help="Request/response transaction count (0 to skip)."),
+    rr_timeout: float = typer.Option(1.0, help="Request/response per-transaction timeout."),
 ) -> None:
-    """Run an automated ECUconnect loop test using SocketCAN.
+    """Run an automated ECUconnect test using SocketCAN.
 
-    Tests raw CAN frame throughput at the specified busload percentage.
-    Randomly chooses between standard (11-bit) and extended (29-bit) CAN IDs.
-
-    For realistic ISOTP request-response testing, use the 'isotp-test' command."""
+    Tests both raw CAN frame throughput at the specified busload percentage,
+    and request/response latency patterns. Randomly chooses between standard
+    (11-bit) and extended (29-bit) CAN IDs."""
     endpoint = ctx.obj["endpoint"]
     rx_buffer = ctx.obj["rx_buffer"]
     tx_buffer = ctx.obj["tx_buffer"]
@@ -1035,181 +1038,89 @@ def test(
         rx_buffer=rx_buffer,
         tx_buffer=tx_buffer,
         loss_threshold=loss_threshold,
+        ecu_tx_boost=ecu_tx_boost,
+        rr_count=rr_count,
+        rr_timeout=rr_timeout,
     )
 
-    table = Table(title="ECUconnect Test Results")
-    table.add_column("Busload %", justify="right")
+    # Throughput results table
+    table = Table(title="Throughput Test")
+    table.add_column("Busload", justify="right")
     table.add_column("Direction")
     table.add_column("Sent")
     table.add_column("Recv")
     table.add_column("Loss %", justify="right")
 
-    for summary, busload_pct in zip(summaries, busload_list):
+    for summary in summaries:
+        busload_pct = summary.busload
         if summary.can_to_ecu is None:
-            table.add_row(f"{busload_pct:.1f}", "CAN -> ECU", "-", "-", "skipped")
+            table.add_row(f"{busload_pct:.0f}%", "CAN -> ECU", "-", "-", "skipped")
         else:
+            m = summary.can_to_ecu
             table.add_row(
-                f"{busload_pct:.1f}",
+                f"{busload_pct:.0f}%",
                 "CAN -> ECU",
-                str(summary.can_to_ecu.sent),
-                str(summary.can_to_ecu.received),
-                f"{summary.can_to_ecu.loss_pct:.2f}",
+                str(m.sent),
+                str(m.received),
+                f"{m.loss_pct:.2f}",
             )
         if summary.ecu_to_can is None:
-            table.add_row(f"{busload_pct:.1f}", "ECU -> CAN", "-", "-", "skipped")
+            table.add_row(f"{busload_pct:.0f}%", "ECU -> CAN", "-", "-", "skipped")
         else:
+            m = summary.ecu_to_can
             table.add_row(
-                f"{busload_pct:.1f}",
+                f"{busload_pct:.0f}%",
                 "ECU -> CAN",
-                str(summary.ecu_to_can.sent),
-                str(summary.ecu_to_can.received),
-                f"{summary.ecu_to_can.loss_pct:.2f}",
+                str(m.sent),
+                str(m.received),
+                f"{m.loss_pct:.2f}",
             )
 
     console.print(table)
+
+    # Request/response results table
+    rr_table = Table(title="Request/Response Test")
+    rr_table.add_column("Busload", justify="right")
+    rr_table.add_column("OK", justify="right")
+    rr_table.add_column("Fail", justify="right")
+    rr_table.add_column("Min ms", justify="right")
+    rr_table.add_column("Avg ms", justify="right")
+    rr_table.add_column("Max ms", justify="right")
+
+    for summary in summaries:
+        rr = summary.request_response
+        if rr is None:
+            rr_table.add_row(f"{summary.busload:.0f}%", "-", "-", "-", "-", "-")
+        else:
+            rr_table.add_row(
+                f"{summary.busload:.0f}%",
+                str(rr.successful),
+                str(rr.failed),
+                f"{rr.min_latency_ms:.2f}" if rr.successful > 0 else "-",
+                f"{rr.avg_latency_ms:.2f}" if rr.successful > 0 else "-",
+                f"{rr.max_latency_ms:.2f}" if rr.successful > 0 else "-",
+            )
+
+    console.print(rr_table)
+
+    # Filter test results (only in first summary)
+    filter_result = next((s.filter_test for s in summaries if s.filter_test is not None), None)
+    if filter_result is not None:
+        console.print("")
+        if filter_result.passed:
+            console.print(
+                f"Filter Test: PASSED "
+                f"({filter_result.accepted_matching} accepted, {filter_result.rejected_nonmatching} rejected)"
+            )
+        else:
+            console.print(f"Filter Test: FAILED")
+            for error in filter_result.errors:
+                console.print(f"  - {error}")
+
     if not all(summary.passed for summary in summaries):
-        console.print("Test failed: loss threshold exceeded.")
+        console.print("Test failed.")
         raise typer.Exit(code=1)
     console.print("Test passed.")
-
-
-@app.command("isotp-test")
-def isotp_test(
-    ctx: typer.Context,
-    can_interface: str = typer.Option("can0", help="SocketCAN interface to use."),
-    bitrate: int = typer.Option(500000, help="CAN bitrate."),
-    sizes: List[str] = typer.Option(
-        [],
-        "--sizes",
-        "-s",
-        help=(
-            "Payload sizes to test (bytes). Repeatable or comma-separated. "
-            "Default: 7,16,64,256,1024,4095"
-        ),
-    ),
-    count: int = typer.Option(10, "--count", "-c", help="Transactions per payload size."),
-    tx_id: str = typer.Option("0x7DF", help="TX CAN ID (ECUconnect sends to bus)."),
-    rx_id: str = typer.Option("0x7E8", help="RX CAN ID (bus responds to ECUconnect)."),
-    timeout: float = typer.Option(2.0, help="Timeout per transaction (seconds)."),
-    open_timeout: float = typer.Option(5.0, help="Timeout for open_channel (seconds)."),
-    open_retries: int = typer.Option(3, help="Retries for open_channel timeouts."),
-    open_retry_delay: float = typer.Option(1.0, help="Delay between open_channel retries."),
-) -> None:
-    """Run ISOTP request/response test with echo responder on SocketCAN.
-
-    This tests realistic diagnostic communication patterns using ISOTP protocol.
-    A simple echo responder runs on SocketCAN to simulate ECU responses.
-
-    Examples:
-        isotp-test --sizes 7                    # Single-frame only
-        isotp-test --sizes 7,64,256             # Various sizes
-        isotp-test --count 100 --sizes 64       # 100 transactions at 64 bytes
-    """
-    endpoint = ctx.obj["endpoint"]
-    rx_buffer = ctx.obj["rx_buffer"]
-    tx_buffer = ctx.obj["tx_buffer"]
-
-    tx_id_value = _parse_int(tx_id)
-    rx_id_value = _parse_int(rx_id)
-
-    # Parse payload sizes
-    raw_sizes: list[int] = []
-    for entry in sizes:
-        for part in entry.replace(",", " ").split():
-            if not part:
-                continue
-            try:
-                raw_sizes.append(int(part, 0))
-            except ValueError as exc:
-                raise typer.BadParameter(f"Invalid payload size: {part}") from exc
-
-    # Default sizes if none provided: single-frame, and several multi-frame sizes
-    if not raw_sizes:
-        raw_sizes = [7, 16, 64, 256, 1024, 4095]
-
-    payload_sizes = sorted(set(raw_sizes))
-
-    # Validate sizes
-    if any(size < 1 for size in payload_sizes):
-        raise typer.BadParameter("Payload sizes must be >= 1.")
-    if any(size > 4095 for size in payload_sizes):
-        raise typer.BadParameter("Payload sizes must be <= 4095 (ISOTP max).")
-
-    # Verify SocketCAN interface exists
-    try:
-        py_socket.if_nametoindex(can_interface)
-    except OSError as exc:
-        raise typer.BadParameter(
-            f"SocketCAN interface '{can_interface}' not found. "
-            "Use --can-interface to set the correct device."
-        ) from exc
-
-    console.print(f"ISOTP Test: {len(payload_sizes)} sizes, {count} transactions each")
-    console.print(f"Payload sizes: {', '.join(str(s) for s in payload_sizes)} bytes")
-    console.print(f"TX ID: 0x{tx_id_value:03X}, RX ID: 0x{rx_id_value:03X}")
-    console.print("")
-
-    summary = run_isotp_test(
-        endpoint=endpoint,
-        can_interface=can_interface,
-        bitrate=bitrate,
-        payload_sizes=payload_sizes,
-        transactions_per_size=count,
-        tx_id=tx_id_value,
-        rx_id=rx_id_value,
-        open_timeout=open_timeout,
-        open_retries=open_retries,
-        open_retry_delay=open_retry_delay,
-        transaction_timeout=timeout,
-        rx_buffer=rx_buffer,
-        tx_buffer=tx_buffer,
-    )
-
-    # Display results table
-    table = Table(title="ISOTP Test Results")
-    table.add_column("Size", justify="right")
-    table.add_column("OK", justify="right")
-    table.add_column("Fail", justify="right")
-    table.add_column("Success %", justify="right")
-    table.add_column("Min ms", justify="right")
-    table.add_column("Avg ms", justify="right")
-    table.add_column("Max ms", justify="right")
-    table.add_column("Throughput", justify="right")
-
-    for m in summary.metrics:
-        success_pct = f"{m.success_rate:.1f}"
-        if m.successful > 0:
-            min_lat = f"{m.min_latency_ms:.2f}"
-            avg_lat = f"{m.avg_latency_ms:.2f}"
-            max_lat = f"{m.max_latency_ms:.2f}"
-            throughput = _format_rate(m.throughput_bytes_per_sec)
-        else:
-            min_lat = avg_lat = max_lat = "-"
-            throughput = "-"
-
-        table.add_row(
-            f"{m.payload_size}",
-            str(m.successful),
-            str(m.failed),
-            success_pct,
-            min_lat,
-            avg_lat,
-            max_lat,
-            throughput,
-        )
-
-    console.print(table)
-    console.print("")
-    console.print(
-        f"Total: {summary.total_transactions} transactions, "
-        f"{summary.total_successful} successful, {summary.total_failed} failed"
-    )
-
-    if summary.passed:
-        console.print("Test passed.")
-    else:
-        console.print("Test failed: some transactions failed.")
-        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

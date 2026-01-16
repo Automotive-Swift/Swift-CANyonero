@@ -18,28 +18,43 @@ class DirectionMetrics:
     received: int
     duplicates: int
     duration: float
-    pps: float
+    target_pps: float
+    send_pps: float  # Rate we sent commands
+    recv_pps: float  # Rate frames were received (actual bus rate for verification)
+    target_busload: float
+    send_busload: float  # Busload based on send rate
+    recv_busload: float  # Busload based on receive rate (actual bus measurement)
     loss_pct: float
 
 
 @dataclass
 class TestSummary:
+    busload: float
     can_to_ecu: Optional[DirectionMetrics]
     ecu_to_can: Optional[DirectionMetrics]
+    request_response: Optional["ISOTPMetrics"]
+    filter_test: Optional["FilterTestResult"]
     loss_threshold: float
 
     @property
     def passed(self) -> bool:
         can_ok = self.can_to_ecu is None or self.can_to_ecu.loss_pct <= self.loss_threshold
         ecu_ok = self.ecu_to_can is None or self.ecu_to_can.loss_pct <= self.loss_threshold
-        return can_ok and ecu_ok
+        rr_ok = self.request_response is None or self.request_response.failed == 0
+        filter_ok = self.filter_test is None or self.filter_test.passed
+        return can_ok and ecu_ok and rr_ok and filter_ok
 
 
 def _estimate_frame_bits(payload_len: int, extended: bool) -> int:
+    # CAN 2.0 frame: SOF(1) + ID(11/29) + RTR(1) + IDE(1) + r0(1) + DLC(4) +
+    #               Data(8*n) + CRC(15) + CRCdel(1) + ACK(1) + ACKdel(1) + EOF(7) + IFS(3)
+    # Standard: 47 + 8*payload_len, Extended: +18 for 29-bit ID
+    # Note: Using nominal bits without stuffing estimate. Actual busload depends
+    # on data patterns. Use canbusload -e for exact measurement.
     base = 47 + payload_len * 8
     if extended:
         base += 18
-    return int(base * 1.2)
+    return base
 
 
 def busload_to_pps(bitrate: int, busload_pct: float, payload_len: int, extended: bool) -> float:
@@ -113,6 +128,9 @@ def _run_direction(
     settle_time: float,
     direction_marker: int,
     run_id: int,
+    bitrate: int,
+    extended: bool,
+    target_busload: float,
 ) -> DirectionMetrics:
     """Run a directional throughput test at the specified PPS rate."""
     interval = 1.0 / pps if pps > 0 else 0.0
@@ -121,9 +139,11 @@ def _run_direction(
     duplicates = 0
     stop = threading.Event()
     received_lock = threading.Lock()
+    first_recv_time: Optional[float] = None
+    last_recv_time: Optional[float] = None
 
     def receiver_loop() -> None:
-        nonlocal duplicates
+        nonlocal duplicates, first_recv_time, last_recv_time
         while not stop.is_set():
             payload = receive_iter(0.1)
             if payload is None:
@@ -131,11 +151,15 @@ def _run_direction(
             seq = _parse_seq(payload, run_id, direction_marker)
             if seq is None:
                 continue
+            now = time.perf_counter()
             with received_lock:
                 if seq in received:
                     duplicates += 1
                 else:
                     received.add(seq)
+                    if first_recv_time is None:
+                        first_recv_time = now
+                    last_recv_time = now
         # Drain any remaining items from the queue after stop is signaled
         drain_deadline = time.perf_counter() + 0.5
         empty_count = 0
@@ -151,11 +175,15 @@ def _run_direction(
             seq = _parse_seq(payload, run_id, direction_marker)
             if seq is None:
                 continue
+            now = time.perf_counter()
             with received_lock:
                 if seq in received:
                     duplicates += 1
                 else:
                     received.add(seq)
+                    if first_recv_time is None:
+                        first_recv_time = now
+                    last_recv_time = now
 
     receiver = threading.Thread(target=receiver_loop, name=f"{name}-rx", daemon=True)
     receiver.start()
@@ -167,6 +195,8 @@ def _run_direction(
         if interval > 0:
             _sleep_until(start + (seq + 1) * interval)
 
+    send_elapsed = max(time.perf_counter() - start, 0.001)
+
     # Dynamic settle time: at least 1 second, plus extra time for high PPS
     effective_settle = max(settle_time, 1.0 + expected / max(pps, 1) * 0.05)
     _sleep_until(time.perf_counter() + effective_settle)
@@ -174,8 +204,19 @@ def _run_direction(
     receiver.join(timeout=2.0)
 
     elapsed = max(time.perf_counter() - start, 0.001)
+    send_pps = expected / send_elapsed if send_elapsed > 0 else 0
+    send_busload = pps_to_busload(bitrate, send_pps, payload_len, extended)
     with received_lock:
         received_count = len(received)
+        recv_first = first_recv_time
+        recv_last = last_recv_time
+    # Calculate actual receive rate (true bus measurement)
+    if recv_first is not None and recv_last is not None and received_count > 1:
+        recv_duration = recv_last - recv_first
+        recv_pps = (received_count - 1) / recv_duration if recv_duration > 0 else 0
+    else:
+        recv_pps = 0
+    recv_busload = pps_to_busload(bitrate, recv_pps, payload_len, extended)
     loss_pct = 100.0 * max(expected - received_count, 0) / max(expected, 1)
     return DirectionMetrics(
         name=name,
@@ -183,7 +224,12 @@ def _run_direction(
         received=received_count,
         duplicates=duplicates,
         duration=elapsed,
-        pps=pps,
+        target_pps=pps,
+        send_pps=send_pps,
+        recv_pps=recv_pps,
+        target_busload=target_busload,
+        send_busload=send_busload,
+        recv_busload=recv_busload,
         loss_pct=loss_pct,
     )
 
@@ -203,6 +249,9 @@ def run_ecuconnect_test(
     rx_buffer: int,
     tx_buffer: int,
     loss_threshold: float,
+    ecu_tx_boost: float = 1.2,  # Compensation for ECU->CAN TCP overhead
+    rr_count: int = 100,  # Request/response transaction count
+    rr_timeout: float = 1.0,  # Request/response per-transaction timeout
 ) -> list[TestSummary]:
     summaries: list[TestSummary] = []
     run_id = secrets.randbelow(256)
@@ -263,11 +312,45 @@ def run_ecuconnect_test(
             )
             bus.start_reader()
 
+        # Run filter test once at the beginning
+        filter_result: Optional[FilterTestResult] = None
+        if bus is not None:
+            # Temporarily remove filters to receive all test IDs
+            bus.close()
+            bus = SocketCanBus(
+                interface=can_interface,
+                rx_buffer=rx_buffer,
+                tx_buffer=tx_buffer,
+                filters=[],  # No filters for filter test
+            )
+            bus.start_reader()
+            filter_result = run_filter_test(ecu, bus, channel, extended, timeout=0.5)
+            # Restore original filters
+            bus.close()
+            bus = SocketCanBus(
+                interface=can_interface,
+                rx_buffer=rx_buffer,
+                tx_buffer=tx_buffer,
+                filters=filters,
+            )
+            bus.start_reader()
+            # Restore original arbitration after filter test
+            arbitration = canyonero.Arbitration(
+                request=tx_id,
+                reply_pattern=rx_id,
+                reply_mask=rx_mask,
+                request_extension=0,
+                reply_extension=0,
+            )
+            ecu.set_arbitration(channel, arbitration)
+
         busload_list = list(busloads)
+        first_summary = True
 
         for busload in busload_list:
             pps_can_to_ecu = busload_to_pps(bitrate, busload, payload_len, extended)
-            pps_ecu_to_can = busload_to_pps(bitrate, busload, payload_len, extended)
+            # Apply boost factor to ECU->CAN to compensate for TCP command overhead
+            pps_ecu_to_can = busload_to_pps(bitrate, busload, payload_len, extended) * ecu_tx_boost
             if (do_rx and pps_can_to_ecu <= 0) or (do_tx and pps_ecu_to_can <= 0):
                 raise ValueError("Calculated PPS is zero; lower payload length or increase busload")
 
@@ -296,6 +379,9 @@ def run_ecuconnect_test(
                     settle_time=settle_time,
                     direction_marker=0xA1,
                     run_id=run_id,
+                    bitrate=bitrate,
+                    extended=extended,
+                    target_busload=busload,
                 )
 
             if do_tx and bus is not None:
@@ -317,15 +403,36 @@ def run_ecuconnect_test(
                     settle_time=settle_time,
                     direction_marker=0xB2,
                     run_id=run_id,
+                    bitrate=bitrate,
+                    extended=extended,
+                    target_busload=busload,
+                )
+
+            # Run request/response test after throughput tests
+            rr_metrics: Optional[ISOTPMetrics] = None
+            if bus is not None and rr_count > 0:
+                rr_metrics = run_request_response_test(
+                    ecu=ecu,
+                    bus=bus,
+                    channel=channel,
+                    tx_id=tx_id,
+                    rx_id=rx_id,
+                    extended=extended,
+                    count=rr_count,
+                    timeout=rr_timeout,
                 )
 
             summaries.append(
                 TestSummary(
+                    busload=busload,
                     can_to_ecu=can_to_ecu,
                     ecu_to_can=ecu_to_can,
+                    request_response=rr_metrics,
+                    filter_test=filter_result if first_summary else None,
                     loss_threshold=loss_threshold,
                 )
             )
+            first_summary = False
     finally:
         if bus is not None:
             bus.close()
@@ -365,295 +472,194 @@ def open_channel_with_retry(
 
 
 # -----------------------------------------------------------------------------
-# ISOTP Test Functions - realistic request/response testing
+# ISOTP Request/Response Test - realistic diagnostic patterns
 # -----------------------------------------------------------------------------
 
 @dataclass
-class ISOTPTransactionResult:
-    """Result of a single ISOTP request/response transaction."""
-    payload_size: int
-    success: bool
-    latency_ms: float
-    error: Optional[str] = None
-
-
-@dataclass
-class ISOTPTestMetrics:
-    """Aggregated metrics for ISOTP testing."""
-    payload_size: int
+class ISOTPMetrics:
+    """Metrics for ISOTP request/response testing."""
     transactions: int
     successful: int
     failed: int
     min_latency_ms: float
     avg_latency_ms: float
     max_latency_ms: float
-    throughput_bytes_per_sec: float
 
     @property
     def success_rate(self) -> float:
         return 100.0 * self.successful / max(self.transactions, 1)
 
 
-@dataclass
-class ISOTPTestSummary:
-    """Summary of ISOTP test run."""
-    metrics: list[ISOTPTestMetrics]
-    total_transactions: int
-    total_successful: int
-    total_failed: int
-
-    @property
-    def passed(self) -> bool:
-        return self.total_failed == 0
-
-
-def _isotp_echo_responder(
+def _raw_echo_responder(
     bus: SocketCanBus,
     request_id: int,
     response_id: int,
+    extended: bool,
     stop: threading.Event,
 ) -> None:
-    """
-    SocketCAN-side ISOTP echo responder.
-
-    Listens for ISOTP frames on request_id and echoes the payload back on response_id.
-    This simulates an ECU responding to diagnostic requests.
-
-    For simplicity, this handles single-frame ISOTP only (payloads up to 7 bytes).
-    Multi-frame would require full ISOTP state machine.
-    """
+    """Echo responder for raw CAN frames - echoes payload back on response_id."""
     while not stop.is_set():
         frame = bus.get_frame(timeout=0.1)
         if frame is None:
             continue
         if frame.can_id != request_id:
             continue
-
-        data = frame.data
-        if len(data) < 1:
-            continue
-
-        pci = data[0]
-        frame_type = (pci >> 4) & 0x0F
-
-        if frame_type == 0:  # Single Frame
-            sf_dl = pci & 0x0F
-            if sf_dl > 0 and len(data) > sf_dl:
-                payload = data[1:1+sf_dl]
-                # Echo back as single frame
-                response = bytes([sf_dl]) + payload
-                response = response.ljust(8, b'\xAA')
-                bus.send_frame(response_id, response)
-        elif frame_type == 1:  # First Frame - send Flow Control
-            # Send FC with CTS (Continue To Send)
-            fc_frame = bytes([0x30, 0x00, 0x00, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
-            bus.send_frame(response_id, fc_frame)
-        # Consecutive frames (type 2) are handled by ISOTP layer on ECUconnect
+        bus.send_frame(response_id, frame.data, extended=extended)
 
 
-def run_isotp_transaction(
+@dataclass
+class FilterTestResult:
+    """Result of arbitration filter/mask testing."""
+    passed: bool
+    accepted_matching: int
+    rejected_nonmatching: int
+    errors: list[str]
+
+
+def run_filter_test(
     ecu: EcuconnectClient,
+    bus: SocketCanBus,
     channel: int,
-    payload: bytes,
+    extended: bool,
     timeout: float,
-) -> ISOTPTransactionResult:
+) -> FilterTestResult:
     """
-    Run a single ISOTP request/response transaction.
+    Test that arbitration masks work correctly.
 
-    Sends payload via ECUconnect ISOTP channel and waits for response.
+    Sets various patterns/masks and verifies:
+    - Frames matching the pattern ARE received
+    - Frames NOT matching the pattern are rejected
     """
-    start = time.perf_counter()
+    errors: list[str] = []
+    accepted = 0
+    rejected = 0
 
-    try:
-        # Send the ISOTP payload
-        ecu.send(channel, payload)
+    # Test cases: (pattern, mask, should_match_ids, should_reject_ids)
+    if extended:
+        test_cases = [
+            # Exact match
+            (0x18DA00F1, 0x1FFFFFFF, [0x18DA00F1], [0x18DA00F2, 0x18DB00F1]),
+            # Wildcard last nibble: accept 0x18DA00F0-0x18DA00FF
+            (0x18DA00F0, 0x1FFFFFF0, [0x18DA00F0, 0x18DA00F5, 0x18DA00FF], [0x18DA0100, 0x18DA00EF]),
+        ]
+    else:
+        test_cases = [
+            # Exact match
+            (0x7E8, 0x7FF, [0x7E8], [0x7E9, 0x7E0]),
+            # Accept 0x7E0-0x7EF (mask off low nibble)
+            (0x7E0, 0x7F0, [0x7E0, 0x7E8, 0x7EF], [0x7F0, 0x7D0]),
+            # Accept 0x600-0x6FF (mask off low byte)
+            (0x600, 0x700, [0x600, 0x650, 0x6FF], [0x700, 0x5FF]),
+        ]
 
-        # Wait for response (received PDU)
-        deadline = time.perf_counter() + timeout
-        while time.perf_counter() < deadline:
-            pdu = ecu.get_pdu(timeout=min(0.1, deadline - time.perf_counter()))
-            if pdu is None:
-                continue
-            if pdu.type == canyonero.PDUType.received:
-                # Got response
-                latency = (time.perf_counter() - start) * 1000
-                return ISOTPTransactionResult(
-                    payload_size=len(payload),
-                    success=True,
-                    latency_ms=latency,
-                )
-            elif pdu.type in (canyonero.PDUType.error_no_response,
-                              canyonero.PDUType.error_hardware,
-                              canyonero.PDUType.error_unspecified):
-                latency = (time.perf_counter() - start) * 1000
-                return ISOTPTransactionResult(
-                    payload_size=len(payload),
-                    success=False,
-                    latency_ms=latency,
-                    error=f"ECU error: {pdu.type}",
-                )
-
-        # Timeout
-        latency = (time.perf_counter() - start) * 1000
-        return ISOTPTransactionResult(
-            payload_size=len(payload),
-            success=False,
-            latency_ms=latency,
-            error="Timeout waiting for response",
-        )
-    except Exception as e:
-        latency = (time.perf_counter() - start) * 1000
-        return ISOTPTransactionResult(
-            payload_size=len(payload),
-            success=False,
-            latency_ms=latency,
-            error=str(e),
-        )
-
-
-def run_isotp_test(
-    endpoint: str,
-    can_interface: str,
-    bitrate: int,
-    payload_sizes: Iterable[int],
-    transactions_per_size: int,
-    tx_id: int,
-    rx_id: int,
-    open_timeout: float,
-    open_retries: int,
-    open_retry_delay: float,
-    transaction_timeout: float,
-    rx_buffer: int,
-    tx_buffer: int,
-) -> ISOTPTestSummary:
-    """
-    Run ISOTP request/response test with various payload sizes.
-
-    This tests realistic diagnostic communication patterns:
-    - Small payloads (1-7 bytes): Single-frame UDS requests
-    - Medium payloads (8-100 bytes): Multi-frame requests
-    - Large payloads (100-4095 bytes): Large transfers (e.g., flash data)
-    """
-    all_metrics: list[ISOTPTestMetrics] = []
-    total_transactions = 0
-    total_successful = 0
-    total_failed = 0
-
-    ecu = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
-    ecu.connect()
-
-    bus: Optional[SocketCanBus] = None
-    channel: Optional[int] = None
-    stop_responder = threading.Event()
-    responder_thread: Optional[threading.Thread] = None
-
-    try:
-        # Open ISOTP channel
-        channel = open_channel_with_retry(
-            ecu,
-            bitrate=bitrate,
-            protocol=canyonero.ChannelProtocol.isotp,
-            open_timeout=open_timeout,
-            open_retries=open_retries,
-            open_retry_delay=open_retry_delay,
-        )
-
-        # Set arbitration
+    for pattern, mask, should_match, should_reject in test_cases:
+        # Set the arbitration with this pattern/mask
         arbitration = canyonero.Arbitration(
-            request=tx_id,
-            reply_pattern=rx_id,
-            reply_mask=0x7FF,
+            request=0x123 if not extended else 0x18DA00F1,  # TX doesn't matter for this test
+            reply_pattern=pattern,
+            reply_mask=mask,
             request_extension=0,
             reply_extension=0,
         )
         ecu.set_arbitration(channel, arbitration)
 
-        # Setup SocketCAN with echo responder
-        bus = SocketCanBus(
-            interface=can_interface,
-            filters=[(tx_id, 0x7FF)],
-        )
-        bus.start_reader()
+        # Drain any pending PDUs
+        while ecu.get_pdu(timeout=0.05) is not None:
+            pass
 
-        # Start echo responder thread
-        responder_thread = threading.Thread(
-            target=_isotp_echo_responder,
-            args=(bus, tx_id, rx_id, stop_responder),
-            name="isotp-responder",
-            daemon=True,
-        )
-        responder_thread.start()
+        # Send frames that SHOULD match
+        for can_id in should_match:
+            payload = bytes([0x02, 0x3E, 0x00, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
+            bus.send_frame(can_id, payload, extended=extended)
+            time.sleep(0.01)
 
-        # Run tests for each payload size
-        for payload_size in payload_sizes:
-            results: list[ISOTPTransactionResult] = []
-
-            for i in range(transactions_per_size):
-                # Create test payload with sequence number
-                payload = bytes([(i >> 8) & 0xFF, i & 0xFF]) + bytes(
-                    [(j + i) & 0xFF for j in range(payload_size - 2)]
-                ) if payload_size > 2 else bytes([i & 0xFF] * payload_size)
-
-                result = run_isotp_transaction(
-                    ecu, channel, payload, transaction_timeout
-                )
-                results.append(result)
-
-                total_transactions += 1
-                if result.success:
-                    total_successful += 1
-                else:
-                    total_failed += 1
-
-            # Calculate metrics for this payload size
-            successful_results = [r for r in results if r.success]
-            latencies = [r.latency_ms for r in successful_results]
-
-            if latencies:
-                total_bytes = sum(r.payload_size for r in successful_results)
-                total_time_sec = sum(r.latency_ms for r in successful_results) / 1000.0
-                throughput = total_bytes / max(total_time_sec, 0.001)
-
-                metrics = ISOTPTestMetrics(
-                    payload_size=payload_size,
-                    transactions=len(results),
-                    successful=len(successful_results),
-                    failed=len(results) - len(successful_results),
-                    min_latency_ms=min(latencies),
-                    avg_latency_ms=sum(latencies) / len(latencies),
-                    max_latency_ms=max(latencies),
-                    throughput_bytes_per_sec=throughput,
-                )
+            # Check if ECUconnect received it
+            pdu = ecu.get_pdu(timeout=timeout)
+            if pdu is not None and pdu.type in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                accepted += 1
             else:
-                metrics = ISOTPTestMetrics(
-                    payload_size=payload_size,
-                    transactions=len(results),
-                    successful=0,
-                    failed=len(results),
-                    min_latency_ms=0,
-                    avg_latency_ms=0,
-                    max_latency_ms=0,
-                    throughput_bytes_per_sec=0,
-                )
+                errors.append(f"Filter {pattern:#x}/{mask:#x}: ID {can_id:#x} should match but wasn't received")
 
-            all_metrics.append(metrics)
+        # Send frames that should NOT match
+        for can_id in should_reject:
+            payload = bytes([0x02, 0x3E, 0x00, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
+            bus.send_frame(can_id, payload, extended=extended)
+            time.sleep(0.01)
 
+            # Should NOT receive this
+            pdu = ecu.get_pdu(timeout=0.1)  # Short timeout - we expect nothing
+            if pdu is None:
+                rejected += 1
+            elif pdu.type in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                errors.append(f"Filter {pattern:#x}/{mask:#x}: ID {can_id:#x} should NOT match but was received")
+            else:
+                rejected += 1  # Got some other PDU type, that's fine
+
+    return FilterTestResult(
+        passed=len(errors) == 0,
+        accepted_matching=accepted,
+        rejected_nonmatching=rejected,
+        errors=errors,
+    )
+
+
+def run_request_response_test(
+    ecu: EcuconnectClient,
+    bus: SocketCanBus,
+    channel: int,
+    tx_id: int,
+    rx_id: int,
+    extended: bool,
+    count: int,
+    timeout: float,
+) -> ISOTPMetrics:
+    """
+    Run request/response test pattern.
+
+    ECUconnect sends a frame, SocketCAN echo responder sends it back.
+    This tests realistic diagnostic communication latency.
+    """
+    stop = threading.Event()
+    responder = threading.Thread(
+        target=_raw_echo_responder,
+        args=(bus, tx_id, rx_id, extended, stop),
+        daemon=True,
+    )
+    responder.start()
+
+    latencies: list[float] = []
+    failed = 0
+
+    try:
+        for i in range(count):
+            payload = bytes([0x02, 0x3E, (i & 0xFF), 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
+            start = time.perf_counter()
+            ecu.send(channel, payload)
+
+            # Wait for echo response
+            deadline = start + timeout
+            got_response = False
+            while time.perf_counter() < deadline:
+                pdu = ecu.get_pdu(timeout=min(0.05, deadline - time.perf_counter()))
+                if pdu is None:
+                    continue
+                if pdu.type in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                    latencies.append((time.perf_counter() - start) * 1000)
+                    got_response = True
+                    break
+
+            if not got_response:
+                failed += 1
     finally:
-        stop_responder.set()
-        if responder_thread:
-            responder_thread.join(timeout=1.0)
-        if bus is not None:
-            bus.close()
-        if channel is not None:
-            try:
-                ecu.close_channel(channel, timeout=open_timeout)
-            except (TimeoutError, RuntimeError):
-                pass
-        ecu.close()
+        stop.set()
+        responder.join(timeout=1.0)
 
-    return ISOTPTestSummary(
-        metrics=all_metrics,
-        total_transactions=total_transactions,
-        total_successful=total_successful,
-        total_failed=total_failed,
+    successful = len(latencies)
+    return ISOTPMetrics(
+        transactions=count,
+        successful=successful,
+        failed=failed,
+        min_latency_ms=min(latencies) if latencies else 0,
+        avg_latency_ms=sum(latencies) / len(latencies) if latencies else 0,
+        max_latency_ms=max(latencies) if latencies else 0,
     )
