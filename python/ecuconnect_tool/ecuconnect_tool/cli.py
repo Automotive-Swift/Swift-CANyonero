@@ -16,7 +16,6 @@ from . import canyonero
 from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient
 from .test_runner import (
     open_channel_with_retry,
-    pps_to_busload,
     run_ecuconnect_test,
     run_isotp_test,
 )
@@ -906,15 +905,13 @@ def test(
     bitrate: int = typer.Option(500000, help="CAN bitrate."),
     payload_len: int = typer.Option(8, help="Payload length."),
     busload: List[str] = typer.Option(
-        ["1"],
+        ["5"],
         "--busload",
         "-b",
-        help="Busload percentage(s) to test, or 'auto' to ramp from low PPS.",
+        help="Busload percentage(s) to test, or 'auto' to ramp up automatically.",
     ),
-    pps: Optional[float] = typer.Option(None, help="Override with packets/sec."),
-    auto_start_pps: float = typer.Option(1.0, help="Auto ramp start rate (pps)."),
-    auto_step_pps: float = typer.Option(1.0, help="Auto ramp step size (pps)."),
-    auto_max_busload: float = typer.Option(1.0, help="Auto ramp max busload percent."),
+    auto_max: float = typer.Option(30.0, help="Max busload for 'auto' mode (percent)."),
+    auto_step: float = typer.Option(5.0, help="Busload step size for 'auto' mode (percent)."),
     preflight: bool = typer.Option(True, help="Run info + ping preflight before load test."),
     preflight_only: bool = typer.Option(
         False, help="Stop after preflight (no CAN channel open)."
@@ -932,60 +929,37 @@ def test(
     open_retry_delay: float = typer.Option(1.0, help="Delay between open_channel retries."),
     duration: float = typer.Option(5.0, help="Duration per direction (seconds)."),
     settle: float = typer.Option(1.0, help="Settle time after sending (seconds)."),
-    tx_id: str = typer.Option("0x123", help="TX CAN ID for ECUconnect->bus."),
-    rx_id: str = typer.Option("0x321", help="RX CAN ID for bus->ECUconnect."),
-    rx_mask: Optional[str] = typer.Option(None, help="RX mask for ECUconnect."),
-    tx_extended: bool = typer.Option(False, help="Use extended TX ID."),
-    rx_extended: bool = typer.Option(False, help="Use extended RX ID."),
     loss_threshold: float = typer.Option(2.0, help="Maximum loss percentage allowed."),
 ) -> None:
     """Run an automated ECUconnect loop test using SocketCAN.
 
     Uses burst-limited sending to simulate realistic ISOTP-like traffic patterns.
-    Sends max 600 frames per burst (ISOTP max transfer), then waits for responses."""
+    Sends max 600 frames per burst (ISOTP max transfer), then waits for responses.
+
+    Randomly chooses between standard (11-bit) and extended (29-bit) CAN IDs."""
     endpoint = ctx.obj["endpoint"]
     rx_buffer = ctx.obj["rx_buffer"]
     tx_buffer = ctx.obj["tx_buffer"]
-    tx_id_value = _parse_int(tx_id)
-    rx_id_value = _parse_int(rx_id)
-
-    if rx_mask is None:
-        rx_mask_value = 0x1FFFFFFF if rx_extended else 0x7FF
-    else:
-        rx_mask_value = _parse_int(rx_mask)
 
     busload_entries = [entry.strip().lower() for entry in busload]
-    pps_list: list[float] = []
 
     if "auto" in busload_entries:
         if len(busload_entries) > 1:
             raise typer.BadParameter("Use only 'auto' or numeric busload values, not both.")
-        if pps is not None:
-            raise typer.BadParameter("Use either pps override or auto ramp, not both.")
-        if auto_start_pps <= 0 or auto_step_pps <= 0:
-            raise typer.BadParameter("auto_start_pps and auto_step_pps must be > 0.")
-        if auto_max_busload <= 0:
-            raise typer.BadParameter("auto_max_busload must be > 0.")
+        if auto_step <= 0 or auto_max <= 0:
+            raise typer.BadParameter("auto_step and auto_max must be > 0.")
         busload_list = []
-        current_pps = auto_start_pps
-        while True:
-            current_busload = pps_to_busload(bitrate, current_pps, payload_len, rx_extended)
-            if current_busload > auto_max_busload:
-                break
-            busload_list.append(current_busload)
-            pps_list.append(current_pps)
-            current_pps += auto_step_pps
+        current = auto_step
+        while current <= auto_max:
+            busload_list.append(current)
+            current += auto_step
         if not busload_list:
-            raise typer.BadParameter("auto ramp produced no steps; adjust auto_max_busload.")
+            raise typer.BadParameter("auto ramp produced no steps; adjust auto_max/auto_step.")
     else:
         try:
-            busload_list = [float(entry) for entry in busload]
+            busload_list = [float(entry) for entry in busload_entries]
         except ValueError as exc:
             raise typer.BadParameter("Busload values must be numeric or 'auto'.") from exc
-
-        if pps is not None:
-            busload_list = [pps_to_busload(bitrate, pps, payload_len, rx_extended)]
-            pps_list = [pps]
 
     if preflight:
         console.print("Preflight: request info + ping")
@@ -1033,10 +1007,11 @@ def test(
                 open_retries=open_retries,
                 open_retry_delay=open_retry_delay,
             )
+            # Use standard test IDs for traffic=none
             arbitration = canyonero.Arbitration(
-                request=tx_id_value,
-                reply_pattern=rx_id_value,
-                reply_mask=rx_mask_value,
+                request=0x123,
+                reply_pattern=0x321,
+                reply_mask=0x7FF,
                 request_extension=0,
                 reply_extension=0,
             )
@@ -1051,18 +1026,12 @@ def test(
         bitrate=bitrate,
         payload_len=payload_len,
         busloads=busload_list,
-        pps_overrides=pps_list or None,
         traffic_mode=traffic_mode,
         open_timeout=open_timeout,
         open_retries=open_retries,
         open_retry_delay=open_retry_delay,
         duration=duration,
         settle_time=settle,
-        tx_id=tx_id_value,
-        rx_id=rx_id_value,
-        rx_mask=rx_mask_value,
-        tx_extended=tx_extended,
-        rx_extended=rx_extended,
         rx_buffer=rx_buffer,
         tx_buffer=tx_buffer,
         loss_threshold=loss_threshold,
