@@ -219,18 +219,12 @@ def run_ecuconnect_test(
     bitrate: int,
     payload_len: int,
     busloads: Iterable[float],
-    pps_overrides: Optional[list[float]],
     traffic_mode: str,
     open_timeout: float,
     open_retries: int,
     open_retry_delay: float,
     duration: float,
     settle_time: float,
-    tx_id: int,
-    rx_id: int,
-    rx_mask: int,
-    tx_extended: bool,
-    rx_extended: bool,
     rx_buffer: int,
     tx_buffer: int,
     loss_threshold: float,
@@ -239,6 +233,17 @@ def run_ecuconnect_test(
 ) -> list[TestSummary]:
     summaries: list[TestSummary] = []
     run_id = secrets.randbelow(256)
+
+    # Randomly choose between standard and extended CAN IDs
+    extended = secrets.randbelow(2) == 1
+    if extended:
+        tx_id = 0x18DA00F1  # ISO-TP style extended ID
+        rx_id = 0x18DAF100
+        rx_mask = 0x1FFFFFFF
+    else:
+        tx_id = 0x123
+        rx_id = 0x321
+        rx_mask = 0x7FF
 
     ecu = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
     ecu.connect()
@@ -268,11 +273,11 @@ def run_ecuconnect_test(
 
         if traffic_mode != "none":
             filters = []
-            if rx_extended:
+            if extended:
                 filters.append((rx_id | 0x80000000, rx_mask | 0x80000000))
             else:
                 filters.append((rx_id, rx_mask))
-            if tx_extended:
+            if extended:
                 filters.append((tx_id | 0x80000000, 0x1FFFFFFF | 0x80000000))
             else:
                 filters.append((tx_id, 0x7FF))
@@ -286,16 +291,10 @@ def run_ecuconnect_test(
             bus.start_reader()
 
         busload_list = list(busloads)
-        if pps_overrides is not None and len(pps_overrides) != len(busload_list):
-            raise ValueError("pps_overrides length must match busloads length")
 
-        for idx, busload in enumerate(busload_list):
-            if pps_overrides is not None:
-                pps_can_to_ecu = pps_overrides[idx]
-                pps_ecu_to_can = pps_overrides[idx]
-            else:
-                pps_can_to_ecu = busload_to_pps(bitrate, busload, payload_len, rx_extended)
-                pps_ecu_to_can = busload_to_pps(bitrate, busload, payload_len, tx_extended)
+        for busload in busload_list:
+            pps_can_to_ecu = busload_to_pps(bitrate, busload, payload_len, extended)
+            pps_ecu_to_can = busload_to_pps(bitrate, busload, payload_len, extended)
             if (do_rx and pps_can_to_ecu <= 0) or (do_tx and pps_ecu_to_can <= 0):
                 raise ValueError("Calculated PPS is zero; lower payload length or increase busload")
 
@@ -316,7 +315,7 @@ def run_ecuconnect_test(
 
                 can_to_ecu = _run_direction(
                     name=f"can-to-ecu@{busload}",
-                    send_fn=lambda payload: bus.send_frame(rx_id, payload, extended=rx_extended),
+                    send_fn=lambda payload: bus.send_frame(rx_id, payload, extended=extended),
                     receive_iter=ecu_receive,
                     payload_len=payload_len,
                     pps=pps_can_to_ecu,
