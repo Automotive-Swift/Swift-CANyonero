@@ -933,10 +933,10 @@ def test(
 ) -> None:
     """Run an automated ECUconnect loop test using SocketCAN.
 
-    Uses burst-limited sending to simulate realistic ISOTP-like traffic patterns.
-    Sends max 600 frames per burst (ISOTP max transfer), then waits for responses.
+    Tests raw CAN frame throughput at the specified busload percentage.
+    Randomly chooses between standard (11-bit) and extended (29-bit) CAN IDs.
 
-    Randomly chooses between standard (11-bit) and extended (29-bit) CAN IDs."""
+    For realistic ISOTP request-response testing, use the 'isotp-test' command."""
     endpoint = ctx.obj["endpoint"]
     rx_buffer = ctx.obj["rx_buffer"]
     tx_buffer = ctx.obj["tx_buffer"]
