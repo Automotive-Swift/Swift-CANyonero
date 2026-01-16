@@ -113,24 +113,14 @@ def _run_direction(
     settle_time: float,
     direction_marker: int,
     run_id: int,
-    burst_size: int = 600,
-    burst_wait_timeout: float = 0.5,
 ) -> DirectionMetrics:
-    """
-    Run a directional throughput test with burst-limited sending.
-
-    Args:
-        burst_size: Max frames to send before waiting for responses (default 600,
-                    simulating realistic ISOTP-like traffic patterns)
-        burst_wait_timeout: Max time to wait for responses between bursts
-    """
+    """Run a directional throughput test at the specified PPS rate."""
     interval = 1.0 / pps if pps > 0 else 0.0
     expected = int(pps * duration)
     received: set[int] = set()
     duplicates = 0
     stop = threading.Event()
     received_lock = threading.Lock()
-    received_event = threading.Event()  # Signaled when new data arrives
 
     def receiver_loop() -> None:
         nonlocal duplicates
@@ -146,7 +136,6 @@ def _run_direction(
                     duplicates += 1
                 else:
                     received.add(seq)
-            received_event.set()  # Signal that we got data
         # Drain any remaining items from the queue after stop is signaled
         drain_deadline = time.perf_counter() + 0.5
         empty_count = 0
@@ -172,25 +161,11 @@ def _run_direction(
     receiver.start()
 
     start = time.perf_counter()
-    seq = 0
-    while seq < expected:
-        # Send a burst of frames
-        burst_end = min(seq + burst_size, expected)
-        burst_start_seq = seq
-
-        for seq in range(burst_start_seq, burst_end):
-            payload = _build_payload(payload_len, direction_marker, seq, run_id)
-            send_fn(payload)
-            if interval > 0:
-                _sleep_until(start + (seq + 1) * interval)
-
-        seq = burst_end  # Move past the burst
-
-        # If more frames to send, wait for some responses before next burst
-        if seq < expected:
-            received_event.clear()
-            # Wait for at least one response or timeout
-            received_event.wait(timeout=burst_wait_timeout)
+    for seq in range(expected):
+        payload = _build_payload(payload_len, direction_marker, seq, run_id)
+        send_fn(payload)
+        if interval > 0:
+            _sleep_until(start + (seq + 1) * interval)
 
     # Dynamic settle time: at least 1 second, plus extra time for high PPS
     effective_settle = max(settle_time, 1.0 + expected / max(pps, 1) * 0.05)
@@ -228,8 +203,6 @@ def run_ecuconnect_test(
     rx_buffer: int,
     tx_buffer: int,
     loss_threshold: float,
-    burst_size: int = 600,
-    burst_wait_timeout: float = 0.5,
 ) -> list[TestSummary]:
     summaries: list[TestSummary] = []
     run_id = secrets.randbelow(256)
@@ -323,8 +296,6 @@ def run_ecuconnect_test(
                     settle_time=settle_time,
                     direction_marker=0xA1,
                     run_id=run_id,
-                    burst_size=burst_size,
-                    burst_wait_timeout=burst_wait_timeout,
                 )
 
             if do_tx and bus is not None:
@@ -346,8 +317,6 @@ def run_ecuconnect_test(
                     settle_time=settle_time,
                     direction_marker=0xB2,
                     run_id=run_id,
-                    burst_size=burst_size,
-                    burst_wait_timeout=burst_wait_timeout,
                 )
 
             summaries.append(
