@@ -99,6 +99,10 @@ class EcuconnectClient:
 
     def close(self) -> None:
         self._stop.set()
+        # Wait for reader thread to exit before closing socket
+        if self._reader is not None:
+            self._reader.join(timeout=1.0)
+            self._reader = None
         if self._sock:
             try:
                 self._sock.shutdown(socket.SHUT_RDWR)

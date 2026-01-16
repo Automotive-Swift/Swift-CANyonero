@@ -81,11 +81,16 @@ class SocketCanBus:
 
     def close(self) -> None:
         self._stop.set()
+        # Wait for reader thread to exit before closing socket
+        if self._reader is not None:
+            self._reader.join(timeout=1.0)
+            self._reader = None
         if self.bus:
             if hasattr(self.bus, "shutdown"):
                 self.bus.shutdown()
             else:
                 self.bus.close()
+            self.bus = None
 
     def start_reader(self) -> None:
         if self._reader and self._reader.is_alive():
