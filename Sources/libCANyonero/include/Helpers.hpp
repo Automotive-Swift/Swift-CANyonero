@@ -35,10 +35,10 @@ inline uint32_t vector_read_uint32(std::vector<uint8_t>::const_iterator& it) {
 inline std::vector<uint8_t> vector_drop_first(std::vector<uint8_t>& vec, size_t n) {
     std::vector<uint8_t> removed_elements;
     removed_elements.reserve(n);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         removed_elements.push_back(vec[i]);
     }
-    vec.erase(vec.begin(), vec.begin() + n);
+    vec.erase(vec.begin(), vec.begin() + static_cast<std::ptrdiff_t>(n));
     return removed_elements;
 }
 
