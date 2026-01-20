@@ -23,6 +23,8 @@ typedef int SOCKET;
 
 #include <cstring>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 
 namespace ecuconnect {
 
@@ -292,29 +294,94 @@ std::string TcpTransport::getLastError() const {
     return pImpl->lastError;
 }
 
-// Transport factory
-std::unique_ptr<ITransport> createTransport(TransportType type, const std::string& connection_string) {
-    switch (type) {
-        case TransportType::TCP: {
-            TcpConfig config;
-            // Parse connection string if provided (format: "host:port")
-            if (!connection_string.empty()) {
-                size_t colonPos = connection_string.find(':');
-                if (colonPos != std::string::npos) {
-                    config.host = connection_string.substr(0, colonPos);
-                    config.port = static_cast<uint16_t>(std::stoi(connection_string.substr(colonPos + 1)));
-                } else {
-                    config.host = connection_string;
-                }
-            }
-            return std::make_unique<TcpTransport>(config);
+namespace {
+
+// Check if string looks like an IP address (contains dots and only digits/dots/colons)
+bool looksLikeIpAddress(const std::string& s) {
+    if (s.empty()) return false;
+
+    // Must contain at least one dot
+    if (s.find('.') == std::string::npos) return false;
+
+    // All characters must be digits, dots, or colon (for port)
+    for (char c : s) {
+        if (!std::isdigit(static_cast<unsigned char>(c)) && c != '.' && c != ':') {
+            return false;
         }
-        case TransportType::BLE_L2CAP:
-            // Future implementation
-            return nullptr;
-        default:
-            return nullptr;
     }
+    return true;
+}
+
+// Case-insensitive prefix check
+bool startsWithIgnoreCase(const std::string& str, const std::string& prefix) {
+    if (str.length() < prefix.length()) return false;
+    for (size_t i = 0; i < prefix.length(); i++) {
+        if (std::tolower(static_cast<unsigned char>(str[i])) !=
+            std::tolower(static_cast<unsigned char>(prefix[i]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
+// Transport factory with connection string parsing and auto-detection
+std::unique_ptr<ITransport> createTransport(TransportType type, const std::string& connection_string) {
+    std::string cs = connection_string;
+
+    // Handle explicit BLE prefix: "BLE:..." or "ble:..."
+    if (startsWithIgnoreCase(cs, "BLE:")) {
+        BleConfig config;
+        config.deviceNameOrAddress = cs.substr(4);
+        return std::make_unique<BleTransport>(config);
+    }
+
+    // Handle explicit TCP prefix: "TCP:..." or "tcp:..."
+    if (startsWithIgnoreCase(cs, "TCP:")) {
+        cs = cs.substr(4);
+        // Fall through to TCP parsing
+    }
+
+    // If TransportType::BLE_L2CAP was explicitly requested
+    if (type == TransportType::BLE_L2CAP) {
+        BleConfig config;
+        config.deviceNameOrAddress = cs;
+        return std::make_unique<BleTransport>(config);
+    }
+
+    // Auto-detect based on connection string format
+    // - IP address (contains dots and digits) → TCP
+    // - Otherwise (device name without dots) → BLE
+    if (!cs.empty() && !looksLikeIpAddress(cs)) {
+        // Looks like a BLE device name (e.g., "ECUconnect-XXXX")
+        BleConfig config;
+        config.deviceNameOrAddress = cs;
+        return std::make_unique<BleTransport>(config);
+    }
+
+    // TCP transport (default or explicit)
+    TcpConfig config;
+    if (!cs.empty()) {
+        // Parse host:port format
+        size_t colonPos = cs.rfind(':');  // Use rfind in case of IPv6 future support
+        if (colonPos != std::string::npos) {
+            // Check if the part after colon is a valid port number
+            std::string portStr = cs.substr(colonPos + 1);
+            bool isPort = !portStr.empty() && std::all_of(portStr.begin(), portStr.end(),
+                [](char c) { return std::isdigit(static_cast<unsigned char>(c)); });
+
+            if (isPort) {
+                config.host = cs.substr(0, colonPos);
+                config.port = static_cast<uint16_t>(std::stoi(portStr));
+            } else {
+                config.host = cs;
+            }
+        } else {
+            config.host = cs;
+        }
+    }
+    return std::make_unique<TcpTransport>(config);
 }
 
 } // namespace ecuconnect

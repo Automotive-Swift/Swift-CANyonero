@@ -70,6 +70,17 @@ struct TcpConfig {
 };
 
 /**
+ * BLE L2CAP Transport configuration
+ */
+struct BleConfig {
+    std::string deviceNameOrAddress;      // "ECUconnect-XXXX" or "XX:XX:XX:XX:XX:XX"
+    std::string serviceUUID = "FFF1";     // ECUconnect BLE service UUID
+    uint16_t psm = 129;                   // L2CAP PSM for CANyonero protocol
+    uint32_t connect_timeout_ms = 10000;  // BLE connections take longer
+    uint32_t receive_timeout_ms = 1000;
+};
+
+/**
  * TCP Transport implementation
  */
 class TcpTransport : public ITransport {
@@ -94,13 +105,49 @@ private:
 };
 
 /**
+ * BLE L2CAP Transport implementation (Windows 10 1803+)
+ */
+class BleTransport : public ITransport {
+public:
+    explicit BleTransport(const BleConfig& config = BleConfig{});
+    ~BleTransport() override;
+
+    // Non-copyable
+    BleTransport(const BleTransport&) = delete;
+    BleTransport& operator=(const BleTransport&) = delete;
+
+    bool connect() override;
+    void disconnect() override;
+    bool isConnected() const override;
+    int send(const std::vector<uint8_t>& data) override;
+    std::vector<uint8_t> receive(uint32_t timeout_ms) override;
+    std::string getLastError() const override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> pImpl;
+};
+
+/**
  * Transport factory for creating transports by type
  */
 enum class TransportType {
     TCP,
-    BLE_L2CAP  // Future
+    BLE_L2CAP
 };
 
+/**
+ * Create transport from type and connection string.
+ *
+ * Connection string formats:
+ *   - "" or NULL              → TCP default (192.168.42.42:129)
+ *   - "192.168.42.42"         → TCP explicit (IP address detected)
+ *   - "192.168.42.42:129"     → TCP with port
+ *   - "BLE:ECUconnect"        → BLE by device name
+ *   - "BLE:XX:XX:XX:XX:XX:XX" → BLE by MAC address
+ *   - "ECUconnect-XXXX"       → BLE auto-detect (no dots = BLE device name)
+ *   - "TCP:192.168.42.42"     → TCP explicit prefix
+ */
 std::unique_ptr<ITransport> createTransport(TransportType type, const std::string& connection_string = "");
 
 } // namespace ecuconnect

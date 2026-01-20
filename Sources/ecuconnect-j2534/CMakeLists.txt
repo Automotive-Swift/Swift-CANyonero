@@ -20,7 +20,10 @@ message(STATUS "Building: ${DLL_NAME_BASE}.dll (${CMAKE_GENERATOR_PLATFORM})")
 
 # Windows-specific settings
 if(WIN32)
-    add_definitions(-D_WIN32_WINNT=0x0601)  # Windows 7+
+    # BLE L2CAP requires Windows 10 1803+ (build 17134)
+    # TCP transport still works on Windows 7+
+    add_definitions(-D_WIN32_WINNT=0x0A00)  # Windows 10
+    add_definitions(-DNTDDI_VERSION=0x0A000004)  # Windows 10 1803 (RS4)
     add_definitions(-DUNICODE -D_UNICODE)
     add_definitions(-DNOMINMAX)             # Prevent min/max macro conflicts
     add_definitions(-DWIN32_LEAN_AND_MEAN)  # Reduce Windows header bloat
@@ -31,6 +34,7 @@ add_library(ecuconnect_j2534 SHARED
     src/j2534_api.cpp
     src/ecuconnect.cpp
     src/transport_tcp.cpp
+    src/transport_ble.cpp
     src/canyonero_protocol.cpp
 )
 
@@ -41,6 +45,14 @@ target_include_directories(ecuconnect_j2534 PRIVATE
 # Link Windows networking
 if(WIN32)
     target_link_libraries(ecuconnect_j2534 PRIVATE ws2_32)
+
+    # BLE L2CAP transport: currently a stub implementation
+    # Full implementation requires Windows SDK 10.0.19041+ with C++/WinRT
+    # To enable full BLE support, uncomment the following when SDK is available:
+    # if(MSVC)
+    #     target_compile_options(ecuconnect_j2534 PRIVATE /await)
+    #     target_link_libraries(ecuconnect_j2534 PRIVATE windowsapp RuntimeObject)
+    # endif()
 endif()
 
 # Export definitions for J2534 API
