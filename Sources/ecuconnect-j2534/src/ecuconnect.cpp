@@ -12,7 +12,39 @@
 namespace ecuconnect {
 
 namespace {
-bool filter_matches_id(const Filter& filter, uint32_t can_id) {
+uint8_t id_byte(uint32_t can_id, size_t index) {
+    switch (index) {
+        case 0: return static_cast<uint8_t>((can_id >> 24) & 0xFF);
+        case 1: return static_cast<uint8_t>((can_id >> 16) & 0xFF);
+        case 2: return static_cast<uint8_t>((can_id >> 8) & 0xFF);
+        default: return static_cast<uint8_t>(can_id & 0xFF);
+    }
+}
+
+bool filter_matches_bytes(const Filter& filter, uint32_t can_id, const std::vector<uint8_t>& data) {
+    if (!filter.maskBytes.empty() && filter.maskBytes.size() == filter.patternBytes.size()) {
+        const size_t len = filter.maskBytes.size();
+        for (size_t i = 0; i < len; i++) {
+            uint8_t value = 0;
+            if (i < 4) {
+                value = id_byte(can_id, i);
+            } else {
+                size_t dataIndex = i - 4;
+                if (dataIndex >= data.size()) {
+                    return false;
+                }
+                value = data[dataIndex];
+            }
+
+            uint8_t mask = filter.maskBytes[i];
+            uint8_t pattern = filter.patternBytes[i];
+            if ((value & mask) != (pattern & mask)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     return (can_id & filter.mask) == (filter.pattern & filter.mask);
 }
 
@@ -24,7 +56,7 @@ bool arbitration_equals(const Arbitration& lhs, const Arbitration& rhs) {
         && lhs.replyExtension == rhs.replyExtension;
 }
 
-bool message_passes_filters(const Channel& channel, uint32_t can_id) {
+bool message_passes_filters(const Channel& channel, uint32_t can_id, const std::vector<uint8_t>& data) {
     bool has_pass_filter = false;
     bool pass_match = false;
 
@@ -35,11 +67,11 @@ bool message_passes_filters(const Channel& channel, uint32_t can_id) {
 
         if (filter.type == PASS_FILTER) {
             has_pass_filter = true;
-            if (filter_matches_id(filter, can_id)) {
+            if (filter_matches_bytes(filter, can_id, data)) {
                 pass_match = true;
             }
         } else if (filter.type == BLOCK_FILTER) {
-            if (filter_matches_id(filter, can_id)) {
+            if (filter_matches_bytes(filter, can_id, data)) {
                 return false;
             }
         }
@@ -295,7 +327,7 @@ void DeviceManager::pollMessages(Channel* channel, Device* device, uint32_t time
     auto frames = device->protocol->receiveMessages(timeout_ms);
 
     for (const auto& frame : frames) {
-        if (!message_passes_filters(*channel, frame.id)) {
+        if (!message_passes_filters(*channel, frame.id, frame.data)) {
             continue;
         }
 
@@ -365,6 +397,10 @@ long DeviceManager::readMsgs(unsigned long channelId, PASSTHRU_MSG* msgs,
     }
 
     if (*numMsgs == 0) {
+        if (timeout > 0) {
+            setLastError("Read timeout");
+            return ERR_TIMEOUT;
+        }
         return ERR_BUFFER_EMPTY;
     }
 
@@ -436,14 +472,20 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
 
         // Send message
         if (!device->protocol->sendMessage(channel->ecuHandle, data, timeout)) {
-            setLastError("Failed to send message: " + device->protocol->getLastError());
+            const auto last_error = device->protocol->getLastError();
+            setLastError("Failed to send message: " + last_error);
+            const bool is_timeout = last_error.find("timeout") != std::string::npos
+                || last_error.find("Timeout") != std::string::npos;
+            if (timeout > 0 && is_timeout) {
+                return ERR_TIMEOUT;
+            }
             return ERR_FAILED;
         }
 
         (*numMsgs)++;
 
         // Handle loopback
-        if (channel->loopback && message_passes_filters(*channel, canId)) {
+        if (channel->loopback && message_passes_filters(*channel, canId, data)) {
             PASSTHRU_MSG loopbackMsg = msg;
             loopbackMsg.RxStatus = TX_MSG_TYPE;
             if (msg.TxFlags & CAN_29BIT_ID) {
@@ -579,8 +621,19 @@ long DeviceManager::startMsgFilter(unsigned long channelId, unsigned long filter
     auto chIt = device->channels.find(channelId);
     auto& channel = chIt->second;
 
-    // Extract mask and pattern (CAN ID is first 4 bytes)
-    if (maskMsg->DataSize < 4 || patternMsg->DataSize < 4) {
+    if (filterType != PASS_FILTER && filterType != BLOCK_FILTER && filterType != FLOW_CONTROL_FILTER) {
+        setLastError("Invalid filter type");
+        return ERR_INVALID_MSG;
+    }
+
+    if (filterType == FLOW_CONTROL_FILTER && channel->protocolId != ISO15765) {
+        setLastError("Flow control filters only supported for ISO15765");
+        return ERR_NOT_SUPPORTED;
+    }
+
+    const unsigned long maskSize = maskMsg->DataSize;
+    const unsigned long patternSize = patternMsg->DataSize;
+    if (maskSize == 0 || patternSize == 0 || maskSize > 12 || patternSize > 12 || maskSize != patternSize) {
         DBG("startMsgFilter: invalid message size (mask=%lu, pattern=%lu)",
             maskMsg->DataSize, patternMsg->DataSize);
         setLastError("Invalid filter message size");
@@ -597,6 +650,8 @@ long DeviceManager::startMsgFilter(unsigned long channelId, unsigned long filter
                      (static_cast<uint32_t>(patternMsg->Data[1]) << 16) |
                      (static_cast<uint32_t>(patternMsg->Data[2]) << 8) |
                      static_cast<uint32_t>(patternMsg->Data[3]);
+    filter.maskBytes.assign(maskMsg->Data, maskMsg->Data + maskSize);
+    filter.patternBytes.assign(patternMsg->Data, patternMsg->Data + patternSize);
 
     DBG("startMsgFilter: mask=0x%08X, pattern=0x%08X", filter.mask, filter.pattern);
 
