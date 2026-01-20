@@ -131,6 +131,7 @@ private:
     std::unordered_map<unsigned long, unsigned long> channelToDevice_;  // channelId -> deviceId
     unsigned long nextDeviceId_ = 1;
     mutable std::mutex mutex_;
+    mutable std::mutex errorMutex_;
     std::string lastError_;
 
     // Poll for received messages

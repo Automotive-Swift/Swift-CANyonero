@@ -107,12 +107,12 @@ Channel* DeviceManager::getChannel(unsigned long channelId) {
 }
 
 const char* DeviceManager::getLastError() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(errorMutex_);
     return lastError_.c_str();
 }
 
 void DeviceManager::setLastError(const std::string& error) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(errorMutex_);
     lastError_ = error;
 }
 
