@@ -20,10 +20,10 @@ message(STATUS "Building: ${DLL_NAME_BASE}.dll (${CMAKE_GENERATOR_PLATFORM})")
 
 # Windows-specific settings
 if(WIN32)
-    # BLE L2CAP requires Windows 10 1803+ (build 17134)
+    # BLE GATT requires Windows 10 Anniversary Update (1607, build 14393)
     # TCP transport still works on Windows 7+
     add_definitions(-D_WIN32_WINNT=0x0A00)  # Windows 10
-    add_definitions(-DNTDDI_VERSION=0x0A000004)  # Windows 10 1803 (RS4)
+    add_definitions(-DNTDDI_VERSION=0x0A000002)  # Windows 10 1607 (Anniversary Update)
     add_definitions(-DUNICODE -D_UNICODE)
     add_definitions(-DNOMINMAX)             # Prevent min/max macro conflicts
     add_definitions(-DWIN32_LEAN_AND_MEAN)  # Reduce Windows header bloat
@@ -42,17 +42,22 @@ target_include_directories(ecuconnect_j2534 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link Windows networking
+# Link Windows networking and runtime libraries
 if(WIN32)
     target_link_libraries(ecuconnect_j2534 PRIVATE ws2_32)
 
-    # BLE L2CAP transport: currently a stub implementation
-    # Full implementation requires Windows SDK 10.0.19041+ with C++/WinRT
-    # To enable full BLE support, uncomment the following when SDK is available:
-    # if(MSVC)
-    #     target_compile_options(ecuconnect_j2534 PRIVATE /await)
-    #     target_link_libraries(ecuconnect_j2534 PRIVATE windowsapp RuntimeObject)
-    # endif()
+    # BLE GATT transport requires C++/WinRT (MSVC 2019+)
+    # Note: L2CAP CoC is NOT available in user-mode Windows; we use GATT instead
+    if(MSVC)
+        # C++/WinRT requires /await for coroutines and /EHsc for exceptions
+        target_compile_options(ecuconnect_j2534 PRIVATE /await /EHsc)
+
+        # Link Windows Runtime libraries for BLE GATT
+        target_link_libraries(ecuconnect_j2534 PRIVATE
+            windowsapp      # UWP/WinRT core
+            RuntimeObject   # WinRT runtime object support
+        )
+    endif()
 endif()
 
 # Export definitions for J2534 API
