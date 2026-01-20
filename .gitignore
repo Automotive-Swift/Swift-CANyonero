@@ -7,3 +7,12 @@ DerivedData/
 .swiftpm/config/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+
+# J2534 driver build artifacts
+Sources/ecuconnect-j2534/build32/
+Sources/ecuconnect-j2534/build64/
+Sources/ecuconnect-j2534/nul
+Sources/ecuconnect-j2534/.claude/
+
+# Legacy location (to be deleted)
+/ecuconnect-j2534/

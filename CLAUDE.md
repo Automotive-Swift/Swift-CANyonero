@@ -34,6 +34,39 @@ swift test --filter ISOTP_Transmit_Valid
 ### ESP-IDF Build (for embedded deployment)
 The project includes ESP-IDF support for deployment on ESP32 hardware. The CMakeLists.txt and idf_component.yml files configure the libCANyonero library as an ESP-IDF component.
 
+### J2534 Driver Build (Windows)
+```bash
+cd Sources/ecuconnect-j2534
+
+# Build both 32-bit and 64-bit DLLs
+make release
+
+# Or build individually
+make release32      # 32-bit only
+make release64      # 64-bit only
+
+# Install and register (requires Administrator)
+make install        # Copies DLLs to Program Files, creates registry entries
+make uninstall      # Removes DLLs and registry entries
+
+# Development helpers
+make status         # Show installation status
+make list-drivers   # List all J2534 drivers on system
+make dev-register   # Register from build directory (no install)
+```
+
+The J2534 driver connects to ECUconnect devices at `192.168.42.42:129` (TCP) by default.
+
+Registry entries are created at:
+- `HKLM\SOFTWARE\PassThruSupport.04.04\ECUconnect` → ecuconnect64.dll (for 64-bit apps)
+- `HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04\ECUconnect` → ecuconnect32.dll (for 32-bit apps)
+
+**Important Implementation Notes:**
+- ECUconnect hardware supports only one active channel at a time; the driver returns `ERR_CHANNEL_IN_USE` if a second channel is requested
+- Raw CAN uses pass-all filtering (`replyMask=0`) to receive all CAN frames
+- The `setArbitration` command is sent on every `PassThruWriteMsgs` to update the request CAN ID while preserving the pass-all RX filter
+- `PASSTHRU_MSG` structure requires 1-byte packing (`#pragma pack(push, 1)`), but `SCONFIG` and `SCONFIG_LIST` use natural alignment (critical for 64-bit compatibility)
+
 ## Architecture Overview
 
 ### Three-Layer Structure
@@ -56,6 +89,18 @@ The project includes ESP-IDF support for deployment on ESP32 hardware. The CMake
    - Location: `Sources/Swift-CANyonero/`
    - Currently commented out in Package.swift
    - Requires Swift 5.9+ C++ interoperability mode
+
+4. **ecuconnect-j2534** (Windows J2534 Driver)
+   - Location: `Sources/ecuconnect-j2534/`
+   - Windows DLL implementing SAE J2534-1 API v04.04
+   - Standalone C++20 implementation with its own CANyonero protocol encoder/decoder
+   - Builds both 32-bit (`ecuconnect32.dll`) and 64-bit (`ecuconnect64.dll`)
+   - Raw CAN protocol with pass-all RX filtering
+   - Key components:
+     - `j2534_api.cpp`: J2534 API exports with exception handling
+     - `ecuconnect.cpp`: Device/channel manager with single-channel constraint
+     - `canyonero_protocol.cpp`: CANyonero PDU encoding/decoding and Arbitration serialization
+     - `transport_tcp.cpp`: TCP transport layer (connects to 192.168.42.42:129)
 
 ### Protocol Implementation
 

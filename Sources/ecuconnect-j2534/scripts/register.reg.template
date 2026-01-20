@@ -1,0 +1,47 @@
+Windows Registry Editor Version 5.00
+
+; ECUconnect J2534 Driver Registration
+; =====================================
+;
+; INSTRUCTIONS:
+; 1. Copy this file to register.reg
+; 2. Edit the FunctionLibrary paths below to match your DLL locations
+; 3. Double-click to import into registry (requires Administrator)
+;
+; NOTE: Use double backslashes (\\) in paths
+;
+; IMPORTANT: On 64-bit Windows, you need BOTH entries:
+;   - SOFTWARE\PassThruSupport.04.04 is read by 64-bit applications
+;   - SOFTWARE\WOW6432Node\PassThruSupport.04.04 is read by 32-bit applications
+;
+; Each entry should point to the matching architecture DLL!
+
+; ============================================================================
+; For 64-bit applications -> points to 64-bit DLL
+; ============================================================================
+[HKEY_LOCAL_MACHINE\SOFTWARE\PassThruSupport.04.04\ECUconnect]
+"Name"="ECUconnect"
+"Vendor"="ECUconnect"
+"FunctionLibrary"="C:\\Program Files\\ECUconnect\\J2534\\ecuconnect64.dll"
+"ConfigApplication"=""
+"CAN"=dword:00000001
+"ISO15765"=dword:00000000
+"ISO9141"=dword:00000000
+"ISO14230"=dword:00000000
+"J1850VPW"=dword:00000000
+"J1850PWM"=dword:00000000
+
+; ============================================================================
+; For 32-bit applications (WOW64) -> points to 32-bit DLL
+; ============================================================================
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PassThruSupport.04.04\ECUconnect]
+"Name"="ECUconnect"
+"Vendor"="ECUconnect"
+"FunctionLibrary"="C:\\Program Files\\ECUconnect\\J2534\\ecuconnect32.dll"
+"ConfigApplication"=""
+"CAN"=dword:00000001
+"ISO15765"=dword:00000000
+"ISO9141"=dword:00000000
+"ISO14230"=dword:00000000
+"J1850VPW"=dword:00000000
+"J1850PWM"=dword:00000000

@@ -1,0 +1,11 @@
+Windows Registry Editor Version 5.00
+
+; ECUconnect J2534 Driver Unregistration
+; =======================================
+;
+; Double-click to remove registry entries (requires Administrator)
+; This only removes registry entries, not the DLL files.
+
+[-HKEY_LOCAL_MACHINE\SOFTWARE\PassThruSupport.04.04\ECUconnect]
+
+[-HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\PassThruSupport.04.04\ECUconnect]

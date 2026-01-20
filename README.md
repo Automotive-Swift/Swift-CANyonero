@@ -33,6 +33,31 @@ The adapter runs CANyonerOS (FreeRTOS based) and exposes the CANyonero protocol 
 
 You can explore the exact field names and helper factories inside `Protocol.hpp`, which mirrors the documentation above in code form.
 
+## Windows J2534 Driver
+
+The `Sources/ecuconnect-j2534` directory contains a Windows J2534 (Pass-Thru) driver that enables any J2534-compatible application to communicate with ECUconnect hardware. This includes professional diagnostic tools, flash programmers, and custom applications.
+
+### Features
+
+- **SAE J2534-1 API v04.04** compliance for broad application compatibility
+- **Dual architecture**: Both 32-bit (`ecuconnect32.dll`) and 64-bit (`ecuconnect64.dll`) DLLs
+- **Raw CAN** protocol with pass-all filtering for diagnostic communication
+- **CANyonero protocol** over TCP (connects to ECUconnect at `192.168.42.42:129`)
+- **Single-channel constraint** matching ECUconnect hardware capabilities
+
+### Quick Start (Windows, Administrator required)
+
+```bash
+cd Sources/ecuconnect-j2534
+make install      # Build, install to Program Files, register in Windows Registry
+```
+
+The driver registers at:
+- `HKLM\SOFTWARE\PassThruSupport.04.04\ECUconnect` (for 64-bit applications)
+- `HKLM\SOFTWARE\WOW6432Node\PassThruSupport.04.04\ECUconnect` (for 32-bit applications)
+
+See `Sources/ecuconnect-j2534/README.md` for detailed build instructions, API usage examples, and architecture documentation.
+
 ## Tools
 
 `Sources/ecuconnect-tool` provides an interactive CLI for working with CANyonero hardware from macOS/Linux terminals. Launch it with:
