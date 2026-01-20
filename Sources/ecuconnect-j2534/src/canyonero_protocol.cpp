@@ -543,7 +543,8 @@ bool Protocol::endPeriodicMessage(uint8_t handle, uint32_t timeout_ms) {
         return false;
     }
 
-    return response->type() == PDUType::PeriodicMessageEnded;
+    return response->type() == PDUType::PeriodicMessageEnded
+        || response->type() == PDUType::Ok;
 }
 
 } // namespace ecuconnect

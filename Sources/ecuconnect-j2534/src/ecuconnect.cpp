@@ -11,6 +11,44 @@
 
 namespace ecuconnect {
 
+namespace {
+bool filter_matches_id(const Filter& filter, uint32_t can_id) {
+    return (can_id & filter.mask) == (filter.pattern & filter.mask);
+}
+
+bool arbitration_equals(const Arbitration& lhs, const Arbitration& rhs) {
+    return lhs.request == rhs.request
+        && lhs.replyPattern == rhs.replyPattern
+        && lhs.replyMask == rhs.replyMask
+        && lhs.requestExtension == rhs.requestExtension
+        && lhs.replyExtension == rhs.replyExtension;
+}
+
+bool message_passes_filters(const Channel& channel, uint32_t can_id) {
+    bool has_pass_filter = false;
+    bool pass_match = false;
+
+    for (const auto& [id, filter] : channel.filters) {
+        if (!filter.active) {
+            continue;
+        }
+
+        if (filter.type == PASS_FILTER) {
+            has_pass_filter = true;
+            if (filter_matches_id(filter, can_id)) {
+                pass_match = true;
+            }
+        } else if (filter.type == BLOCK_FILTER) {
+            if (filter_matches_id(filter, can_id)) {
+                return false;
+            }
+        }
+    }
+
+    return has_pass_filter ? pass_match : true;
+}
+} // namespace
+
 DeviceManager& DeviceManager::instance() {
     static DeviceManager instance;
     return instance;
@@ -257,26 +295,7 @@ void DeviceManager::pollMessages(Channel* channel, Device* device, uint32_t time
     auto frames = device->protocol->receiveMessages(timeout_ms);
 
     for (const auto& frame : frames) {
-        // Check if frame matches any filter
-        bool passesFilter = channel->filters.empty();  // No filters = pass all
-
-        for (const auto& [id, filter] : channel->filters) {
-            if (!filter.active) continue;
-
-            if (filter.type == PASS_FILTER) {
-                if ((frame.id & filter.mask) == (filter.pattern & filter.mask)) {
-                    passesFilter = true;
-                    break;
-                }
-            } else if (filter.type == BLOCK_FILTER) {
-                if ((frame.id & filter.mask) == (filter.pattern & filter.mask)) {
-                    passesFilter = false;
-                    break;
-                }
-            }
-        }
-
-        if (!passesFilter) {
+        if (!message_passes_filters(*channel, frame.id)) {
             continue;
         }
 
@@ -403,10 +422,13 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
         arb.replyMask = 0;  // Pass all incoming messages
         arb.replyExtension = 0;
 
-        // Set arbitration
-        if (!device->protocol->setArbitration(channel->ecuHandle, arb, timeout)) {
-            setLastError("Failed to set arbitration: " + device->protocol->getLastError());
-            return ERR_FAILED;
+        if (!channel->hasTxArb || !arbitration_equals(channel->lastTxArb, arb)) {
+            if (!device->protocol->setArbitration(channel->ecuHandle, arb, timeout)) {
+                setLastError("Failed to set arbitration: " + device->protocol->getLastError());
+                return ERR_FAILED;
+            }
+            channel->lastTxArb = arb;
+            channel->hasTxArb = true;
         }
 
         // Extract data portion
@@ -421,9 +443,12 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
         (*numMsgs)++;
 
         // Handle loopback
-        if (channel->loopback) {
+        if (channel->loopback && message_passes_filters(*channel, canId)) {
             PASSTHRU_MSG loopbackMsg = msg;
             loopbackMsg.RxStatus = TX_MSG_TYPE;
+            if (msg.TxFlags & CAN_29BIT_ID) {
+                loopbackMsg.RxStatus |= CAN_29BIT_ID;
+            }
             loopbackMsg.Timestamp = static_cast<unsigned long>(
                 std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::steady_clock::now().time_since_epoch()
@@ -514,8 +539,13 @@ long DeviceManager::stopPeriodicMsg(unsigned long channelId, unsigned long msgId
     }
 
     if (!device->protocol->endPeriodicMessage(it->second, 1000)) {
-        setLastError("Failed to stop periodic message: " + device->protocol->getLastError());
-        return ERR_FAILED;
+        const auto last_error = device->protocol->getLastError();
+        if (!device->protocol->endPeriodicMessage(0, 1000)) {
+            setLastError("Failed to stop periodic message: " + last_error);
+            return ERR_FAILED;
+        }
+        channel->periodicMessages.clear();
+        return STATUS_NOERROR;
     }
 
     channel->periodicMessages.erase(it);
@@ -633,7 +663,13 @@ long DeviceManager::ioctl(unsigned long channelId, unsigned long ioctlId,
 
     // Handle device-level IOCTLs (channelId = 0 means device ID)
     if (ioctlId == READ_VBATT || ioctlId == READ_PROG_VOLTAGE) {
-        auto device = getDevice(channelId);  // channelId is actually deviceId for these
+        auto device = getDevice(channelId);  // Some callers pass deviceId, others pass channelId.
+        if (!device) {
+            auto devIt = channelToDevice_.find(channelId);
+            if (devIt != channelToDevice_.end()) {
+                device = getDevice(devIt->second);
+            }
+        }
         if (!device) {
             setLastError("Invalid device ID");
             return ERR_INVALID_DEVICE_ID;

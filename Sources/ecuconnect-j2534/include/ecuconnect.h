@@ -51,6 +51,8 @@ struct Channel {
     // Configuration
     bool loopback = false;
     uint32_t dataRate = 500000;
+    bool hasTxArb = false;
+    Arbitration lastTxArb{};
 };
 
 /**
