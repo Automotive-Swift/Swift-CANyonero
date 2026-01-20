@@ -12,6 +12,7 @@
 #include <mutex>
 #include <queue>
 #include <atomic>
+#include <vector>
 
 namespace ecuconnect {
 
@@ -22,6 +23,8 @@ struct Filter {
     unsigned long type;
     uint32_t mask;
     uint32_t pattern;
+    std::vector<uint8_t> maskBytes;
+    std::vector<uint8_t> patternBytes;
     uint32_t flowControlId;
     bool active = false;
 };
