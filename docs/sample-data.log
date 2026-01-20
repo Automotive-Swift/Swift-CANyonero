@@ -1,0 +1,1019 @@
+No trace log requested.
+ScenePhase inactive => active
+2026-01-20 09:57:06.397 [CornucopiaSUI:ObservableReachability] <0> (T) Path satisfied via [en0, en0, pdp_ip0], gateways: [192.168.1.1:0]
+2026-01-20 09:57:06.406 [CornucopiaCore:Keychain] <1> (D) Created Cornucopia.Core.Keychain(service: 'de.schaknat.flasher')
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:57:07.883 [CornucopiaCore:JWT] <1> (N) Can't decode JWT payload into Payload
+2026-01-20 09:57:07.883 [CornucopiaCore:JWT] <1> (N) Can't decode JWT payload into Payload
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:57:11.337 [Schaknat:Session] <0> (D) Loaded 14 vehicles for user
+2026-01-20 09:57:11.714 [Schaknat:VCM] <0> (T) VCM now has state idle, showing adapter info: false
+[Sentry] [fatal] [1768899431.736212] [SentrySDKInternal:511] The SDK is disabled, so addBreadcrumb doesn't work. Please ensure to start the SDK before adding breadcrumbs.
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C1.1.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+Ignoring VCM state: idle
+Called -[UIContextMenuInteraction updateVisibleMenuWithBlock:] while no context menu is visible. This won't do anything.
+Adding '_UIReparentingView' as a subview of UIHostingController.view is not supported and may result in a broken view hierarchy. Add your view above UIHostingController.view in a common superview or insert it into your SwiftUI content in a UIViewRepresentable instead.
+Adding '_UIReparentingView' as a subview of UIHostingController.view is not supported and may result in a broken view hierarchy. Add your view above UIHostingController.view in a common superview or insert it into your SwiftUI content in a UIViewRepresentable instead.
+Adding '_UIReparentingView' as a subview of UIHostingController.view is not supported and may result in a broken view hierarchy. Add your view above UIHostingController.view in a common superview or insert it into your SwiftUI content in a UIViewRepresentable instead.
+<0x11e235b80> Gesture: System gesture gate timed out.
+nw_socket_copy_info [C1.1.1.1.1:3] Can't get TCP_INFO on a multipath socket
+nw_socket_copy_info [C1.1.1.1.1:3] Can't get TCP_CONNECTION_INFO on a multipath socket
+2026-01-20 09:58:34.745 [Schaknat:VCM] <0> (T) VCM now has state idle, showing adapter info: false
+[Sentry] [fatal] [1768899514.751821] [SentrySDKInternal:511] The SDK is disabled, so addBreadcrumb doesn't work. Please ensure to start the SDK before adding breadcrumbs.
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:34.858 [CornucopiaCore:BLE] <2> (T) BLE authorization status now granted
+Ignoring VCM state: waitingForAdapter
+2026-01-20 09:58:34.858 [Schaknat:VCM] <0> (T) VCM now has state waitingForAdapter, showing adapter info: true
+2026-01-20 09:58:34.863 [Swift-Automotive:BaseAdapter] <2> (D) AdapterState now searching
+2026-01-20 09:58:34.863 [Schaknat:VCM] <2> (D) adapter now searching
+2026-01-20 09:58:34.876 [CornucopiaStreams:BLEConnector] <0> (T) CBCentralManager state now CBManagerState(rawValue: 5)
+2026-01-20 09:58:35.231 [CornucopiaStreams:BLEConnector] <0> (T) CBCentralManager did discover <CBPeripheral: 0x11f57d6c0, identifier = 655910F1-4DD1-88A2-A411-D622D64B7A62, name = nimble, mtu = 0, state = disconnected>
+2026-01-20 09:58:35.882 [CornucopiaStreams:BLEConnector] <0> (T) CBCentralManager did connect <CBPeripheral: 0x11f57d6c0, identifier = 655910F1-4DD1-88A2-A411-D622D64B7A62, name = nimble, mtu = 23, state = connected>
+2026-01-20 09:58:36.236 [CornucopiaStreams:BLEConnector] <3> (D) <_TtCOE17CornucopiaStreamsO14CornucopiaCore10Cornucopia7Streams12BLEConnector: 0x11f3a3930> destroyed
+2026-01-20 09:58:36.238 [Swift-Automotive:ECUconnect-Adapter] <3> (D) Streams connected...
+2026-01-20 09:58:36.238 [Swift-Automotive:AsyncStreamThread] <4> (T) Entering runloop
+2026-01-20 09:58:36.240 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.240 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [open completed]
+2026-01-20 09:58:36.240 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [open completed]
+2026-01-20 09:58:36.240 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.241 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 11 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.241 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.241 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.413 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.414 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 51 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 91 00 2F 56 61 6E 69 6C 6C 65 2D 4D 65 64 69││.../Vanille-Medi│
+│00000010││61 0A 45 43 55 63 6F 6E 6E 65 63 74 0A 53 33 2F││a.ECUconnect.S3/│
+│00000020││56 32 0A 45 41 35 42 45 30 0A 30 2E 38 2E 30 2E││V2.EA5BE0.0.8.0.│
+│00000030││34 32 38                                       ││428             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.415 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.427 [Swift-Automotive:BaseAdapter] <2> (D) AdapterState now identified(Vanille-Media ECUconnect, S3/V2, EA5BE0, 0.8.0.428)
+2026-01-20 09:58:36.427 [Schaknat:VCM] <2> (D) adapter now identified(Vanille-Media ECUconnect, S3/V2, EA5BE0, 0.8.0.428)
+2026-01-20 09:58:36.427 [Swift-Automotive:AsyncStreamCommand] <2> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.427 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.427 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 10 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 30 00 06 01 00 07 A1 20 00                  ││.0...... .      │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.427 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.427 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.444 [Schaknat:VCM] <0> (T) VCM now has state waitingForAnyECU, showing adapter info: true
+Ignoring VCM state: waitingForAnyECU
+2026-01-20 09:58:36.533 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.533 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 5 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B0 00 01 00                                 ││.....           │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.534 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.536 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.536 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA 00 F9 00 18 DA F9 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.536 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.536 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.593 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.594 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.654 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.654 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.655 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.655 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 12 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 08 00 18 DA F9 00 00 7E 00            ││..........~.    │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.657 [Swift-Automotive:ECUconnect-Adapter] <3> (D) Command finished [0122 ms]: 18DA00F9 [1] 3E -> 18DAF900 [2] 7E00
+2026-01-20 09:58:36.657 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:36.657 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.657 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.679 [Swift-Automotive:BaseAdapter] <3> (D) AdapterState now connected(CAN 29B (500K), [18DAF900 [2] 7E 00])
+2026-01-20 09:58:36.679 [Schaknat:VCM] <3> (D) adapter now connected(CAN 29B (500K), [18DAF900 [2] 7E 00])
+2026-01-20 09:58:36.684 [Schaknat:VCM] <0> (T) VCM now has state analyzing, showing adapter info: false
+2026-01-20 09:58:36.699 [Swift-Automotive:Pipeline] <5> (D) Automotive Pipeline with adapter Swift_Automotive_Adapter.ECUconnect.Adapter ready.
+[Sentry] [fatal] [1768899516.702043] [SentrySDKInternal:511] The SDK is disabled, so addBreadcrumb doesn't work. Please ensure to start the SDK before adding breadcrumbs.
+2026-01-20 09:58:36.708 [Schaknat:VCM] <5> (D) Trying to identify ECU EMS S6 with arbitration <Arbitration[can]: 18DA00F9 -> 18DAF900 (0)>
+2026-01-20 09:58:36.716 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:36.719 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:36.720 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:36.720 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:36.722 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:36.722 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:36 +0000
+2026-01-20 09:58:36.730 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:36.730 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:36.730 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.730 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.730 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.730 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.775 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.775 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 16 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00 1F B2 00 08 00 18 DA F9 00 00 7E 00││..............~.│
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.775 [Swift-Automotive:ECUconnect-Adapter] <5> (D) Command finished [0045 ms]: 18DA00F9 [1] 3E -> 18DAF900 [2] 7E00
+2026-01-20 09:58:36.775 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:36.775 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.775 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.775 [TPELibrary:Step] <5> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:36.778 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 1)
+2026-01-20 09:58:36.778 [TPELibrary:Executor] <5> (I) Executing Step 2/2: KWPReadEcuIdentification
+2026-01-20 09:58:36.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.778 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 97                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.834 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.834 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.835 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.835 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 27 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 17 00 18 DA F9 00 00 5A 97 45 4D 53 20││..........Z.EMS │
+│00000010││53 38 20 20 44 43 31 33 31 32 35               ││S8  DC13125     │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.835 [Swift-Automotive:ECUconnect-Adapter] <3> (D) Command finished [0057 ms]: 18DA00F9 [2] 1A97 -> 18DAF900 [17] 5A97454D53205338202044433133313235
+2026-01-20 09:58:36.835 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:36.835 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.835 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.836 [TPELibrary:Step] <3> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:36.836 [TPELibrary:Executor] <3> (I) Completed Manifest Execution at 2026-01-20 08:58:36 +0000 ­­– Duration: 0.11655497550964355
+2026-01-20 09:58:36.836 [TPELibrary:Executor] <3> (D) Executor State now completed
+2026-01-20 09:58:36.837 [Schaknat:VCM] <3> (D) Match identifier ECUINFO value EMS S8  DC13125 does not match, skipping.
+2026-01-20 09:58:36.837 [Schaknat:VCM] <3> (D) ECU EMS S6 does not match with task Identify. Trying next one.
+2026-01-20 09:58:36.837 [Schaknat:VCM] <3> (D) ECU EMS S6 does not match at all. Trying the next one.
+2026-01-20 09:58:36.837 [Schaknat:VCM] <3> (D) Trying to identify ECU EMS S10 with arbitration <Arbitration[can]: 1CDA00FA -> 1CDAFA00 (0)>
+2026-01-20 09:58:36.837 [TPELibrary:Executor] <3> (I) Computing Steps...
+2026-01-20 09:58:36.837 [TPELibrary:Manifest+Factory] <3> (D) Processing step Identify EMS S10.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:36.837 [TPELibrary:Manifest+Factory] <3> (D) Processing step Identify EMS S10.ECUINFO w/ command ReadDataByIdentifier...
+2026-01-20 09:58:36.838 [TPELibrary:Executor] <3> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:36.838 [TPELibrary:Executor] <3> (D) Executor State now started
+2026-01-20 09:58:36.838 [TPELibrary:Executor] <3> (I) Started Manifest Execution at 2026-01-20 08:58:36 +0000
+2026-01-20 09:58:36.838 [TPELibrary:Executor] <3> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:36.838 [TPELibrary:Executor] <3> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:36.838 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.838 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 1C DA 00 FA 00 1C DA FA 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.838 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.838 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.893 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 3E 00                           ││.3...>.         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:36.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:36.985 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:36.985 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+Ignoring VCM state: analyzing
+2026-01-20 09:58:37.907 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:37.907 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:37.907 [Swift-Automotive:AsyncStreamCommand] <5> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:37.924 [Schaknat:VCM] <5> (D) Could not validate or execute task Identify EMS S10: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:37.924 [Schaknat:VCM] <5> (D) ECU EMS S10 does not match at all. Trying the next one.
+2026-01-20 09:58:37.924 [Schaknat:VCM] <5> (D) Trying to identify ECU EMS S8 with arbitration <Arbitration[can]: 18DA00F9 -> 18DAF900 (0)>
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:37.924 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify EMS S8.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:37.924 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify EMS S8.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:37 +0000
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:37.924 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:37.924 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:37.924 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA 00 F9 00 18 DA F9 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:37.925 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:37.925 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:37.975 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.033 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.034 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 12 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 08 00 18 DA F9 00 00 7E 00            ││..........~.    │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.035 [Swift-Automotive:ECUconnect-Adapter] <5> (D) Command finished [0111 ms]: 18DA00F9 [1] 3E -> 18DAF900 [2] 7E00
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.035 [TPELibrary:Step] <5> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.035 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 1)
+2026-01-20 09:58:38.035 [TPELibrary:Executor] <5> (I) Executing Step 2/2: KWPReadEcuIdentification
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 97                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.035 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.094 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.094 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.095 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.095 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 27 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 17 00 18 DA F9 00 00 5A 97 45 4D 53 20││..........Z.EMS │
+│00000010││53 38 20 20 44 43 31 33 31 32 35               ││S8  DC13125     │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.095 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0060 ms]: 18DA00F9 [2] 1A97 -> 18DAF900 [17] 5A97454D53205338202044433133313235
+2026-01-20 09:58:38.095 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.095 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.095 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.095 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.095 [TPELibrary:Executor] <6> (I) Completed Manifest Execution at 2026-01-20 08:58:38 +0000 ­­– Duration: 0.17112696170806885
+2026-01-20 09:58:38.095 [TPELibrary:Executor] <6> (D) Executor State now completed
+2026-01-20 09:58:38.095 [Schaknat:VCM] <6> (D) ECU EMS S8 [EMS S8  DC13125] successfully detected, returning
+2026-01-20 09:58:38.095 [TPELibrary:Executor] <6> (I) Computing Steps...
+2026-01-20 09:58:38.095 [TPELibrary:Manifest+Factory] <6> (D) Processing step Identify EMS S8.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:38.095 [TPELibrary:Manifest+Factory] <6> (D) Processing step Identify EMS S8.CAL w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.095 [TPELibrary:Manifest+Factory] <6> (D) Processing step Identify EMS S8.SERIAL_NUMBER w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.095 [TPELibrary:Manifest+Factory] <6> (D) Processing step Identify EMS S8.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.095 [TPELibrary:Manifest+Factory] <6> (D) Processing step Identify EMS S8.VIN w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.096 [TPELibrary:Executor] <6> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:38.096 [TPELibrary:Executor] <6> (D) Executor State now started
+2026-01-20 09:58:38.096 [TPELibrary:Executor] <6> (I) Started Manifest Execution at 2026-01-20 08:58:38 +0000
+2026-01-20 09:58:38.096 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:38.096 [TPELibrary:Executor] <6> (I) Executing Step 1/5: TesterPresent
+2026-01-20 09:58:38.096 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.096 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.096 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.096 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.154 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.154 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.155 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.155 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 12 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 08 00 18 DA F9 00 00 7E 00            ││..........~.    │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.155 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0060 ms]: 18DA00F9 [1] 3E -> 18DAF900 [2] 7E00
+2026-01-20 09:58:38.155 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.155 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.155 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.155 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.156 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 1)
+2026-01-20 09:58:38.156 [TPELibrary:Executor] <6> (I) Executing Step 2/5: KWPReadEcuIdentification
+2026-01-20 09:58:38.156 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.156 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A A2                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.156 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.156 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.244 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.244 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.245 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.245 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 0F 00 18 DA F9 00 00 5A A2 32 37 38 31││..........Z.2781│
+│00000010││36 34 32                                       ││642             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.245 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0090 ms]: 18DA00F9 [2] 1AA2 -> 18DAF900 [9] 5AA232373831363432
+2026-01-20 09:58:38.245 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.245 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.245 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.246 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.246 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 2)
+2026-01-20 09:58:38.246 [TPELibrary:Executor] <6> (I) Executing Step 3/5: KWPReadEcuIdentification
+2026-01-20 09:58:38.246 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.246 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 8C                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.246 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.246 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 25 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00 1F B2 00 11 00 18 DA F9 00 00 5A 8C││..............Z.│
+│00000010││31 35 33 30 33 30 32 37 32                     ││153030272       │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.305 [Swift-Automotive:ECUconnect-Adapter] <2> (D) Command finished [0059 ms]: 18DA00F9 [2] 1A8C -> 18DAF900 [11] 5A8C313533303330323732
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.305 [TPELibrary:Step] <2> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.305 [TPELibrary:Executor] <2> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 3)
+2026-01-20 09:58:38.305 [TPELibrary:Executor] <2> (I) Executing Step 4/5: KWPReadEcuIdentification
+2026-01-20 09:58:38.305 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.306 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 97                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.306 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.306 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.364 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.364 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.365 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.365 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 27 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 17 00 18 DA F9 00 00 5A 97 45 4D 53 20││..........Z.EMS │
+│00000010││53 38 20 20 44 43 31 33 31 32 35               ││S8  DC13125     │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.365 [Swift-Automotive:ECUconnect-Adapter] <5> (D) Command finished [0060 ms]: 18DA00F9 [2] 1A97 -> 18DAF900 [17] 5A97454D53205338202044433133313235
+2026-01-20 09:58:38.365 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.365 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.365 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.366 [TPELibrary:Step] <5> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.366 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 4)
+2026-01-20 09:58:38.366 [TPELibrary:Executor] <5> (I) Executing Step 5/5: KWPReadEcuIdentification
+2026-01-20 09:58:38.366 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.366 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 90                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.366 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.366 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.424 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.424 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.425 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.425 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 29 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 19 00 18 DA F9 00 00 5A 90 59 53 32 52││..........Z.YS2R│
+│00000010││36 58 34 30 30 30 35 34 31 32 37 33 35         ││6X40005412735   │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.425 [Swift-Automotive:ECUconnect-Adapter] <3> (D) Command finished [0059 ms]: 18DA00F9 [2] 1A90 -> 18DAF900 [19] 5A905953325236583430303035343132373335
+2026-01-20 09:58:38.425 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:38.425 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.425 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.425 [TPELibrary:Step] <3> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:38.426 [TPELibrary:Executor] <3> (I) Completed Manifest Execution at 2026-01-20 08:58:38 +0000 ­­– Duration: 0.33001601696014404
+2026-01-20 09:58:38.426 [TPELibrary:Executor] <3> (D) Executor State now completed
+2026-01-20 09:58:38.433 [Schaknat:VCM] <3> (D) Trying to identify ECU EMS EMD1 with arbitration <Arbitration[can]: 1CDA00F9 -> 1CDAF900 (0)>
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (I) Computing Steps...
+2026-01-20 09:58:38.433 [TPELibrary:Manifest+Factory] <3> (D) Processing step Identify EMS EMD1.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:38.433 [TPELibrary:Manifest+Factory] <3> (D) Processing step Identify EMS EMD1.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.433 [TPELibrary:Manifest+Factory] <3> (D) Processing step Identify EMS EMD1.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (D) Executor State now started
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (I) Started Manifest Execution at 2026-01-20 08:58:38 +0000
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:38.433 [TPELibrary:Executor] <3> (I) Executing Step 1/3: TesterPresent
+2026-01-20 09:58:38.433 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.434 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 1C DA 00 F9 00 1C DA F9 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.434 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.434 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.483 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:38.484 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:38.543 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:38.544 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.485 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:39.486 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.486 [Swift-Automotive:AsyncStreamCommand] <2> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.486 [TPELibrary:Executor] <2> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:39.486 [TPELibrary:Executor] <2> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:39.486 [Schaknat:VCM] <2> (D) Could not validate or execute task Identify EMS EMD1: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:39.486 [Schaknat:VCM] <2> (D) Trying to identify ECU EMS EMD1 with arbitration <Arbitration[can]: 18DA00F9 -> 18DAF900 (0)>
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (I) Computing Steps...
+2026-01-20 09:58:39.487 [TPELibrary:Manifest+Factory] <2> (D) Processing step Identify EMS EMD1.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:39.487 [TPELibrary:Manifest+Factory] <2> (D) Processing step Identify EMS EMD1.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:39.487 [TPELibrary:Manifest+Factory] <2> (D) Processing step Identify EMS EMD1.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (D) Executor State now started
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (I) Started Manifest Execution at 2026-01-20 08:58:39 +0000
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:39.487 [TPELibrary:Executor] <2> (I) Executing Step 1/3: TesterPresent
+2026-01-20 09:58:39.487 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.488 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA 00 F9 00 18 DA F9 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.488 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.488 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.533 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.534 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.594 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.594 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.595 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.595 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 12 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 08 00 18 DA F9 00 00 7E 00            ││..........~.    │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.595 [Swift-Automotive:ECUconnect-Adapter] <5> (D) Command finished [0108 ms]: 18DA00F9 [1] 3E -> 18DAF900 [2] 7E00
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.596 [TPELibrary:Step] <5> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:39.596 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 1)
+2026-01-20 09:58:39.596 [TPELibrary:Executor] <5> (I) Executing Step 2/3: KWPReadEcuIdentification
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 97                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.596 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.654 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.654 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.655 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.655 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 27 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 17 00 18 DA F9 00 00 5A 97 45 4D 53 20││..........Z.EMS │
+│00000010││53 38 20 20 44 43 31 33 31 32 35               ││S8  DC13125     │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.655 [Swift-Automotive:ECUconnect-Adapter] <2> (D) Command finished [0059 ms]: 18DA00F9 [2] 1A97 -> 18DAF900 [17] 5A97454D53205338202044433133313235
+2026-01-20 09:58:39.655 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.656 [TPELibrary:Step] <2> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:39.656 [TPELibrary:Executor] <2> (D) Executor State now executing(TPELibrary.TPE.KWPReadEcuIdentification, atIndex: 2)
+2026-01-20 09:58:39.656 [TPELibrary:Executor] <2> (I) Executing Step 3/3: KWPReadEcuIdentification
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 1A 97                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.656 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.714 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.714 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.715 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.715 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 27 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 17 00 18 DA F9 00 00 5A 97 45 4D 53 20││..........Z.EMS │
+│00000010││53 38 20 20 44 43 31 33 31 32 35               ││S8  DC13125     │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.715 [Swift-Automotive:ECUconnect-Adapter] <2> (D) Command finished [0059 ms]: 18DA00F9 [2] 1A97 -> 18DAF900 [17] 5A97454D53205338202044433133313235
+2026-01-20 09:58:39.716 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:39.716 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.716 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.716 [TPELibrary:Step] <2> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:39.716 [TPELibrary:Executor] <2> (I) Completed Manifest Execution at 2026-01-20 08:58:39 +0000 ­­– Duration: 0.22889602184295654
+2026-01-20 09:58:39.716 [TPELibrary:Executor] <2> (D) Executor State now completed
+2026-01-20 09:58:39.716 [Schaknat:VCM] <2> (D) Match identifier ECUINFO value EMS S8  DC13125 does not match, skipping.
+2026-01-20 09:58:39.716 [Schaknat:VCM] <2> (D) ECU EMS EMD1 does not match with task Identify EMS EMD1. Trying next one.
+2026-01-20 09:58:39.716 [Schaknat:VCM] <2> (D) ECU EMS EMD1 does not match at all. Trying the next one.
+2026-01-20 09:58:39.716 [Schaknat:VCM] <5> (D) Trying to identify ECU TMS TMS3 with arbitration <Arbitration[can]: 1CDADCFA -> 1CDAFADC (0)>
+2026-01-20 09:58:39.716 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:39.717 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS3.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:39.717 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS3.ECUINFO w/ command ReadDataByIdentifier...
+2026-01-20 09:58:39.717 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:39.717 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:39.717 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:39 +0000
+2026-01-20 09:58:39.717 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:39.717 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:39.717 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.717 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 1C DA DC FA 00 1C DA FA DC FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.717 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.717 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.773 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 3E 00                           ││.3...>.         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:39.774 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:39.833 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:39.834 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:40.776 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:40.776 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:40.776 [Swift-Automotive:AsyncStreamCommand] <3> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:40.776 [TPELibrary:Executor] <3> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:40.776 [TPELibrary:Executor] <3> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:40.776 [Schaknat:VCM] <3> (D) Could not validate or execute task Identify TMS3: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:40.776 [Schaknat:VCM] <3> (D) ECU TMS TMS3 does not match at all. Trying the next one.
+2026-01-20 09:58:40.777 [Schaknat:VCM] <5> (D) Trying to identify ECU TMS OPC5 with arbitration <Arbitration[can]: 18DA03F9 -> 18DAF903 (0)>
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:40.777 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify OPC5.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:40.777 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify OPC5.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:40 +0000
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:40.777 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:40.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:40.778 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA 03 F9 00 18 DA F9 03 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:40.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:40.778 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:40.823 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:40.824 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:40.884 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:40.884 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:41.826 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:41.826 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:41.826 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:41.826 [TPELibrary:Executor] <2> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:41.826 [TPELibrary:Executor] <2> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:41.826 [Schaknat:VCM] <2> (D) Could not validate or execute task Identify OPC5: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:41.826 [Schaknat:VCM] <2> (D) ECU TMS OPC5 does not match at all. Trying the next one.
+2026-01-20 09:58:41.827 [Schaknat:VCM] <5> (D) Trying to identify ECU TMS TMS2 with arbitration <Arbitration[can]: 1CDADCFA -> 1CDAFADC (0)>
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:41.827 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS2.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:41.827 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS2.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:41 +0000
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:41.827 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:41.828 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:41.828 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 1C DA DC FA 00 1C DA FA DC FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:41.828 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:41.828 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:41.875 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:41.875 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:41.875 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:41.875 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:41.875 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:41.876 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:41.876 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:41.876 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:41.935 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:41.935 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:42.877 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:42.877 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:42.877 [Swift-Automotive:AsyncStreamCommand] <5> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:42.877 [TPELibrary:Executor] <5> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:42.878 [TPELibrary:Executor] <5> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:42.878 [Schaknat:VCM] <5> (D) Could not validate or execute task Identify TMS2: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:42.878 [Schaknat:VCM] <5> (D) ECU TMS TMS2 does not match at all. Trying the next one.
+2026-01-20 09:58:42.878 [Schaknat:VCM] <5> (D) Trying to identify ECU TMS TMS1 with arbitration <Arbitration[can]: 18DADCFA -> 18DAFADC (0)>
+2026-01-20 09:58:42.878 [TPELibrary:Executor] <5> (I) Computing Steps...
+2026-01-20 09:58:42.878 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS1.TesterPresent w/ command TesterPresent...
+2026-01-20 09:58:42.878 [TPELibrary:Manifest+Factory] <5> (D) Processing step Identify TMS1.ECUINFO w/ command KWPReadEcuIdentification...
+2026-01-20 09:58:42.878 [TPELibrary:Executor] <5> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:42.878 [TPELibrary:Executor] <5> (D) Executor State now started
+2026-01-20 09:58:42.878 [TPELibrary:Executor] <5> (I) Started Manifest Execution at 2026-01-20 08:58:42 +0000
+2026-01-20 09:58:42.879 [TPELibrary:Executor] <5> (D) Executor State now executing(TPELibrary.TPE.TesterPresent, atIndex: 0)
+2026-01-20 09:58:42.879 [TPELibrary:Executor] <5> (I) Executing Step 1/2: TesterPresent
+2026-01-20 09:58:42.879 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:42.879 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA DC FA 00 18 DA FA DC FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:42.879 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:42.879 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:42.953 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 6 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 02 00 3E                              ││.3...>          │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:42.954 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:43.015 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:43.015 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:43.956 [Swift-Automotive:AsyncStreamCommand] <4> (D) Did not receive final response within seconds(1)
+2026-01-20 09:58:43.956 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:43.956 [Swift-Automotive:AsyncStreamCommand] <2> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:43.956 [TPELibrary:Executor] <2> (D) Executor State now failed(at: TPELibrary.TPE.TesterPresent, with: Swift_Automotive_Core.Automotive.Error.noResponseFromBus("Did not receive final response within seconds(1)"))
+2026-01-20 09:58:43.956 [TPELibrary:Executor] <2> (I) Failed Manifest Execution at step TPELibrary.TPE.TesterPresent w/ error: noResponseFromBus("Did not receive final response within seconds(1)")
+2026-01-20 09:58:43.956 [Schaknat:VCM] <2> (D) Could not validate or execute task Identify TMS1: noResponseFromBus("Did not receive final response within seconds(1)"), skipping.
+2026-01-20 09:58:43.956 [Schaknat:VCM] <2> (D) ECU TMS TMS1 does not match at all. Trying the next one.
+2026-01-20 09:58:43.993 [CornucopiaHTTP:OOPNetworking] <2> (D) Launched POST of a 'DebugLog' to https://sn.app-backend.eu/api/v1/user/debug_log. Outstanding tasks: 1
+2026-01-20 09:58:44.001 [Swift-Automotive:Pipeline] <6> (D) Shutting down pipeline…
+2026-01-20 09:58:44.002 [Swift-Automotive:Pipeline] <6> (D) Pipeline shutdown completed.
+2026-01-20 09:58:44.009 [Schaknat:VCM] <0> (T) VCM now has state identified, showing adapter info: false
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:44.071 [CornucopiaHTTP:OOPNetworking] <7> (T) Did receive URL authentication challenge w/ method 'NSURLAuthenticationMethodServerTrust. Host sn.app-backend.eu:443', Realm N/A
+2026-01-20 09:58:44.071 [CornucopiaHTTP:OOPNetworking] <7> (T) Auth method is not NSURLAuthenticationMethodClientCertificate, using default handling
+2026-01-20 09:58:44.080 [CornucopiaHTTP:OOPNetworking] <7> (T) Did receive URL authentication challenge w/ method 'NSURLAuthenticationMethodClientCertificate. Host sn.app-backend.eu:443', Realm N/A
+2026-01-20 09:58:44.080 [CornucopiaHTTP:OOPNetworking] <7> (T) Supplying provided identity
+2026-01-20 09:58:44.177 [CornucopiaHTTP:OOPNetworking] <6> (I) Task BackgroundUploadTask <55B2951C-4DEE-40E2-8B25-25E6B39568AB>.<1> finished
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:44.453 [Schaknat:Session] <0> (D) Loaded 14 vehicles for user
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:44.846 [Schaknat:Session] <0> (D) Loaded 14 vehicles for user
+2026-01-20 09:58:47.601 [Schaknat:VCM] <0> (T) VCM now has state identified, showing adapter info: false
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+Ignoring VCM state: identified
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+Errors found! Invalidating cache...
+Errors found! Invalidating cache...
+2026-01-20 09:58:57.415 [Schaknat:VCM] <0> (I) Performing TaskCommand(adapterKinds: [TPELibrary.TPE.Manifest.Adapter.Kind.can], manifestKey: "bm9ybWFsX2NvZGluZ18yXzYyXzBfMF8wXzBfMF9mZjQ3ODA2MC00ZTFkLTRkNmUtYmE4NS00YWQ0MGUwZDcyOGM=", versionTitle: "Codierung Power", versionDescription: "", taskDescription: "", disclaimer: nil, _generalHints: CornucopiaCore.Cornucopia.Core.Default<CornucopiaCore.Cornucopia.Core.Empty<Swift.Array<Schaknat.API.TaskCommand.GeneralHint>>>(wrappedValue: [Schaknat.API.TaskCommand.GeneralHint.airconditionerOff, Schaknat.API.TaskCommand.GeneralHint.carPlayOff, Schaknat.API.TaskCommand.GeneralHint.ignitionOn, Schaknat.API.TaskCommand.GeneralHint.noAppSwitching, Schaknat.API.TaskCommand.GeneralHint.noPhoneCall, Schaknat.API.TaskCommand.GeneralHint.transmissionPark, Schaknat.API.TaskCommand.GeneralHint.atHome]), _stageHints: CornucopiaCore.Cornucopia.Core.Default<CornucopiaCore.Cornucopia.Core.Empty<Swift.Array<Schaknat.API.TaskCommand.StageHint>>>(wrappedValue: []), _isBeta: CornucopiaCore.Cornucopia.Core.Default<CornucopiaCore.Cornucopia.Core.False>(wrappedValue: false), _isCurrent: CornucopiaCore.Cornucopia.Core.Default<CornucopiaCore.Cornucopia.Core.False>(wrappedValue: false)) on ECU <ECUStateModel: Engine control unit, EMS S8  DC13125 w/ 2781642, YS2R6X40005412735, ["VIN", "CAL", "SERIAL_NUMBER", "ECUINFO"]>
+2026-01-20 09:58:57.448 [Schaknat:VCM] <0> (T) VCM now has state executing, showing adapter info: false
+2026-01-20 09:58:57.448 [Swift-Automotive:Pipeline] <8> (D) Automotive Pipeline with adapter Swift_Automotive_Adapter.ECUconnect.Adapter ready.
+2026-01-20 09:58:57.449 [TPELibrary:Executor] <8> (I) Computing Steps...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Create history started entry.HTTPPostCall w/ command ExecuteHttpPostApiCall...
+2026-01-20 09:58:57.449 [Schaknat:VCM] <8> (I) Should create uploader for /user/flash_history/1109
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Configuring Pipeline & Adapter... w/ command ConfigurePipeline...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Wait for 200ms to avoid getting no answer from ECU. w/ command Wait...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.kwpDefault Session w/ command DiagnosticSessionControl...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Wait for 200ms to avoid getting no answer from ECU. w/ command Wait...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Wait for 200ms to avoid getting no answer from ECU. w/ command Wait...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.kwpDevelopment Session w/ command DiagnosticSessionControl...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Wait for 200ms to avoid getting no answer from ECU. w/ command Wait...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Seed anfordern w/ command SecurityAccess...
+2026-01-20 09:58:57.449 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Key senden w/ command SecurityAccess...
+2026-01-20 09:58:57.452 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Getriebebegrenzer lesen w/ command ReadDataByIdentifier...
+2026-01-20 09:58:57.452 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Getriebebegrenzer modifizieren w/ command ModifyStore...
+2026-01-20 09:58:57.452 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.Getriebebegrenzer schreiben w/ command WriteDataByIdentifier...
+2026-01-20 09:58:57.452 [TPELibrary:Manifest+Factory] <8> (D) Processing step Codierung Power.ECUReset w/ command ECUReset...
+2026-01-20 09:58:57.452 [TPELibrary:Manifest+Factory] <8> (D) Processing step Create history finished entry.HTTPPostCall w/ command ExecuteHttpPostApiCall...
+2026-01-20 09:58:57.452 [Schaknat:VCM] <8> (I) Should create uploader for /user/flash_history/1109
+2026-01-20 09:58:57.452 [TPELibrary:Executor] <8> (I) Steps computed. Manifest syntactically and semantically valid.
+2026-01-20 09:58:57.452 [TPELibrary:Executor] <8> (D) Executor State now started
+2026-01-20 09:58:57.452 [TPELibrary:Executor] <8> (I) Started Manifest Execution at 2026-01-20 08:58:57 +0000
+[Sentry] [fatal] [1768899537.452815] [SentrySDKInternal:511] The SDK is disabled, so addBreadcrumb doesn't work. Please ensure to start the SDK before adding breadcrumbs.
+2026-01-20 09:58:57.454 [TPELibrary:Executor] <8> (D) Executor State now executing(TPELibrary.TPE.ExecuteHttpPostApiCall, atIndex: 0)
+2026-01-20 09:58:57.454 [TPELibrary:Executor] <8> (I) Executing Step 1/15: ExecuteHttpPostApiCall
+2026-01-20 09:58:57.454 [TPELibrary:Step] <8> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:57.456 [TPELibrary:Executor] <8> (D) Executor State now executing(TPELibrary.TPE.ConfigurePipeline, atIndex: 1)
+2026-01-20 09:58:57.456 [TPELibrary:Executor] <8> (I) Executing Step 2/15: ConfigurePipeline
+2026-01-20 09:58:57.456 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:57.456 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 5 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 31 00 01 00                                 ││.1...           │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.456 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:57.456 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:57.503 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 5 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B1 00 01 00                                 ││.....           │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 10 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 30 00 06 01 00 00 00 00 01                  ││.0........      │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:57.504 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+2026-01-20 09:58:57.623 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:57.624 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 5 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B0 00 01 00                                 ││.....           │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.624 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:57.624 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:57.624 [TPELibrary:Step] <8> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:57.627 [TPELibrary:Executor] <8> (D) Executor State now executing(TPELibrary.TPE.Wait, atIndex: 2)
+2026-01-20 09:58:57.627 [TPELibrary:Executor] <8> (I) Executing Step 3/15: Wait
+2026-01-20 09:58:57.836 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:57.848 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.DiagnosticSessionControl, atIndex: 3)
+2026-01-20 09:58:57.848 [TPELibrary:Executor] <6> (I) Executing Step 4/15: DiagnosticSessionControl
+2026-01-20 09:58:57.848 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:57.848 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 19 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 34 00 0F 00 18 DA 00 F9 00 18 DA F9 00 FF FF││.4..............│
+│00000010││FF FF 00                                       ││...             │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.849 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:57.849 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:57.893 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:57.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:57.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:57.894 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:57.894 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 10 81                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:57.895 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:57.895 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:57.953 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:57.954 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:58.043 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:58.044 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 13 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 09 00 18 DA F9 00 00 7F 10 78         ││............x   │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:58.044 [Swift-Automotive:ECUconnect-Adapter] <9> (T) 18DAF900 needs more time, enlarging timeout to milliseconds(6500)
+Ignoring VCM state: executing
+2026-01-20 09:58:58.434 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:58.434 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 16 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 0C 00 18 DA F9 00 00 50 81 00 14 00 C8││..........P.....│
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:58.434 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0586 ms]: 18DA00F9 [2] 1081 -> 18DAF900 [6] 5081001400C8
+2026-01-20 09:58:58.434 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:58.434 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:58.434 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:58.445 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Adjusting UDS session timeout for 0x18DAF900 to SessionTimeouts(p2ServerMax: Dispatch.DispatchTimeInterval.milliseconds(20), p2StarServerMax: Dispatch.DispatchTimeInterval.milliseconds(2000))
+2026-01-20 09:58:58.445 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:58.445 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.Wait, atIndex: 4)
+2026-01-20 09:58:58.445 [TPELibrary:Executor] <6> (I) Executing Step 5/15: Wait
+2026-01-20 09:58:58.654 [TPELibrary:Step] <7> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:58.654 [TPELibrary:Executor] <7> (D) Executor State now executing(TPELibrary.TPE.Wait, atIndex: 5)
+2026-01-20 09:58:58.654 [TPELibrary:Executor] <7> (I) Executing Step 6/15: Wait
+2026-01-20 09:58:58.864 [TPELibrary:Step] <7> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:58.864 [TPELibrary:Executor] <7> (D) Executor State now executing(TPELibrary.TPE.DiagnosticSessionControl, atIndex: 6)
+2026-01-20 09:58:58.864 [TPELibrary:Executor] <7> (I) Executing Step 7/15: DiagnosticSessionControl
+2026-01-20 09:58:58.865 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:58.865 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 10 85                           ││.3.....         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:58.865 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:58.865 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:58.914 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:58.914 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.004 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.004 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 13 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 09 00 18 DA F9 00 00 7F 10 78         ││............x   │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.004 [Swift-Automotive:ECUconnect-Adapter] <7> (T) 18DAF900 needs more time, enlarging timeout to milliseconds(2000)
+2026-01-20 09:58:59.394 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.394 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 16 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 0C 00 18 DA F9 00 00 50 85 00 14 00 C8││..........P.....│
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.395 [Swift-Automotive:ECUconnect-Adapter] <9> (D) Command finished [0530 ms]: 18DA00F9 [2] 1085 -> 18DAF900 [6] 5085001400C8
+2026-01-20 09:58:59.395 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:59.395 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:59.395 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:59.395 [Swift-Automotive:ECUconnect-Adapter] <9> (D) Adjusting UDS session timeout for 0x18DAF900 to SessionTimeouts(p2ServerMax: Dispatch.DispatchTimeInterval.milliseconds(20), p2StarServerMax: Dispatch.DispatchTimeInterval.milliseconds(2000))
+2026-01-20 09:58:59.395 [TPELibrary:Step] <9> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:59.395 [TPELibrary:Executor] <9> (D) Executor State now executing(TPELibrary.TPE.Wait, atIndex: 7)
+2026-01-20 09:58:59.395 [TPELibrary:Executor] <9> (I) Executing Step 8/15: Wait
+2026-01-20 09:58:59.598 [TPELibrary:Step] <7> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:59.610 [TPELibrary:Executor] <7> (D) Executor State now executing(TPELibrary.TPE.SecurityAccessRequestSeed, atIndex: 8)
+2026-01-20 09:58:59.610 [TPELibrary:Executor] <7> (I) Executing Step 9/15: SecurityAccessRequestSeed
+2026-01-20 09:58:59.610 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:59.610 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 7 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 03 00 27 01                           ││.3...'.         │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.611 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:59.611 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:59.664 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.664 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.666 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.666 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 20 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 10 00 18 DA F9 00 00 67 01 11 22 33 44││..........g.."3D│
+│00000010││55 66 77 88                                    ││Ufw.            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.666 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0056 ms]: 18DA00F9 [2] 2701 -> 18DAF900 [10] 67011122334455667788
+2026-01-20 09:58:59.666 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:59.666 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:59.666 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:59.666 [TPELibrary:Step] <6> (T) Step did not update progress on its own… synthesizing.
+2026-01-20 09:58:59.677 [TPELibrary:Executor] <6> (D) Executor State now executing(TPELibrary.TPE.SecurityAccessSendKey, atIndex: 9)
+2026-01-20 09:58:59.677 [TPELibrary:Executor] <6> (I) Executing Step 10/15: SecurityAccessSendKey
+2026-01-20 09:58:59.678 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now AsyncStreamCommand<Reply -> Command>
+2026-01-20 09:58:59.678 [Swift-Automotive:AsyncStreamCommand] <4> (T) Wrote 15 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 33 00 0B 00 27 02 72 93 B1 E0 D1 E7 27 85   ││.3...'.r.....'. │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.678 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFOutputStream: 0x11f3c5ea0> ==> event [has space available]
+2026-01-20 09:58:59.678 [Swift-Automotive:AsyncStreamThread] <4> (T) Command sent, waiting for response...
+2026-01-20 09:58:59.724 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.724 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 4 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F 80 00 00                                    ││....            │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.726 [Swift-Automotive:AsyncStreamThread] <4> (T) Stream <__NSCFInputStream: 0x11f3c7660> ==> event [has bytes available]
+2026-01-20 09:58:59.726 [Swift-Automotive:AsyncStreamCommand] <4> (T) Read 13 bytes:
+╭────────┬┬───────────────────────────────────────────────┬┬────────────────╮
+│00000000││1F B2 00 09 00 18 DA F9 00 00 7F 27 35         ││...........'5   │
+╰────────┴┴───────────────────────────────────────────────┴┴────────────────╯
+2026-01-20 09:58:59.726 [Swift-Automotive:ECUconnect-Adapter] <6> (D) Command finished [0048 ms]: 18DA00F9 [10] 27027293B1E0D1E72785 -> 18DAF900 [3] 7F2735
+2026-01-20 09:58:59.726 [Swift-Automotive:AsyncStreamCommand] <4> (T) Continuation prematurely terminated. Ignoring further responses...
+2026-01-20 09:58:59.726 [Swift-Automotive:AsyncStreamThread] <4> (T) Active command now nil
+2026-01-20 09:58:59.726 [Swift-Automotive:AsyncStreamCommand] <4> (T) AsyncStreamCommand<Reply -> Command>: DEINIT
+2026-01-20 09:58:59.740 [TPELibrary:Executor] <6> (D) Executor State now failed(at: TPELibrary.TPE.SecurityAccessSendKey, with: Swift_Automotive_Core.Automotive.Error.udsNegativeResponse(code: Swift_Automotive_Core.UDS.NegativeResponseCode.invalidKey))
+2026-01-20 09:58:59.740 [TPELibrary:Executor] <6> (I) Failed Manifest Execution at step TPELibrary.TPE.SecurityAccessSendKey w/ error: udsNegativeResponse(code: Swift_Automotive_Core.UDS.NegativeResponseCode.invalidKey)
+[Sentry] [fatal] [1768899539.7404752] [SentrySDKInternal:511] The SDK is disabled, so addBreadcrumb doesn't work. Please ensure to start the SDK before adding breadcrumbs.
+2026-01-20 09:58:59.760 [CornucopiaHTTP:OOPNetworking] <6> (D) Launched POST of a 'DebugLog' to https://sn.app-backend.eu/api/v1/user/debug_log. Outstanding tasks: 1
+2026-01-20 09:58:59.760 [Swift-Automotive:Pipeline] <6> (D) Shutting down pipeline…
+2026-01-20 09:58:59.761 [Swift-Automotive:Pipeline] <6> (D) Pipeline shutdown completed.
+2026-01-20 09:58:59.761 [Schaknat:VCM] <6> (I) Error: udsNegativeResponse(code: Swift_Automotive_Core.UDS.NegativeResponseCode.invalidKey) [Error]
+2026-01-20 09:58:59.761 [Schaknat:VCM] <0> (T) VCM now has state udsError(Swift_Automotive_Core.Automotive.Error.udsNegativeResponse(code: Swift_Automotive_Core.UDS.NegativeResponseCode.invalidKey)), showing adapter info: false
+2026-01-20 09:58:59.839 [CornucopiaHTTP:OOPNetworking] <6> (T) Did receive URL authentication challenge w/ method 'NSURLAuthenticationMethodServerTrust. Host sn.app-backend.eu:443', Realm N/A
+2026-01-20 09:58:59.839 [CornucopiaHTTP:OOPNetworking] <6> (T) Auth method is not NSURLAuthenticationMethodClientCertificate, using default handling
+2026-01-20 09:58:59.850 [CornucopiaHTTP:OOPNetworking] <7> (T) Did receive URL authentication challenge w/ method 'NSURLAuthenticationMethodClientCertificate. Host sn.app-backend.eu:443', Realm N/A
+2026-01-20 09:58:59.850 [CornucopiaHTTP:OOPNetworking] <7> (T) Supplying provided identity
+2026-01-20 09:58:59.926 [CornucopiaHTTP:OOPNetworking] <7> (I) Task BackgroundUploadTask <587895CE-7A26-4009-B7E9-CCD0121266F3>.<2> finished
+Ignoring VCM state: udsError(Swift_Automotive_Core.Automotive.Error.udsNegativeResponse(code: Swift_Automotive_Core.UDS.NegativeResponseCode.invalidKey))
+2026-01-20 09:59:01.452 [Schaknat:VCM] <0> (T) VCM now has state identified, showing adapter info: false
+2026-01-20 09:59:01.459 [Schaknat:VCM] <0> (T) VCM now has state identified, showing adapter info: false
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+nw_socket_set_connection_idle [C2.1.1.1:3] setsockopt SO_CONNECTION_IDLE failed [42: Protocol not available]
+Ignoring VCM state: identified
