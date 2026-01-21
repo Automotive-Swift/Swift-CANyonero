@@ -273,6 +273,10 @@ long DeviceManager::connect(unsigned long deviceId, unsigned long protocolId,
     device->channels[*channelId] = std::move(channel);
     channelToDevice_[*channelId] = deviceId;
 
+    // Start background polling thread
+    device->stopPolling = false;
+    device->pollingThread = std::thread(&DeviceManager::pollingThreadFunc, this, deviceId);
+
     DBG("connect: success, channelId=%lu", *channelId);
     return STATUS_NOERROR;
 }
@@ -298,6 +302,12 @@ long DeviceManager::disconnect(unsigned long channelId) {
         return ERR_INVALID_CHANNEL_ID;
     }
 
+    // Stop polling thread
+    if (device->pollingThread.joinable()) {
+        device->stopPolling = true;
+        device->pollingThread.join();
+    }
+
     // Close channel on device
     auto& channel = chIt->second;
     if (device->protocol && device->protocol->isConnected()) {
@@ -319,47 +329,72 @@ long DeviceManager::disconnect(unsigned long channelId) {
 // Message Operations
 // ============================================================================
 
-void DeviceManager::pollMessages(Channel* channel, Device* device, uint32_t timeout_ms) {
-    if (!device->protocol || !device->protocol->isConnected()) {
-        return;
-    }
+void DeviceManager::pollingThreadFunc(unsigned long deviceId) {
+    DBG("Polling thread started for deviceId=%lu", deviceId);
 
-    auto frames = device->protocol->receiveMessages(timeout_ms);
+    while (true) {
+        // Use a local lock to get device and check stop flag
+        Device* device = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            device = getDevice(deviceId);
+            if (!device || device->stopPolling) {
+                break; // Exit if device is gone or stop is requested
+            }
+        }
 
-    for (const auto& frame : frames) {
-        if (!message_passes_filters(*channel, frame.id, frame.data)) {
+        if (!device->protocol || !device->protocol->isConnected()) {
+            // Wait a bit before retrying if not connected
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
 
-        // Create J2534 message
-        PASSTHRU_MSG msg{};
-        msg.ProtocolID = channel->protocolId;
-        msg.RxStatus = 0;
-        msg.Timestamp = static_cast<unsigned long>(frame.timestamp & 0xFFFFFFFF);
-
-        // Build CAN frame: 4-byte ID + data
-        size_t idSize = (channel->flags & CAN_29BIT_ID) ? 4 : 4;
-        msg.DataSize = static_cast<unsigned long>(idSize + frame.data.size());
-        msg.ExtraDataIndex = msg.DataSize;
-
-        // ID in big-endian
-        msg.Data[0] = static_cast<uint8_t>((frame.id >> 24) & 0xFF);
-        msg.Data[1] = static_cast<uint8_t>((frame.id >> 16) & 0xFF);
-        msg.Data[2] = static_cast<uint8_t>((frame.id >> 8) & 0xFF);
-        msg.Data[3] = static_cast<uint8_t>(frame.id & 0xFF);
-
-        // Copy data
-        std::memcpy(&msg.Data[4], frame.data.data(), frame.data.size());
-
-        // Set 29-bit flag if applicable
-        if (frame.id > 0x7FF) {
-            msg.RxStatus |= CAN_29BIT_ID;
+        // Poll for messages with a short timeout to remain responsive
+        auto frames = device->protocol->receiveMessages(100);
+        if (frames.empty()) {
+            continue;
         }
 
-        // Queue message
-        std::lock_guard<std::mutex> rxLock(channel->rxMutex);
-        channel->rxQueue.push(msg);
+        // This lock is to access the channels map
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (device->channels.empty()) {
+            continue; // No channels to deliver to
+        }
+        // Assuming one channel per device for now
+        auto& channel = device->channels.begin()->second;
+
+        for (const auto& frame : frames) {
+            if (!message_passes_filters(*channel, frame.id, frame.data)) {
+                continue;
+            }
+
+            // Create J2534 message
+            PASSTHRU_MSG msg{};
+            msg.ProtocolID = channel->protocolId;
+            msg.RxStatus = 0;
+            msg.Timestamp = static_cast<unsigned long>(frame.timestamp & 0xFFFFFFFF);
+            msg.DataSize = static_cast<unsigned long>(4 + frame.data.size());
+            msg.ExtraDataIndex = msg.DataSize;
+
+            msg.Data[0] = static_cast<uint8_t>((frame.id >> 24) & 0xFF);
+            msg.Data[1] = static_cast<uint8_t>((frame.id >> 16) & 0xFF);
+            msg.Data[2] = static_cast<uint8_t>((frame.id >> 8) & 0xFF);
+            msg.Data[3] = static_cast<uint8_t>(frame.id & 0xFF);
+            std::memcpy(&msg.Data[4], frame.data.data(), frame.data.size());
+
+            if (frame.id > 0x7FF) {
+                msg.RxStatus |= CAN_29BIT_ID;
+            }
+
+            // Queue message and notify reader
+            {
+                std::lock_guard<std::mutex> rxLock(channel->rxMutex);
+                channel->rxQueue.push(msg);
+            }
+            channel->rxCv.notify_one();
+        }
     }
+    DBG("Polling thread stopped for deviceId=%lu", deviceId);
 }
 
 long DeviceManager::readMsgs(unsigned long channelId, PASSTHRU_MSG* msgs,
@@ -372,24 +407,26 @@ long DeviceManager::readMsgs(unsigned long channelId, PASSTHRU_MSG* msgs,
     unsigned long requested = *numMsgs;
     *numMsgs = 0;
 
-    std::unique_lock<std::mutex> lock(mutex_);
-
-    auto devIt = channelToDevice_.find(channelId);
-    if (devIt == channelToDevice_.end()) {
+    Channel* channel = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        channel = getChannel(channelId);
+    }
+    
+    if (!channel) {
         setLastError("Invalid channel ID");
         return ERR_INVALID_CHANNEL_ID;
     }
 
-    auto device = getDevice(devIt->second);
-    auto chIt = device->channels.find(channelId);
-    auto& channel = chIt->second;
+    std::unique_lock<std::mutex> rxLock(channel->rxMutex);
 
-    // Poll for messages
-    pollMessages(channel.get(), device, timeout);
+    // Wait for messages if the queue is empty
+    if (channel->rxQueue.empty() && timeout > 0) {
+        channel->rxCv.wait_for(rxLock, std::chrono::milliseconds(timeout),
+                               [&] { return !channel->rxQueue.empty(); });
+    }
 
     // Return queued messages
-    std::lock_guard<std::mutex> rxLock(channel->rxMutex);
-
     while (*numMsgs < requested && !channel->rxQueue.empty()) {
         msgs[*numMsgs] = channel->rxQueue.front();
         channel->rxQueue.pop();
@@ -397,11 +434,7 @@ long DeviceManager::readMsgs(unsigned long channelId, PASSTHRU_MSG* msgs,
     }
 
     if (*numMsgs == 0) {
-        if (timeout > 0) {
-            setLastError("Read timeout");
-            return ERR_TIMEOUT;
-        }
-        return ERR_BUFFER_EMPTY;
+        return (timeout > 0) ? ERR_TIMEOUT : ERR_BUFFER_EMPTY;
     }
 
     return STATUS_NOERROR;

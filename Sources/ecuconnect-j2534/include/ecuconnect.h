@@ -13,6 +13,8 @@
 #include <queue>
 #include <atomic>
 #include <vector>
+#include <thread>
+#include <condition_variable>
 
 namespace ecuconnect {
 
@@ -50,6 +52,7 @@ struct Channel {
     // Receive queue
     std::queue<PASSTHRU_MSG> rxQueue;
     std::mutex rxMutex;
+    std::condition_variable rxCv;
 
     // Configuration
     bool loopback = false;
@@ -65,6 +68,10 @@ struct Device {
     std::unique_ptr<Protocol> protocol;
     std::unordered_map<unsigned long, std::unique_ptr<Channel>> channels;
     unsigned long nextChannelId = 1;
+
+    // Background polling
+    std::thread pollingThread;
+    std::atomic<bool> stopPolling{false};
 
     DeviceInfo info;
     std::string connectionString;
@@ -134,8 +141,7 @@ private:
     mutable std::mutex errorMutex_;
     std::string lastError_;
 
-    // Poll for received messages
-    void pollMessages(Channel* channel, Device* device, uint32_t timeout_ms);
+    void pollingThreadFunc(unsigned long deviceId);
 };
 
 } // namespace ecuconnect

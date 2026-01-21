@@ -30,7 +30,6 @@ struct TcpTransport::Impl {
     TcpConfig config;
     SOCKET socket = INVALID_SOCKET;
     std::string lastError;
-    bool wsaInitialized = false;
 
     Impl(const TcpConfig& cfg) : config(cfg) {}
 
@@ -38,28 +37,6 @@ struct TcpTransport::Impl {
         if (socket != INVALID_SOCKET) {
             closesocket(socket);
         }
-#ifdef _WIN32
-        if (wsaInitialized) {
-            WSACleanup();
-        }
-#endif
-    }
-
-    bool initWsa() {
-#ifdef _WIN32
-        if (!wsaInitialized) {
-            WSADATA wsaData;
-            int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-            if (result != 0) {
-                std::ostringstream oss;
-                oss << "WSAStartup failed: " << result;
-                lastError = oss.str();
-                return false;
-            }
-            wsaInitialized = true;
-        }
-#endif
-        return true;
     }
 
     bool setSocketTimeout(uint32_t timeout_ms) {
@@ -89,10 +66,6 @@ TcpTransport::TcpTransport(const TcpConfig& config)
 TcpTransport::~TcpTransport() = default;
 
 bool TcpTransport::connect() {
-    if (!pImpl->initWsa()) {
-        return false;
-    }
-
     // Create socket
     pImpl->socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (pImpl->socket == INVALID_SOCKET) {

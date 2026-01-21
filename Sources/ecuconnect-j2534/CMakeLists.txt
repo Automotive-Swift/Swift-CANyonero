@@ -28,6 +28,7 @@ endif()
 
 # J2534 driver DLL
 add_library(ecuconnect_j2534 SHARED
+    src/dllmain.cpp
     src/j2534_api.cpp
     src/ecuconnect.cpp
     src/transport_tcp.cpp
