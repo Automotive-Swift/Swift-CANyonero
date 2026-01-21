@@ -183,6 +183,11 @@ bool TcpTransport::connect() {
     int flag = 1;
     setsockopt(pImpl->socket, IPPROTO_TCP, TCP_NODELAY, (const char*)&flag, sizeof(flag));
 
+    // Increase socket buffer sizes for better throughput
+    int bufSize = 65536;  // 64KB buffers
+    setsockopt(pImpl->socket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufSize, sizeof(bufSize));
+    setsockopt(pImpl->socket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufSize, sizeof(bufSize));
+
     return true;
 }
 
@@ -243,7 +248,7 @@ std::vector<uint8_t> TcpTransport::receive(uint32_t timeout_ms) {
         return {};
     }
 
-    std::vector<uint8_t> buffer(4096);
+    std::vector<uint8_t> buffer(16384);  // Match MAX_BATCH_SIZE for efficiency
     int received = ::recv(pImpl->socket, reinterpret_cast<char*>(buffer.data()),
                           static_cast<int>(buffer.size()), 0);
 

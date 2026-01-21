@@ -462,31 +462,89 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
     auto chIt = device->channels.find(channelId);
     auto& channel = chIt->second;
 
-    for (unsigned long i = 0; i < requested; i++) {
-        const auto& msg = msgs[i];
+    // Group messages by CAN ID for batched sending
+    // Each batch contains frames with the same arbitration (CAN ID + extension)
+    struct BatchKey {
+        uint32_t canId;
+        uint8_t extension;
+        bool operator==(const BatchKey& other) const {
+            return canId == other.canId && extension == other.extension;
+        }
+    };
+
+    unsigned long i = 0;
+    while (i < requested) {
+        const auto& firstMsg = msgs[i];
 
         // Validate protocol
-        if (msg.ProtocolID != channel->protocolId) {
+        if (firstMsg.ProtocolID != channel->protocolId) {
             setLastError("Message protocol mismatch");
             return ERR_MSG_PROTOCOL_ID;
         }
 
-        // Extract CAN ID and data
-        if (msg.DataSize < 4) {
+        if (firstMsg.DataSize < 4) {
             setLastError("Invalid message size");
             return ERR_INVALID_MSG;
         }
 
-        uint32_t canId = (static_cast<uint32_t>(msg.Data[0]) << 24) |
-                         (static_cast<uint32_t>(msg.Data[1]) << 16) |
-                         (static_cast<uint32_t>(msg.Data[2]) << 8) |
-                         static_cast<uint32_t>(msg.Data[3]);
+        // Extract CAN ID for this batch
+        uint32_t batchCanId = (static_cast<uint32_t>(firstMsg.Data[0]) << 24) |
+                              (static_cast<uint32_t>(firstMsg.Data[1]) << 16) |
+                              (static_cast<uint32_t>(firstMsg.Data[2]) << 8) |
+                              static_cast<uint32_t>(firstMsg.Data[3]);
+        uint8_t batchExtension = (firstMsg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
 
-        // Build arbitration for the message
-        // For Raw CAN: set request ID but keep replyMask=0 to pass all RX
+        // Collect all consecutive frames with the same CAN ID into a batch
+        std::vector<std::vector<uint8_t>> batch;
+        std::vector<unsigned long> batchIndices;  // Track which messages are in this batch
+        size_t batchBytes = 1;  // Start with handle byte
+
+        while (i < requested) {
+            const auto& msg = msgs[i];
+
+            if (msg.ProtocolID != channel->protocolId) {
+                break;  // Protocol mismatch, start new batch
+            }
+
+            if (msg.DataSize < 4) {
+                break;  // Invalid message, will be caught next iteration
+            }
+
+            uint32_t canId = (static_cast<uint32_t>(msg.Data[0]) << 24) |
+                             (static_cast<uint32_t>(msg.Data[1]) << 16) |
+                             (static_cast<uint32_t>(msg.Data[2]) << 8) |
+                             static_cast<uint32_t>(msg.Data[3]);
+            uint8_t extension = (msg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+
+            // Stop batch if CAN ID changes
+            if (canId != batchCanId || extension != batchExtension) {
+                break;
+            }
+
+            // Check if adding this frame would exceed batch size limit
+            size_t frameSize = 1 + (msg.DataSize - 4);  // length byte + payload
+            if (batchBytes + frameSize > MAX_BATCH_SIZE && !batch.empty()) {
+                break;  // Batch is full, send what we have
+            }
+
+            // Add frame to batch
+            std::vector<uint8_t> data(msg.Data + 4, msg.Data + msg.DataSize);
+            batch.push_back(std::move(data));
+            batchIndices.push_back(i);
+            batchBytes += frameSize;
+            i++;
+        }
+
+        if (batch.empty()) {
+            // Should not happen, but handle gracefully
+            i++;
+            continue;
+        }
+
+        // Set arbitration for this batch (only if changed)
         Arbitration arb;
-        arb.request = canId;
-        arb.requestExtension = (msg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+        arb.request = batchCanId;
+        arb.requestExtension = batchExtension;
         arb.replyPattern = 0;
         arb.replyMask = 0;  // Pass all incoming messages
         arb.replyExtension = 0;
@@ -500,13 +558,10 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
             channel->hasTxArb = true;
         }
 
-        // Extract data portion
-        std::vector<uint8_t> data(msg.Data + 4, msg.Data + msg.DataSize);
-
-        // Send message
-        if (!device->protocol->sendMessage(channel->ecuHandle, data, timeout)) {
+        // Send the batch
+        if (!device->protocol->sendMessages(channel->ecuHandle, batch, timeout)) {
             const auto last_error = device->protocol->getLastError();
-            setLastError("Failed to send message: " + last_error);
+            setLastError("Failed to send messages: " + last_error);
             const bool is_timeout = last_error.find("timeout") != std::string::npos
                 || last_error.find("Timeout") != std::string::npos;
             if (timeout > 0 && is_timeout) {
@@ -515,23 +570,27 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
             return ERR_FAILED;
         }
 
-        (*numMsgs)++;
+        // Update sent count and handle loopback for all messages in batch
+        for (size_t j = 0; j < batchIndices.size(); j++) {
+            unsigned long idx = batchIndices[j];
+            const auto& msg = msgs[idx];
+            (*numMsgs)++;
 
-        // Handle loopback
-        if (channel->loopback && message_passes_filters(*channel, canId, data)) {
-            PASSTHRU_MSG loopbackMsg = msg;
-            loopbackMsg.RxStatus = TX_MSG_TYPE;
-            if (msg.TxFlags & CAN_29BIT_ID) {
-                loopbackMsg.RxStatus |= CAN_29BIT_ID;
+            if (channel->loopback && message_passes_filters(*channel, batchCanId, batch[j])) {
+                PASSTHRU_MSG loopbackMsg = msg;
+                loopbackMsg.RxStatus = TX_MSG_TYPE;
+                if (msg.TxFlags & CAN_29BIT_ID) {
+                    loopbackMsg.RxStatus |= CAN_29BIT_ID;
+                }
+                loopbackMsg.Timestamp = static_cast<unsigned long>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()
+                    ).count() & 0xFFFFFFFF
+                );
+
+                std::lock_guard<std::mutex> rxLock(channel->rxMutex);
+                channel->rxQueue.push(loopbackMsg);
             }
-            loopbackMsg.Timestamp = static_cast<unsigned long>(
-                std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()
-                ).count() & 0xFFFFFFFF
-            );
-
-            std::lock_guard<std::mutex> rxLock(channel->rxMutex);
-            channel->rxQueue.push(loopbackMsg);
         }
     }
 

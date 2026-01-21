@@ -21,6 +21,7 @@ namespace ecuconnect {
 constexpr uint8_t PDU_ATT = 0x1F;
 constexpr size_t PDU_HEADER_SIZE = 4;
 constexpr size_t MAX_PDU_PAYLOAD = 0xFFFF;
+constexpr size_t MAX_BATCH_SIZE = 16384;  // Max bytes per batched send (TCP packet limit)
 
 /**
  * PDU Types (commands and responses)
@@ -138,6 +139,7 @@ public:
                            uint8_t rxSeparationTime = 0, uint8_t txSeparationTime = 0);
     static PDU closeChannel(uint8_t handle);
     static PDU send(uint8_t handle, const std::vector<uint8_t>& data);
+    static PDU sendBatch(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames);
     static PDU setArbitration(uint8_t handle, const Arbitration& arb);
     static PDU startPeriodicMessage(uint8_t timeout, const Arbitration& arb,
                                      const std::vector<uint8_t>& data);
@@ -189,6 +191,7 @@ public:
 
     // Message operations
     bool sendMessage(uint8_t handle, const std::vector<uint8_t>& data, uint32_t timeout_ms = 1000);
+    bool sendMessages(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames, uint32_t timeout_ms = 1000);
     std::vector<CANFrame> receiveMessages(uint32_t timeout_ms);
 
     // Periodic messages

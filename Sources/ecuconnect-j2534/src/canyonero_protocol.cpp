@@ -144,6 +144,26 @@ PDU PDU::send(uint8_t handle, const std::vector<uint8_t>& data) {
     return PDU(PDUType::Send, payload);
 }
 
+PDU PDU::sendBatch(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames) {
+    // Calculate total size: handle + (length + data) for each frame
+    size_t totalSize = 1;
+    for (const auto& frame : frames) {
+        totalSize += 1 + frame.size();  // 1 byte length prefix + data
+    }
+
+    std::vector<uint8_t> payload;
+    payload.reserve(totalSize);
+    payload.push_back(handle);
+
+    // Pack frames as length-prefixed entries
+    for (const auto& frame : frames) {
+        payload.push_back(static_cast<uint8_t>(frame.size()));
+        payload.insert(payload.end(), frame.begin(), frame.end());
+    }
+
+    return PDU(PDUType::Send, payload);
+}
+
 PDU PDU::setArbitration(uint8_t handle, const Arbitration& arb) {
     std::vector<uint8_t> payload;
     payload.reserve(1 + Arbitration::SIZE);
@@ -456,6 +476,37 @@ bool Protocol::sendMessage(uint8_t handle, const std::vector<uint8_t>& data,
     std::lock_guard<std::mutex> lock(mutex_);
 
     auto response = sendAndReceive(PDU::send(handle, data), timeout_ms);
+    if (!response) return false;
+
+    if (response->isError()) {
+        lastError_ = response->errorMessage();
+        return false;
+    }
+
+    return response->type() == PDUType::Ok;
+}
+
+bool Protocol::sendMessages(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames,
+                             uint32_t timeout_ms) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (frames.empty()) {
+        return true;
+    }
+
+    // Single frame: use regular send
+    if (frames.size() == 1) {
+        auto response = sendAndReceive(PDU::send(handle, frames[0]), timeout_ms);
+        if (!response) return false;
+        if (response->isError()) {
+            lastError_ = response->errorMessage();
+            return false;
+        }
+        return response->type() == PDUType::Ok;
+    }
+
+    // Multiple frames: use batched send
+    auto response = sendAndReceive(PDU::sendBatch(handle, frames), timeout_ms);
     if (!response) return false;
 
     if (response->isError()) {
