@@ -178,6 +178,10 @@ public:
     void disconnect();
     bool isConnected() const;
 
+    // Async mode (default false). Set to true when a background thread 
+    // is responsible for pumping receiveMessages().
+    void setAsyncMode(bool enabled);
+
     // Device operations
     std::optional<DeviceInfo> getDeviceInfo(uint32_t timeout_ms = 1000);
     std::optional<uint16_t> readVoltage(uint32_t timeout_ms = 1000);
@@ -207,13 +211,20 @@ private:
     std::unique_ptr<ITransport> transport_;
     std::vector<uint8_t> receiveBuffer_;
     std::queue<CANFrame> frameQueue_;
+    
     mutable std::mutex mutex_;
+    std::condition_variable responseCv_;
+    bool asyncMode_ = false;
+    std::optional<PDUType> expectedResponse_;
+    std::optional<PDU> capturedResponse_;
+    
     std::string lastError_;
 
-    // Send PDU and wait for response
-    std::optional<PDU> sendAndReceive(const PDU& pdu, uint32_t timeout_ms);
+    // Internal helpers
+    bool send(const PDU& pdu);
+    std::optional<PDU> waitResponse(PDUType type, uint32_t timeout_ms);
 
-    // Process received data, queue frames
+    // Process received data, queue frames, notify waiters
     void processReceivedData(const std::vector<uint8_t>& data);
 };
 

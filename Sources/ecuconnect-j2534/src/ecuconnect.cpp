@@ -276,6 +276,7 @@ long DeviceManager::connect(unsigned long deviceId, unsigned long protocolId,
     // Start background polling thread
     device->stopPolling = false;
     device->pollingThread = std::thread(&DeviceManager::pollingThreadFunc, this, deviceId);
+    device->protocol->setAsyncMode(true);
 
     DBG("connect: success, channelId=%lu", *channelId);
     return STATUS_NOERROR;
