@@ -1,1 +1,0 @@
-/home/mickey/Dokumente/late/Automotive-Swift/Swift-CANyonero/Sources/can-standin/target/release/can-standin: /home/mickey/Dokumente/late/Automotive-Swift/Swift-CANyonero/Sources/can-standin/src/main.rs

@@ -14,5 +14,8 @@ Sources/ecuconnect-j2534/build64/
 Sources/ecuconnect-j2534/nul
 Sources/ecuconnect-j2534/.claude/
 
+# can-standin build artifacts
+Sources/can-standin/target/
+
 # Legacy location (to be deleted)
 /ecuconnect-j2534/
