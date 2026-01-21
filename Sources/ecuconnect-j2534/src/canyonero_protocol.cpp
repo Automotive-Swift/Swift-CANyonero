@@ -465,6 +465,12 @@ bool Protocol::sendMessage(uint8_t handle, const std::vector<uint8_t>& data,
     return send(PDU::send(handle, data));
 }
 
+bool Protocol::sendMessages(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames,
+                             uint32_t timeout_ms) {
+    // Fire and forget batch send
+    return send(PDU::sendBatch(handle, frames));
+}
+
 std::vector<CANFrame> Protocol::receiveMessages(uint32_t timeout_ms) {
     // Note: This function is the "pump" for the background thread.
     // It reads from transport and feeds the dispatcher.
