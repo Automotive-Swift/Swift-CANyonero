@@ -466,6 +466,8 @@ def main(
     ctx: typer.Context,
     endpoint: str = typer.Option(
         DEFAULT_ENDPOINT,
+        "--endpoint",
+        "--url",
         help="ECUconnect endpoint (default: 192.168.42.42:129). Use host:port for mocks.",
     ),
     rx_buffer: int = typer.Option(4 * 1024 * 1024, help="Socket receive buffer size."),

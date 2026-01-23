@@ -20,9 +20,11 @@ struct ECUconnectCommand: ParsableCommand {
         ]
     )
 
+    @OptionGroup() var options: Options
+
     struct Options: ParsableArguments {
 
-        @Argument(help: "The URL to the adapter")
+        @Option(name: [.customShort("u"), .long], help: "The URL to the adapter")
         var url: String = "ecuconnect-l2cap://FFF1:129"
     }
 }
