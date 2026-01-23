@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import queue
 import socket
 import threading
@@ -83,6 +84,7 @@ class EcuconnectClient:
         self._reader: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._stream = PDUStream(max_pdu_size=max_pdu_size)
+        self._rpc_id = 1
 
     def connect(self) -> None:
         if self._sock:
@@ -161,6 +163,47 @@ class EcuconnectClient:
         _ = self.wait_for(lambda p: p.type == canyonero.PDUType.pong, timeout)
         return time.perf_counter() - start
 
+    def reset(self, timeout: float = 2.0) -> None:
+        self.send_pdu(canyonero.PDU.reset())
+        _ = self.wait_for(lambda p: p.type == canyonero.PDUType.ok, timeout)
+
+    def rpc_call(self, method: str, params: Optional[dict] = None, timeout: float = 2.0) -> dict:
+        if params is None:
+            params = {}
+        rpc_id = self._rpc_id
+        self._rpc_id += 1
+        payload = json.dumps(
+            {"method": method, "id": rpc_id, "params": params},
+            separators=(",", ":"),
+        )
+        self.send_pdu(canyonero.PDU.rpc_call(payload))
+
+        def _predicate(pdu: canyonero.PDU) -> bool:
+            return pdu.type in (
+                canyonero.PDUType.rpc_response,
+                canyonero.PDUType.error_invalid_rpc,
+                canyonero.PDUType.error_invalid_command,
+                canyonero.PDUType.error_hardware,
+                canyonero.PDUType.error_unspecified,
+            )
+
+        pdu = self.wait_for(_predicate, timeout)
+        if pdu.type != canyonero.PDUType.rpc_response:
+            raise RuntimeError(f"RPC {method} failed: {pdu.type}")
+        raw_payload = pdu.payload()
+        try:
+            response = json.loads(raw_payload.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("Invalid RPC response payload") from exc
+        if response.get("id") != rpc_id:
+            raise ValueError(f"Unexpected RPC response id: {response.get('id')}")
+        result = response.get("result")
+        if isinstance(result, dict):
+            return result
+        if result is None:
+            return {}
+        raise ValueError("RPC response result is not a JSON object")
+
     def open_channel(
         self,
         protocol: canyonero.ChannelProtocol,
@@ -202,4 +245,3 @@ class EcuconnectClient:
                 continue
             except OSError:
                 break
-
