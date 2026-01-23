@@ -21,6 +21,10 @@ from .test_runner import (
 
 app = typer.Typer(help="ECUconnect tool (Python) for CANyonero adapters", add_completion=False)
 console = Console()
+config_app = typer.Typer(help="Configure ECUconnect via JSON-RPC.")
+config_canvoy_app = typer.Typer(help="Configure CANvoy settings.")
+config_app.add_typer(config_canvoy_app, name="canvoy")
+app.add_typer(config_app, name="config")
 
 
 def _parse_int(value: str) -> int:
@@ -35,7 +39,76 @@ def _parse_hex_bytes(data: str) -> bytes:
     if len(cleaned) % 2 != 0:
         cleaned = "0" + cleaned
     try:
-        return bytes.fromhex(cleaned)
+    return bytes.fromhex(cleaned)
+
+
+def _parse_mode(value: str) -> tuple[int, str]:
+    normalized = value.strip().lower()
+    mapping = {
+        "0": ("elm327", 0),
+        "elm": ("elm327", 0),
+        "elm327": ("elm327", 0),
+        "1": ("logger", 1),
+        "logger": ("logger", 1),
+        "2": ("canvoy", 2),
+        "canvoy": ("canvoy", 2),
+        "3": ("ecos", 3),
+        "ecos": ("ecos", 3),
+    }
+    if normalized not in mapping:
+        raise typer.BadParameter("Mode must be ecos, elm327, logger, canvoy (or 0-3).")
+    name, mode_id = mapping[normalized]
+    return mode_id, name
+
+
+def _format_mode(value: object) -> str:
+    try:
+        mode_id = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    mapping = {0: "elm327", 1: "logger", 2: "canvoy", 3: "ecos"}
+    return mapping.get(mode_id, f"unknown({mode_id})")
+
+
+def _parse_canvoy_role(value: str) -> tuple[int, str]:
+    normalized = value.strip().lower()
+    mapping = {
+        "0": ("unconfigured", 0),
+        "unconfigured": ("unconfigured", 0),
+        "none": ("unconfigured", 0),
+        "1": ("vehicle", 1),
+        "vehicle": ("vehicle", 1),
+        "2": ("tester", 2),
+        "tester": ("tester", 2),
+    }
+    if normalized not in mapping:
+        raise typer.BadParameter("Role must be vehicle, tester, unconfigured (or 0-2).")
+    name, role_id = mapping[normalized]
+    return role_id, name
+
+
+def _format_canvoy_role(value: object) -> str:
+    try:
+        role_id = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    mapping = {0: "unconfigured", 1: "vehicle", 2: "tester"}
+    return mapping.get(role_id, f"unknown({role_id})")
+
+
+def _rpc_bool(value: object, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    return default
+
+
+def _rpc_best_effort(client: EcuconnectClient, method: str, params: Optional[dict] = None) -> Optional[dict]:
+    try:
+        return client.rpc_call(method, params=params)
+    except RuntimeError:
+        return None
     except ValueError as exc:
         raise typer.BadParameter("Invalid hex payload") from exc
 
@@ -405,6 +478,137 @@ def main(
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit()
+
+
+@config_app.command("mode")
+def config_mode(
+    ctx: typer.Context,
+    mode: str = typer.Argument(..., help="Mode: ecos, elm327, logger, canvoy (or 0-3)."),
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Set the ECUconnect operating mode (JSON-RPC app.set_mode)."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+    mode_id, mode_name = _parse_mode(mode)
+    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
+        result = client.rpc_call("app.set_mode", params={"mode": mode_id}, timeout=timeout)
+    success = result.get("success")
+    if success is False:
+        message = result.get("error", "Failed to change mode.")
+        console.print(f"[red]Error:[/red] {message}")
+        raise typer.Exit(code=1)
+    console.print(f"Mode change requested: {mode_name}. Adapter will reboot shortly.")
+
+
+@config_app.command("reboot")
+def config_reboot(
+    ctx: typer.Context,
+    timeout: float = typer.Option(2.0, help="RPC/reset timeout in seconds."),
+) -> None:
+    """Reboot the adapter (tries JSON-RPC system.reboot, falls back to reset)."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
+        try:
+            _ = client.rpc_call("system.reboot", timeout=timeout)
+            console.print("Reboot requested via JSON-RPC.")
+            return
+        except RuntimeError as exc:
+            exc_text = str(exc)
+            if "error_invalid_rpc" not in exc_text and "error_invalid_command" not in exc_text:
+                raise
+            console.print("JSON-RPC reboot not available, falling back to reset command.")
+        client.reset(timeout=timeout)
+    console.print("Reboot requested via reset command.")
+
+
+@config_app.command("show")
+def config_show(
+    ctx: typer.Context,
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Show current configuration (best-effort via JSON-RPC)."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
+        config = _rpc_best_effort(client, "app.config")
+        if config and "mode" in config:
+            mode_value = config.get("mode")
+            console.print(f"App mode: {_format_mode(mode_value)}")
+            if isinstance(config.get("appstate"), str):
+                console.print(f"App state: {config['appstate']}")
+            elif isinstance(config.get("state"), str):
+                console.print(f"App state: {config['state']}")
+        else:
+            console.print("App mode: unavailable (RPC not supported)")
+
+        canvoy = _rpc_best_effort(client, "canvoy.role")
+        if canvoy:
+            role_name = _format_canvoy_role(canvoy.get("role", 0))
+            bitrate = canvoy.get("bitrate", 500_000)
+            if isinstance(bitrate, float):
+                bitrate = int(bitrate)
+            termination = _rpc_bool(canvoy.get("termination"), default=False)
+            console.print(f"CANvoy role: {role_name}")
+            console.print(f"CANvoy bitrate: {bitrate}")
+            console.print(f"CANvoy termination: {'enabled' if termination else 'disabled'}")
+
+
+@config_canvoy_app.command("get")
+def config_canvoy_get(
+    ctx: typer.Context,
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Fetch CANvoy configuration (JSON-RPC canvoy.role)."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
+        result = client.rpc_call("canvoy.role", timeout=timeout)
+
+    role_value = result.get("role", 0)
+    role_name = _format_canvoy_role(role_value)
+    bitrate = result.get("bitrate", 500_000)
+    if isinstance(bitrate, float):
+        bitrate = int(bitrate)
+    termination = _rpc_bool(result.get("termination"), default=False)
+    console.print(f"CANvoy role: {role_name}")
+    console.print(f"Bitrate: {bitrate}")
+    console.print(f"Termination: {'enabled' if termination else 'disabled'}")
+
+
+@config_canvoy_app.command("set")
+def config_canvoy_set(
+    ctx: typer.Context,
+    role: str = typer.Argument(..., help="Role: vehicle, tester, unconfigured (or 0-2)."),
+    bitrate: int = typer.Option(500_000, help="CAN bitrate (e.g. 500000)."),
+    termination: bool = typer.Option(False, "--termination/--no-termination", help="Enable termination."),
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Set CANvoy configuration (JSON-RPC canvoy.set_role)."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+    role_id, role_name = _parse_canvoy_role(role)
+    params = {"role": role_id, "bitrate": bitrate, "termination": termination}
+    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
+        result = client.rpc_call("canvoy.set_role", params=params, timeout=timeout)
+
+    success = result.get("success")
+    if success is False:
+        message = result.get("error", "Unable to set CANvoy role.")
+        console.print(f"[red]Error:[/red] {message}")
+        raise typer.Exit(code=1)
+    applied_bitrate = result.get("bitrate", bitrate)
+    if isinstance(applied_bitrate, float):
+        applied_bitrate = int(applied_bitrate)
+    applied_termination = _rpc_bool(result.get("termination"), default=termination)
+    console.print(f"CANvoy role set to {role_name}.")
+    console.print(f"Bitrate: {applied_bitrate}")
+    console.print(f"Termination: {'enabled' if applied_termination else 'disabled'}")
 
 
 @app.command()

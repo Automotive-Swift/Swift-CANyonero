@@ -10,6 +10,7 @@ struct ECUconnectCommand: ParsableCommand {
         version: "0.5.0",
         subcommands: [
             Benchmark.self,
+            Config.self,
             Monitor.self,
             Ping.self,
             Raw.self,
