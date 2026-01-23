@@ -117,15 +117,17 @@ struct ConfigMode: ParsableCommand {
 
     mutating func run() throws {
         let url: URL = URL(string: parentOptions.url)!
+        let modeId = mode.id
+        let modeName = mode.rawValue
 
         Task {
             do {
                 let adapter = try await connectAdapter(url: url)
-                let params: Cornucopia.Core.StringAnyCollection = ["mode": .int(mode.id)]
+                let params: Cornucopia.Core.StringAnyCollection = ["mode": .int(modeId)]
                 let result = try await adapter.rpcCall(method: "app.set_mode", params: params)
                 let success = (result["success"]?.anyValue as? Bool) ?? false
                 if success {
-                    print("Mode change requested: \(mode.rawValue). Adapter will reboot shortly.")
+                    print("Mode change requested: \(modeName). Adapter will reboot shortly.")
                     Foundation.exit(0)
                 }
                 let message = (result["error"]?.anyValue as? String) ?? "Failed to change mode."
@@ -325,29 +327,33 @@ struct ConfigCANvoySet: ParsableCommand {
 
     mutating func run() throws {
         let url: URL = URL(string: parentOptions.url)!
+        let roleId = role.id
+        let roleName = role.rawValue
+        let bitrateValue = bitrate
+        let terminationValue = termination
 
         Task {
             do {
                 let adapter = try await connectAdapter(url: url)
                 let params: Cornucopia.Core.StringAnyCollection = [
-                    "role": .int(role.id),
-                    "bitrate": .int(bitrate),
-                    "termination": .bool(termination),
+                    "role": .int(roleId),
+                    "bitrate": .int(bitrateValue),
+                    "termination": .bool(terminationValue),
                 ]
                 let result = try await adapter.rpcCall(method: "canvoy.set_role", params: params)
                 let success = (result["success"]?.anyValue as? Bool) ?? false
                 if success {
                     let appliedBitrate = (result["bitrate"]?.anyValue as? Int) ??
-                                         Int(result["bitrate"]?.anyValue as? Double ?? Double(bitrate))
+                                         Int(result["bitrate"]?.anyValue as? Double ?? Double(bitrateValue))
                     let appliedTermination: Bool
                     if let boolValue = result["termination"]?.anyValue as? Bool {
                         appliedTermination = boolValue
                     } else if let intValue = result["termination"]?.anyValue as? Int {
                         appliedTermination = intValue != 0
                     } else {
-                        appliedTermination = termination
+                        appliedTermination = terminationValue
                     }
-                    print("CANvoy role set to \(role.rawValue).")
+                    print("CANvoy role set to \(roleName).")
                     print("Bitrate: \(appliedBitrate)")
                     print("Termination: \(appliedTermination ? "enabled" : "disabled")")
                     Foundation.exit(0)
