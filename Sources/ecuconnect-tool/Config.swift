@@ -338,7 +338,7 @@ struct ConfigCANvoySet: ParsableCommand {
                 let success = (result["success"]?.anyValue as? Bool) ?? false
                 if success {
                     let appliedBitrate = (result["bitrate"]?.anyValue as? Int) ??
-                                         Int(result["bitrate"]?.anyValue as? Double ?? bitrate)
+                                         Int(result["bitrate"]?.anyValue as? Double ?? Double(bitrate))
                     let appliedTermination: Bool
                     if let boolValue = result["termination"]?.anyValue as? Bool {
                         appliedTermination = boolValue
