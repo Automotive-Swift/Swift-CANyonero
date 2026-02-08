@@ -422,18 +422,6 @@ PDU PDU::periodicMessageEnded(const PeriodicMessageHandle handle) {
     return PDU(PDUType::periodicMessageEnded, payload);
 }
 
-PDU PDU::updateStartedSendData() {
-    return PDU(PDUType::updateStartedSendData);
-}
-
-PDU PDU::updateDataReceived() {
-    return PDU(PDUType::updateDataReceived);
-}
-
-PDU PDU::updateCompleted() {
-    return PDU(PDUType::updateCompleted);
-}
-
 PDU PDU::rpcResponse(const std::string& string) {
     auto payload = Bytes(string.begin(), string.end());
     return PDU(PDUType::rpcResponse, payload);

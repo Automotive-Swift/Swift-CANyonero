@@ -49,7 +49,7 @@ fileprivate class REPL {
         repeat {
             var input = ""
             do {
-                let prompt = lastAddressing != nil ? "> " : "> (set addressing first with :7df,7e8) "
+                let prompt = lastAddressing != nil ? "> " : "> (set addressing first with :7df or :7df,7e8) "
                 input = try self.lineNoise.getLine(prompt: prompt)
             } catch LinenoiseError.CTRL_C, LinenoiseError.EOF {
                 print("^D")
@@ -75,7 +75,7 @@ fileprivate class REPL {
                         self.lineNoise.addHistory(trimmed)
                         print("")
                     } else {
-                        print("SyntaxError: Invalid addressing format. Use :7df,7e8 or :18DA33F1/10,18DAF110/20 (send[/ea],reply[/rea])")
+                        print("SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 (or :18DA33F1/10,18DAF110/20 for extended addressing)")
                     }
                 } else {
                     guard let addressing = lastAddressing else {
@@ -288,12 +288,19 @@ fileprivate class REPL {
 
     func parseAddressing(_ input: String) -> Automotive.Addressing? {
         let components = input.components(separatedBy: ",")
-        guard components.count == 2 else { return nil }
+        guard components.count == 1 || components.count == 2 else { return nil }
 
         guard let send = parseAddressComponent(components[0]) else { return nil }
 
+        let replyComponent: String
+        if components.count == 1 || components[1].CC_trimmed().isEmpty {
+            replyComponent = Self.defaultReplyWildcard(for: send.id)
+        } else {
+            replyComponent = components[1]
+        }
+
         // Check for wildcards in reply ID to determine if this is a multicast/broadcast
-        let replyString = components[1].CC_trimmed()
+        let replyString = replyComponent.CC_trimmed()
         let replyParts = replyString.split(separator: "/")
         
         if replyParts.count > 0 && (replyParts[0].contains("x") || replyParts[0].contains("X")) {
@@ -327,7 +334,7 @@ fileprivate class REPL {
 
         } else {
             // Standard Unicast
-            guard let reply = parseAddressComponent(components[1]) else { return nil }
+            guard let reply = parseAddressComponent(replyComponent) else { return nil }
             let addressing = Automotive.Addressing.unicast(id: send.id, ea: send.ext, reply: reply.id, rea: reply.ext)
             lastAddressing = addressing
             return addressing
@@ -358,6 +365,11 @@ fileprivate class REPL {
             normalized = "0" + normalized
         }
         return T(normalized, radix: 16)
+    }
+
+    private static func defaultReplyWildcard(for requestId: Automotive.Header) -> String {
+        let width = requestId > 0x7FF ? 8 : 3
+        return String(repeating: "x", count: width)
     }
 
     func parseMessage(_ input: String, addressing: Automotive.Addressing) -> Automotive.Message? {

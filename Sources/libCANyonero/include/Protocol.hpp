@@ -203,12 +203,6 @@ enum class PDUType: uint8_t {
     periodicMessageStarted  = 0xB5,
     /// Periodic message ended ­– MUST include the handle for the stopped periodic message.
     periodicMessageEnded    = 0xB6,
-    /// Update prepared.
-    updateStartedSendData   = 0xC0,
-    /// Update data received.
-    updateDataReceived      = 0xC1,
-    /// Update completed.
-    updateCompleted         = 0xC2,
 
     /// RPC call response ­– MUST include the stringified JSON payload.
     rpcResponse             = 0xD0,
@@ -349,12 +343,6 @@ public:
     static PDU periodicMessageStarted(const PeriodicMessageHandle handle);
     /// Creates a `periodicMessageEnded` PDU.
     static PDU periodicMessageEnded(const PeriodicMessageHandle handle);
-    /// Creates an `updateStartedSendData` PDU.
-    static PDU updateStartedSendData();
-    /// Creates an `updateDataReceived` PDU.
-    static PDU updateDataReceived();
-    /// Creates an `updateCompleted` PDU.
-    static PDU updateCompleted();
     /// Creates a `rpcResponse` PDU.
     static PDU rpcResponse(const std::string& string);
     /// Creates a `rpcBinaryResponse` PDU.

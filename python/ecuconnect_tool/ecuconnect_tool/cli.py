@@ -160,15 +160,22 @@ def _parse_address_component(component: str) -> tuple[int, int] | None:
     return header, ext
 
 
+def _default_reply_wildcard(request_id: int) -> str:
+    width = 8 if request_id > 0x7FF else 3
+    return "x" * width
+
+
 def _parse_addressing(text: str) -> Addressing | None:
     parts = text.split(",")
-    if len(parts) != 2:
+    if len(parts) not in {1, 2}:
         return None
     send = _parse_address_component(parts[0])
     if send is None:
         return None
 
-    reply_raw = parts[1].strip()
+    reply_raw = parts[1].strip() if len(parts) == 2 else ""
+    if not reply_raw:
+        reply_raw = _default_reply_wildcard(send[0])
     reply_parts = reply_raw.split("/")
     reply_id_str = reply_parts[0]
     reply_ext = 0
@@ -890,7 +897,7 @@ def term(
         }.get(channel_proto, str(channel_proto))
         console.print(f"{channel_desc} channel opened at {bitrate} bps.")
         console.print("Commands:")
-        console.print("  :REQ,REPLY     - Set addressing (e.g. :7df,7e8 or :33,F1)")
+        console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
         console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
         console.print("  0902           - Send hex data with current addressing")
         console.print("  quit           - Exit")
@@ -900,7 +907,7 @@ def term(
 
         try:
             while True:
-                prompt = "> " if current_addressing else "> (set addressing first with :7df,7e8) "
+                prompt = "> " if current_addressing else "> (set addressing first with :7df or :7df,7e8) "
                 try:
                     line = input(prompt)
                 except (EOFError, KeyboardInterrupt):
@@ -916,8 +923,8 @@ def term(
                     addressing = _parse_addressing(trimmed[1:])
                     if addressing is None:
                         console.print(
-                            "SyntaxError: Invalid addressing format. Use :7df,7e8 or "
-                            ":18DA33F1/10,18DAF110/20 (send[/ea],reply[/rea])"
+                            "SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 "
+                            "(or :18DA33F1/10,18DAF110/20 for extended addressing)"
                         )
                         continue
                     current_addressing = addressing

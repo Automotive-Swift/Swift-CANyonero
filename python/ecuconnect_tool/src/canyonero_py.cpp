@@ -58,9 +58,6 @@ PYBIND11_MODULE(canyonero_py, m) {
         .value("received_compressed", CANyonero::PDUType::receivedCompressed)
         .value("periodic_message_started", CANyonero::PDUType::periodicMessageStarted)
         .value("periodic_message_ended", CANyonero::PDUType::periodicMessageEnded)
-        .value("update_started_send_data", CANyonero::PDUType::updateStartedSendData)
-        .value("update_data_received", CANyonero::PDUType::updateDataReceived)
-        .value("update_completed", CANyonero::PDUType::updateCompleted)
         .value("rpc_response", CANyonero::PDUType::rpcResponse)
         .value("rpc_binary_response", CANyonero::PDUType::rpcBinaryResponse)
         .value("error_unspecified", CANyonero::PDUType::errorUnspecified)
@@ -168,9 +165,6 @@ PYBIND11_MODULE(canyonero_py, m) {
         })
         .def_static("periodic_message_started", &CANyonero::PDU::periodicMessageStarted)
         .def_static("periodic_message_ended", &CANyonero::PDU::periodicMessageEnded)
-        .def_static("update_started_send_data", &CANyonero::PDU::updateStartedSendData)
-        .def_static("update_data_received", &CANyonero::PDU::updateDataReceived)
-        .def_static("update_completed", &CANyonero::PDU::updateCompleted)
         .def_static("rpc_response", &CANyonero::PDU::rpcResponse)
         .def_static("rpc_binary_response", [](const py::buffer& data) {
             return CANyonero::PDU::rpcBinaryResponse(bytes_from_buffer(data));
