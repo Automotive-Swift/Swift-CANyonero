@@ -63,6 +63,7 @@ const Arbitration PDU::arbitration() const {
 //MARK: - PDU
 ChannelHandle PDU::channel() const {
     assert(_type == PDUType::openChannel ||
+           _type == PDUType::openFDChannel ||
            _type == PDUType::closeChannel ||
            _type == PDUType::send ||
            _type == PDUType::sendCompressed ||
@@ -80,20 +81,27 @@ PeriodicMessageHandle PDU::periodicMessage() const {
 }
 
 ChannelProtocol PDU::protocol() const {
-    assert(_type == PDUType::openChannel);
+    assert(_type == PDUType::openChannel || _type == PDUType::openFDChannel);
     return static_cast<ChannelProtocol>(_payload[0]);
 }
 
 uint32_t PDU::bitrate() const {
-    assert(_type == PDUType::openChannel);
+    assert(_type == PDUType::openChannel || _type == PDUType::openFDChannel);
     auto it = _payload.begin() + 1;
     return vector_read_uint32(it);
 }
 
+uint32_t PDU::dataBitrate() const {
+    assert(_type == PDUType::openFDChannel);
+    auto it = _payload.begin() + 5;
+    return vector_read_uint32(it);
+}
+
 std::pair<uint16_t, uint16_t> PDU::separationTimes() const {
-    assert(_type == PDUType::openChannel);
-    SeparationTimeCode rxSeparation = _payload[5] >> 4;
-    SeparationTimeCode txSeparation = _payload[5] & 0x0F;
+    assert(_type == PDUType::openChannel || _type == PDUType::openFDChannel);
+    size_t offset = _type == PDUType::openFDChannel ? 9 : 5;
+    SeparationTimeCode rxSeparation = _payload[offset] >> 4;
+    SeparationTimeCode txSeparation = _payload[offset] & 0x0F;
     auto rxSeparationTime = microsecondsFromSeparationTimeCode(rxSeparation);
     auto txSeparationTime = microsecondsFromSeparationTimeCode(txSeparation);
     return std::make_pair(rxSeparationTime, txSeparationTime);
@@ -281,6 +289,15 @@ PDU PDU::openChannel(const ChannelProtocol protocol, uint32_t bitrate, uint8_t r
     uint8_t separationTime = rxSeparationTime << 4 | txSeparationTime;
     payload.push_back(separationTime);
     return PDU(PDUType::openChannel, payload);
+}
+
+PDU PDU::openFDChannel(const ChannelProtocol protocol, uint32_t bitrate, uint32_t dataBitrate, uint8_t rxSeparationTime, uint8_t txSeparationTime) {
+    auto payload = Bytes(1, static_cast<uint8_t>(protocol));
+    vector_append_uint32(payload, bitrate);
+    vector_append_uint32(payload, dataBitrate);
+    uint8_t separationTime = rxSeparationTime << 4 | txSeparationTime;
+    payload.push_back(separationTime);
+    return PDU(PDUType::openFDChannel, payload);
 }
 
 PDU PDU::closeChannel(const ChannelHandle handle) {

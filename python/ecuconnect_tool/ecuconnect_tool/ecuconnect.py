@@ -208,13 +208,24 @@ class EcuconnectClient:
         self,
         protocol: canyonero.ChannelProtocol,
         bitrate: int,
+        data_bitrate: Optional[int] = None,
         rx_separation_us: int = 0,
         tx_separation_us: int = 0,
         timeout: float = 2.0,
     ) -> int:
         rx_code = canyonero.PDU.separation_time_code_from_microseconds(rx_separation_us)
         tx_code = canyonero.PDU.separation_time_code_from_microseconds(tx_separation_us)
-        self.send_pdu(canyonero.PDU.open_channel(protocol, bitrate, rx_code, tx_code))
+        fd_protocols = {
+            canyonero.ChannelProtocol.raw_fd,
+            canyonero.ChannelProtocol.can_fd,
+            canyonero.ChannelProtocol.isotp_fd,
+        }
+        if protocol in fd_protocols:
+            if data_bitrate is None or data_bitrate <= 0:
+                raise ValueError("data_bitrate must be provided for FD channels")
+            self.send_pdu(canyonero.PDU.open_fd_channel(protocol, bitrate, data_bitrate, rx_code, tx_code))
+        else:
+            self.send_pdu(canyonero.PDU.open_channel(protocol, bitrate, rx_code, tx_code))
         pdu = self.wait_for(lambda p: p.type == canyonero.PDUType.channel_opened, timeout)
         payload = pdu.payload()
         if not payload:

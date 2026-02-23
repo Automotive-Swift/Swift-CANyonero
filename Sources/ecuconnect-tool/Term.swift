@@ -33,6 +33,8 @@ fileprivate class REPL {
         switch channelProtocol {
             case .isotp:
                 self.payloadProtocol = .uds
+            case .isotpFD:
+                self.payloadProtocol = .uds
             case .kline:
                 self.payloadProtocol = .kwp
             default:
@@ -428,8 +430,11 @@ struct Term: ParsableCommand {
     @Argument(help: "Bitrate")
     var bitrate: Int = 500000
 
-    @Option(name: .shortAndLong, help: "Channel protocol (passthrough, isotp, or kline)")
+    @Option(name: .shortAndLong, help: "Channel protocol (passthrough, isotp, kline, raw_fd, or isotp_fd)")
     var proto: String = "passthrough"
+
+    @Option(name: .long, help: "CAN-FD data bitrate (used for raw_fd/isotp_fd)")
+    var dataBitrate: Int = 2_000_000
 
     mutating func run() throws {
 
@@ -444,9 +449,14 @@ struct Term: ParsableCommand {
                 channelProto = .isotp
             case "kline":
                 channelProto = .kline
+            case "raw_fd", "can_fd":
+                channelProto = .rawFD
+            case "isotp_fd":
+                channelProto = .isotpFD
             default:
-                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough', 'isotp', or 'kline'.")
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough', 'isotp', 'kline', 'raw_fd', or 'isotp_fd'.")
         }
+        let selectedDataBitrate: Int? = (channelProto == .rawFD || channelProto == .isotpFD) ? dataBitrate : nil
 
         let defaultAddressing: Automotive.Addressing
         switch channelProto {
@@ -469,16 +479,22 @@ struct Term: ParsableCommand {
                 print("Reported system voltage is \(voltage)V.")
 
                 try await Cornucopia.Core.Spinner.run("Opening channel") {
-                    try await adapter.openChannel(proto: channelProto, bitrate: bps)
+                    try await adapter.openChannel(proto: channelProto, bitrate: bps, dataBitrate: selectedDataBitrate ?? 0)
                 }
                 let channelDescription: String
                 switch channelProto {
                     case .passthrough: channelDescription = "Passthrough"
                     case .isotp: channelDescription = "ISOTP"
                     case .kline: channelDescription = "KLine"
+                    case .rawFD: channelDescription = "Raw CAN-FD"
+                    case .isotpFD: channelDescription = "ISOTP-FD"
                     default: channelDescription = "\(channelProto)"
                 }
-                print("\(channelDescription) channel opened at \(bps) bps.")
+                if let selectedDataBitrate {
+                    print("\(channelDescription) channel opened at \(bps)/\(selectedDataBitrate) bps.")
+                } else {
+                    print("\(channelDescription) channel opened at \(bps) bps.")
+                }
                 print("Commands:")
                 print("  :REQ,REPLY     - Set addressing (e.g. :7df,7e8 or :33,F1)")
                 print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")

@@ -27,6 +27,19 @@ using namespace CANyonero;
     XCTAssertEqual(separation.second, 2000u);
 }
 
+- (void)testOpenFDChannelMetadata {
+    auto pdu = CANyonero::PDU::openFDChannel(CANyonero::ChannelProtocol::raw_fd, 500000, 2000000, 0x00, 0x00);
+
+    XCTAssertEqual(pdu.type(), CANyonero::PDUType::openFDChannel);
+    XCTAssertEqual(static_cast<uint8_t>(pdu.protocol()), static_cast<uint8_t>(CANyonero::ChannelProtocol::raw_fd));
+    XCTAssertEqual(pdu.bitrate(), 500000u);
+    XCTAssertEqual(pdu.dataBitrate(), 2000000u);
+
+    auto separation = pdu.separationTimes();
+    XCTAssertEqual(separation.first, 0u);
+    XCTAssertEqual(separation.second, 0u);
+}
+
 - (void)testCloseChannelUsesCorrectType {
     const CANyonero::ChannelHandle handle = 0xAA;
     auto pdu = CANyonero::PDU::closeChannel(handle);

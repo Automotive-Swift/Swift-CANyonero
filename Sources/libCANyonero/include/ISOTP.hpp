@@ -20,7 +20,12 @@ namespace ISOTP {
 constexpr size_t maximumTransferSize = 0xFFF; // 4095 bytes
 constexpr uint8_t standardFrameWidth = 8;
 constexpr uint8_t extendedFrameWidth = 7;
+constexpr uint8_t maximumFrameWidth = 64;
 constexpr uint8_t padding = 0xAA;
+
+constexpr uint8_t singleFramePayloadCapacity(uint8_t width) {
+    return width > standardFrameWidth ? static_cast<uint8_t>(width - 2) : static_cast<uint8_t>(width - 1);
+}
 
 constexpr size_t maxUnconfirmedBlocksForWidth(uint8_t width) {
     const size_t payloadPerFrame = static_cast<size_t>(width - 1);
@@ -60,7 +65,7 @@ struct Frame {
 
     Bytes bytes;
 
-    /// Creates a frame from its on-the-wire structure (exactly 7 or 8 bytes).
+    /// Creates a frame from its on-the-wire structure.
     Frame(const Bytes& bytes)
         :bytes(bytes)
     {
@@ -76,9 +81,15 @@ struct Frame {
 
     /// Returns an SF.
     static Frame single(const Bytes& bytes, uint8_t width) {
-        assert(bytes.size() <= 7);
-        uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
-        auto vector = std::vector<uint8_t> { pci };
+        assert(bytes.size() <= singleFramePayloadCapacity(width));
+        std::vector<uint8_t> vector;
+        if (width > standardFrameWidth) {
+            // CAN-FD single-frame escape sequence: PCI nibble 0 and explicit SF length byte.
+            vector = { uint8_t(Type::single), static_cast<uint8_t>(bytes.size()) };
+        } else {
+            uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
+            vector = { pci };
+        }
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         vector.resize(width, ISOTP::padding);
         return Frame(vector);
@@ -134,9 +145,20 @@ struct Frame {
     }
 
     /// Returns the PDU length for an SF.
-    uint8_t singleLength() {
+    uint8_t singleLength(uint8_t frameWidth) {
         assert((bytes[0] & 0xF0) == 0x00); // ensure this is a single frame
-        return bytes[0] & 0x0F;
+        auto nibbleLength = bytes[0] & 0x0F;
+        if (frameWidth > standardFrameWidth && nibbleLength == 0 && bytes.size() > 1) {
+            return bytes[1];
+        }
+        return nibbleLength;
+    }
+
+    uint8_t singleHeaderSize(uint8_t frameWidth) {
+        if (frameWidth > standardFrameWidth && (bytes[0] & 0x0F) == 0) {
+            return 2;
+        }
+        return 1;
     }
 
     /// Returns the PDU length for an FF.
@@ -271,8 +293,8 @@ public:
     /// Create a new ``Transceiver`` with a custom configuration.
     /// The rxSeparationTime and txSeparationTime are in microseconds.
     /// NOTE: txSeparationTime is only considered, if it is larger than the one reported in the respective flow.
-    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
-        :behavior(behavior), width(mode == Mode::standard ? standardFrameWidth : extendedFrameWidth), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
+    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00, uint8_t frameWidth = 0x00)
+        :behavior(behavior), width(resolveFrameWidth(mode, frameWidth)), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
     }
 
@@ -282,7 +304,8 @@ public:
 
         if (state != State::idle) { return { Action::Type::protocolViolation, "State machine not .idle" }; }
 
-        if (bytes.size() < width) {
+        auto maxSinglePayload = static_cast<size_t>(singleFramePayloadCapacity(width));
+        if (bytes.size() <= maxSinglePayload) {
             // Content small enough to fit in a single frame, send single frame and leave state machine in `.idle`.
             auto frame = Frame::single(bytes, width);
             return { .type = Action::Type::writeFrames, .frames = { 1, frame } };
@@ -360,6 +383,14 @@ public:
     }
 
 private:
+    static uint8_t resolveFrameWidth(Mode mode, uint8_t requestedWidth) {
+        auto defaultWidth = mode == Mode::standard ? standardFrameWidth : extendedFrameWidth;
+        if (requestedWidth == 0) { return defaultWidth; }
+        auto minWidth = defaultWidth;
+        auto clamped = std::max(minWidth, std::min(requestedWidth, maximumFrameWidth));
+        return clamped;
+    }
+
     Behavior behavior;
     uint8_t width;
     uint8_t blockSize;
@@ -439,11 +470,13 @@ private:
             case Frame::Type::single: {
                 if (state != State::idle) { return { Action::Type::protocolViolation, "Did receive SINGLE while we're not idle." }; }
 
-                auto pduLength = frame.singleLength();
+                auto pduLength = frame.singleLength(width);
+                auto headerSize = frame.singleHeaderSize(width);
                 if (pduLength == 0)  { return { Action::Type::protocolViolation, "Did receive SINGLE with zero length in PCI." }; }
-                if (pduLength > bytes.size() - 1) { return { Action::Type::protocolViolation, "Did receive SINGLE with length exceeding payload." }; }
-                if (pduLength > 7) { return { Action::Type::protocolViolation, "Did receive SINGLE with invalid length > 7." }; }
-                auto data = Bytes(bytes.begin() + 1, bytes.begin() + 1 + pduLength);
+                if (bytes.size() < headerSize) { return { Action::Type::protocolViolation, "Did receive SINGLE shorter than expected header." }; }
+                if (pduLength > bytes.size() - headerSize) { return { Action::Type::protocolViolation, "Did receive SINGLE with length exceeding payload." }; }
+                if (pduLength > singleFramePayloadCapacity(width)) { return { Action::Type::protocolViolation, "Did receive SINGLE with invalid length for current frame width." }; }
+                auto data = Bytes(bytes.begin() + headerSize, bytes.begin() + headerSize + pduLength);
                 // No need to call reset() as we didn't change anything in the state machine.
                 return {
                     .type = Action::Type::process,

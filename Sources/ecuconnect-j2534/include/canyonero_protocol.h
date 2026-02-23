@@ -33,6 +33,7 @@ enum class PDUType : uint8_t {
     ReadVoltage             = 0x12,
     OpenChannel             = 0x30,
     CloseChannel            = 0x31,
+    OpenFDChannel           = 0x32,
     Send                    = 0x33,
     SetArbitration          = 0x34,
     StartPeriodicMessage    = 0x35,
@@ -69,7 +70,8 @@ enum class ChannelProtocol : uint8_t {
     Raw         = 0x00,     // Raw CAN frames (max 8 bytes)
     ISOTP       = 0x01,     // ISO 15765-2 (max 4095 bytes)
     KLine       = 0x02,     // ISO 9141
-    CANFD       = 0x03,     // CAN FD (max 64 bytes)
+    RawFD       = 0x03,     // Raw CAN FD (max 64 bytes)
+    CANFD       = RawFD,    // Backwards-compatible alias
     ISOTP_FD    = 0x04,     // ISOTP with CAN FD
     RawWithFC   = 0x05,     // Raw CAN with auto Flow Control
     ENET        = 0x06,     // Ethernet frames
@@ -137,6 +139,8 @@ public:
     static PDU readVoltage();
     static PDU openChannel(ChannelProtocol protocol, uint32_t bitrate,
                            uint8_t rxSeparationTime = 0, uint8_t txSeparationTime = 0);
+    static PDU openFDChannel(ChannelProtocol protocol, uint32_t bitrate, uint32_t dataBitrate,
+                             uint8_t rxSeparationTime = 0, uint8_t txSeparationTime = 0);
     static PDU closeChannel(uint8_t handle);
     static PDU send(uint8_t handle, const std::vector<uint8_t>& data);
     static PDU sendBatch(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames);
@@ -189,7 +193,8 @@ public:
 
     // Channel operations
     std::optional<uint8_t> openChannel(ChannelProtocol protocol, uint32_t bitrate,
-                                        uint32_t timeout_ms = 1000);
+                                       uint32_t timeout_ms = 1000,
+                                       std::optional<uint32_t> dataBitrate = std::nullopt);
     bool closeChannel(uint8_t handle, uint32_t timeout_ms = 1000);
     bool setArbitration(uint8_t handle, const Arbitration& arb, uint32_t timeout_ms = 1000);
 

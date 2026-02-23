@@ -87,8 +87,10 @@ enum class ChannelProtocol: uint8_t {
     isotp                 = 0x01,
     /// KLINE (ISO 9141)
     kline                 = 0x02,
-    /// CAN FD frames. Maximum length = 64 Bytes.
-    can_fd                = 0x03,
+    /// Raw CAN FD frames. Maximum length = 64 Bytes.
+    raw_fd                = 0x03,
+    /// Backwards-compatible alias for raw CAN FD frames.
+    can_fd                = raw_fd,
     /// ISOTP w/ CANFD. Maximum Length = 4 GBytes.
     isotp_fd              = 0x04,
     /// Raw CAN frames with automatic Flow Control for ISOTP First Frames. Maximum length = 8 Byte.
@@ -145,6 +147,8 @@ enum class PDUType: uint8_t {
     openChannel             = 0x30,
     /// CLOSE ­– Requests closing a logical channel. MUST include the channel number (`UInt8`).
     closeChannel            = 0x31,
+    /// OPEN FD – Requests opening a CAN-FD logical channel. MUST include protocol (`UInt8`), nominal bitrate (`UInt32`), data bitrate (`UInt32`), and STmin nibble byte.
+    openFDChannel           = 0x32,
     /// SEND ­– Requests sending a data frame of vehicle protocol data over the logical channel. MUST include the channel number (`UInt8`) and the data (`[UInt8]`). The maximum data length specific to the channel protocol.
     send                    = 0x33,
     /// SET ARBITRATION ­– Set the request and response (or source and target) addresses. MUST include the channel number (`UInt8`) and arbitration infos. See ``Arbitration``.
@@ -263,11 +267,13 @@ public:
     ChannelHandle channel() const;
     /// Returns the periodic message value of this PDU, iff the PDU contains one.
     PeriodicMessageHandle periodicMessage() const;
-    /// Returns the channel protocol value of this PDU, iff the PDU is `openChannel`.
+    /// Returns the channel protocol value of this PDU, iff the PDU is `openChannel` or `openFDChannel`.
     ChannelProtocol protocol() const;
-    /// Returns the channel bitrate value of this PDU, iff the PDU is `openChannel`.
+    /// Returns the channel nominal bitrate value of this PDU, iff the PDU is `openChannel` or `openFDChannel`.
     uint32_t bitrate() const;
-    /// Returns the separation times (in µs) for TX and RX, iff the PDU is `openChannel`.
+    /// Returns the channel data bitrate value of this PDU, iff the PDU is `openFDChannel`.
+    uint32_t dataBitrate() const;
+    /// Returns the separation times (in µs) for TX and RX, iff the PDU is `openChannel` or `openFDChannel`.
     std::pair<Microseconds, Microseconds> separationTimes() const;
     /// Returns the interval value of this PDU, iff the PDU is `startPeriodicMessage`.
     uint16_t milliseconds() const;
@@ -294,6 +300,8 @@ public:
     static PDU readVoltage();
     /// Creates an `openChannel` PDU.
     static PDU openChannel(const ChannelProtocol protocol, const uint32_t bitrate, const SeparationTimeCode rxSeparationTime, const SeparationTimeCode txSeparationTime);
+    /// Creates an `openFDChannel` PDU.
+    static PDU openFDChannel(const ChannelProtocol protocol, const uint32_t bitrate, const uint32_t dataBitrate, const SeparationTimeCode rxSeparationTime, const SeparationTimeCode txSeparationTime);
     /// Creates a `closeChannel` PDU.
     static PDU closeChannel(const ChannelHandle handle);
     /// Creates a `send` PDU.

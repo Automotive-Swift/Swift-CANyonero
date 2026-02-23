@@ -132,6 +132,19 @@ PDU PDU::openChannel(ChannelProtocol protocol, uint32_t bitrate,
     return PDU(PDUType::OpenChannel, payload);
 }
 
+PDU PDU::openFDChannel(ChannelProtocol protocol, uint32_t bitrate, uint32_t dataBitrate,
+                        uint8_t rxSeparationTime, uint8_t txSeparationTime) {
+    std::vector<uint8_t> payload;
+    payload.reserve(10);
+
+    payload.push_back(static_cast<uint8_t>(protocol));
+    appendUint32BE(payload, bitrate);
+    appendUint32BE(payload, dataBitrate);
+    payload.push_back((rxSeparationTime << 4) | (txSeparationTime & 0x0F));
+
+    return PDU(PDUType::OpenFDChannel, payload);
+}
+
 PDU PDU::closeChannel(uint8_t handle) {
     return PDU(PDUType::CloseChannel, {handle});
 }
@@ -433,8 +446,21 @@ bool Protocol::ping(uint32_t timeout_ms) {
 // Channel operations
 std::optional<uint8_t> Protocol::openChannel(ChannelProtocol protocol,
                                               uint32_t bitrate,
-                                              uint32_t timeout_ms) {
-    if (!send(PDU::openChannel(protocol, bitrate))) return std::nullopt;
+                                              uint32_t timeout_ms,
+                                              std::optional<uint32_t> dataBitrate) {
+    const bool fdProtocol =
+        protocol == ChannelProtocol::RawFD ||
+        protocol == ChannelProtocol::CANFD ||
+        protocol == ChannelProtocol::ISOTP_FD;
+    if (fdProtocol) {
+        if (!dataBitrate.has_value() || dataBitrate.value() == 0) {
+            setLastError("Missing data bitrate for CAN-FD channel");
+            return std::nullopt;
+        }
+        if (!send(PDU::openFDChannel(protocol, bitrate, dataBitrate.value()))) return std::nullopt;
+    } else {
+        if (!send(PDU::openChannel(protocol, bitrate))) return std::nullopt;
+    }
 
     auto response = waitResponse(PDUType::ChannelOpened, timeout_ms);
     if (!response) return std::nullopt;

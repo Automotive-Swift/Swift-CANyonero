@@ -39,7 +39,9 @@ def _parse_hex_bytes(data: str) -> bytes:
     if len(cleaned) % 2 != 0:
         cleaned = "0" + cleaned
     try:
-    return bytes.fromhex(cleaned)
+        return bytes.fromhex(cleaned)
+    except ValueError as exc:
+        raise typer.BadParameter("Invalid hex payload") from exc
 
 
 def _parse_mode(value: str) -> tuple[int, str]:
@@ -825,8 +827,9 @@ def term(
     ctx: typer.Context,
     bitrate: int = typer.Argument(500000, help="Bitrate."),
     proto: str = typer.Option(
-        "passthrough", "--proto", "-p", help="Channel protocol (passthrough, isotp, or kline)."
+        "passthrough", "--proto", "-p", help="Channel protocol (passthrough, isotp, kline, raw_fd, or isotp_fd)."
     ),
+    data_bitrate: int = typer.Option(2000000, "--data-bitrate", help="CAN-FD data bitrate (used for raw_fd/isotp_fd)."),
     timeout: float = typer.Option(1.0, help="Response timeout in seconds."),
     idle_timeout: float = typer.Option(0.25, help="Idle timeout for multicast responses."),
 ) -> None:
@@ -842,8 +845,19 @@ def term(
         channel_proto = canyonero.ChannelProtocol.isotp
     elif proto_normalized == "kline":
         channel_proto = canyonero.ChannelProtocol.kline
+    elif proto_normalized in {"raw_fd", "can_fd"}:
+        channel_proto = canyonero.ChannelProtocol.raw_fd
+    elif proto_normalized == "isotp_fd":
+        channel_proto = canyonero.ChannelProtocol.isotp_fd
     else:
-        raise typer.BadParameter("Invalid protocol. Use passthrough, isotp, or kline.")
+        raise typer.BadParameter("Invalid protocol. Use passthrough, isotp, kline, raw_fd, or isotp_fd.")
+
+    fd_protocols = {
+        canyonero.ChannelProtocol.raw_fd,
+        canyonero.ChannelProtocol.can_fd,
+        canyonero.ChannelProtocol.isotp_fd,
+    }
+    selected_data_bitrate = data_bitrate if channel_proto in fd_protocols else None
 
     if channel_proto == canyonero.ChannelProtocol.kline:
         default_addressing = Addressing(
@@ -884,6 +898,7 @@ def term(
             client,
             bitrate=bitrate,
             protocol=channel_proto,
+            data_bitrate=selected_data_bitrate,
             open_timeout=5.0,
             open_retries=3,
             open_retry_delay=1.0,
@@ -894,8 +909,14 @@ def term(
             canyonero.ChannelProtocol.raw: "Passthrough",
             canyonero.ChannelProtocol.isotp: "ISOTP",
             canyonero.ChannelProtocol.kline: "KLine",
+            canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
+            canyonero.ChannelProtocol.can_fd: "Raw CAN-FD",
+            canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
         }.get(channel_proto, str(channel_proto))
-        console.print(f"{channel_desc} channel opened at {bitrate} bps.")
+        if selected_data_bitrate:
+            console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
+        else:
+            console.print(f"{channel_desc} channel opened at {bitrate} bps.")
         console.print("Commands:")
         console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
         console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
@@ -1019,6 +1040,7 @@ def monitor(
             client,
             bitrate=bitrate,
             protocol=canyonero.ChannelProtocol.raw,
+            data_bitrate=None,
             open_timeout=5.0,
             open_retries=3,
             open_retry_delay=1.0,
@@ -1087,6 +1109,7 @@ def send_frame(
             client,
             bitrate=bitrate,
             protocol=canyonero.ChannelProtocol.raw,
+            data_bitrate=None,
             open_timeout=5.0,
             open_retries=3,
             open_retry_delay=1.0,
@@ -1219,6 +1242,7 @@ def test(
                 client,
                 bitrate=bitrate,
                 protocol=canyonero.ChannelProtocol.raw,
+                data_bitrate=None,
                 open_timeout=open_timeout,
                 open_retries=open_retries,
                 open_retry_delay=open_retry_delay,

@@ -25,6 +25,7 @@ PYBIND11_MODULE(canyonero_py, m) {
         .value("raw", CANyonero::ChannelProtocol::raw)
         .value("isotp", CANyonero::ChannelProtocol::isotp)
         .value("kline", CANyonero::ChannelProtocol::kline)
+        .value("raw_fd", CANyonero::ChannelProtocol::raw_fd)
         .value("can_fd", CANyonero::ChannelProtocol::can_fd)
         .value("isotp_fd", CANyonero::ChannelProtocol::isotp_fd)
         .value("raw_with_fc", CANyonero::ChannelProtocol::raw_with_fc)
@@ -36,6 +37,7 @@ PYBIND11_MODULE(canyonero_py, m) {
         .value("request_info", CANyonero::PDUType::requestInfo)
         .value("read_voltage", CANyonero::PDUType::readVoltage)
         .value("open_channel", CANyonero::PDUType::openChannel)
+        .value("open_fd_channel", CANyonero::PDUType::openFDChannel)
         .value("close_channel", CANyonero::PDUType::closeChannel)
         .value("send", CANyonero::PDUType::send)
         .value("set_arbitration", CANyonero::PDUType::setArbitration)
@@ -120,6 +122,7 @@ PYBIND11_MODULE(canyonero_py, m) {
         .def("periodic_message", &CANyonero::PDU::periodicMessage)
         .def("protocol", &CANyonero::PDU::protocol)
         .def("bitrate", &CANyonero::PDU::bitrate)
+        .def("data_bitrate", &CANyonero::PDU::dataBitrate)
         .def("separation_times", &CANyonero::PDU::separationTimes)
         .def("milliseconds", &CANyonero::PDU::milliseconds)
         .def("filename", &CANyonero::PDU::filename)
@@ -129,6 +132,7 @@ PYBIND11_MODULE(canyonero_py, m) {
         .def_static("request_info", &CANyonero::PDU::requestInfo)
         .def_static("read_voltage", &CANyonero::PDU::readVoltage)
         .def_static("open_channel", &CANyonero::PDU::openChannel)
+        .def_static("open_fd_channel", &CANyonero::PDU::openFDChannel)
         .def_static("close_channel", &CANyonero::PDU::closeChannel)
         .def_static("send", [](CANyonero::ChannelHandle handle, const py::buffer& data) {
             return CANyonero::PDU::send(handle, bytes_from_buffer(data));

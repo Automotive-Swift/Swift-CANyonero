@@ -276,6 +276,7 @@ def run_ecuconnect_test(
             ecu,
             bitrate=bitrate,
             protocol=canyonero.ChannelProtocol.raw,
+            data_bitrate=None,
             open_timeout=open_timeout,
             open_retries=open_retries,
             open_retry_delay=open_retry_delay,
@@ -452,6 +453,7 @@ def open_channel_with_retry(
     open_timeout: float,
     open_retries: int,
     open_retry_delay: float,
+    data_bitrate: Optional[int] = None,
 ) -> int:
     channel: Optional[int] = None
     for _ in range(max(open_retries, 0) + 1):
@@ -459,6 +461,7 @@ def open_channel_with_retry(
             channel = ecu.open_channel(
                 protocol,
                 bitrate=bitrate,
+                data_bitrate=data_bitrate,
                 timeout=open_timeout,
             )
             break
