@@ -450,7 +450,6 @@ std::optional<uint8_t> Protocol::openChannel(ChannelProtocol protocol,
                                               std::optional<uint32_t> dataBitrate) {
     const bool fdProtocol =
         protocol == ChannelProtocol::RawFD ||
-        protocol == ChannelProtocol::CANFD ||
         protocol == ChannelProtocol::ISOTP_FD;
     if (fdProtocol) {
         if (!dataBitrate.has_value() || dataBitrate.value() == 0) {

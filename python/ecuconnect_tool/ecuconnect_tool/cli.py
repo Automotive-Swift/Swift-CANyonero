@@ -827,7 +827,7 @@ def term(
     ctx: typer.Context,
     bitrate: int = typer.Argument(500000, help="Bitrate."),
     proto: str = typer.Option(
-        "passthrough", "--proto", "-p", help="Channel protocol (passthrough, isotp, kline, raw_fd, or isotp_fd)."
+        "raw", "--proto", "-p", help="Channel protocol (raw, isotp, kline, raw_fd, or isotp_fd)."
     ),
     data_bitrate: int = typer.Option(2000000, "--data-bitrate", help="CAN-FD data bitrate (used for raw_fd/isotp_fd)."),
     timeout: float = typer.Option(1.0, help="Response timeout in seconds."),
@@ -839,22 +839,21 @@ def term(
     tx_buffer = ctx.obj["tx_buffer"]
 
     proto_normalized = proto.lower()
-    if proto_normalized in {"passthrough", "raw"}:
+    if proto_normalized == "raw":
         channel_proto = canyonero.ChannelProtocol.raw
     elif proto_normalized == "isotp":
         channel_proto = canyonero.ChannelProtocol.isotp
     elif proto_normalized == "kline":
         channel_proto = canyonero.ChannelProtocol.kline
-    elif proto_normalized in {"raw_fd", "can_fd"}:
+    elif proto_normalized == "raw_fd":
         channel_proto = canyonero.ChannelProtocol.raw_fd
     elif proto_normalized == "isotp_fd":
         channel_proto = canyonero.ChannelProtocol.isotp_fd
     else:
-        raise typer.BadParameter("Invalid protocol. Use passthrough, isotp, kline, raw_fd, or isotp_fd.")
+        raise typer.BadParameter("Invalid protocol. Use raw, isotp, kline, raw_fd, or isotp_fd.")
 
     fd_protocols = {
         canyonero.ChannelProtocol.raw_fd,
-        canyonero.ChannelProtocol.can_fd,
         canyonero.ChannelProtocol.isotp_fd,
     }
     selected_data_bitrate = data_bitrate if channel_proto in fd_protocols else None
@@ -906,11 +905,10 @@ def term(
         apply_addressing(client, channel, default_addressing)
 
         channel_desc = {
-            canyonero.ChannelProtocol.raw: "Passthrough",
+            canyonero.ChannelProtocol.raw: "Raw",
             canyonero.ChannelProtocol.isotp: "ISOTP",
             canyonero.ChannelProtocol.kline: "KLine",
             canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
-            canyonero.ChannelProtocol.can_fd: "Raw CAN-FD",
             canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
         }.get(channel_proto, str(channel_proto))
         if selected_data_bitrate:

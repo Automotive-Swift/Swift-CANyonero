@@ -14,7 +14,7 @@ python -m pip install -e ./python/ecuconnect_tool
 ecuconnect-tool info
 ecuconnect-tool ping 512 --count 10
 ecuconnect-tool benchmark --count 32
-ecuconnect-tool term 500000 --proto passthrough
+ecuconnect-tool term 500000 --proto raw
 ecuconnect-tool monitor --bitrate 500000
 ecuconnect-tool send "02 3E 80" --tx-id 0x123 --rx-id 0x321
 ecuconnect-tool test --can-interface can0 --busload 1 --duration 5

@@ -26,7 +26,6 @@ PYBIND11_MODULE(canyonero_py, m) {
         .value("isotp", CANyonero::ChannelProtocol::isotp)
         .value("kline", CANyonero::ChannelProtocol::kline)
         .value("raw_fd", CANyonero::ChannelProtocol::raw_fd)
-        .value("can_fd", CANyonero::ChannelProtocol::can_fd)
         .value("isotp_fd", CANyonero::ChannelProtocol::isotp_fd)
         .value("raw_with_fc", CANyonero::ChannelProtocol::raw_with_fc)
         .value("enet", CANyonero::ChannelProtocol::enet)

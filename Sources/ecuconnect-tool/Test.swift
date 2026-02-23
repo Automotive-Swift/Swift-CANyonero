@@ -47,10 +47,10 @@ struct Test: ParsableCommand {
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
-                let channel = try await Cornucopia.Core.Spinner.run("Opening channel") {
+                let _ = try await Cornucopia.Core.Spinner.run("Opening channel") {
                     try await adapter.openChannel(proto: .isotp, bitrate: 500000)
                 }
-                print("Channel #\(channel) opened.")
+                print("Channel opened.")
 
                 while true {
 
@@ -58,7 +58,7 @@ struct Test: ParsableCommand {
                     print("Started periodic message #1")
                     try await adapter.startSendingPeriodically(message, interval: 1000, repeatCount: 0)
 
-                    try await Task.CC_sleep(seconds: 0.5)
+                    try await Task.sleep(for: .seconds(0.5))
 
                     message = Automotive.Message(addressing: .oneshot(id: 0x123), bytes: [0x3E, 0x80])
                     print("Started periodic message #2")
@@ -66,7 +66,7 @@ struct Test: ParsableCommand {
 
                     for waiting in stride(from: 5, to: 1, by: -1) {
                         print("Cancelling in \(waiting) seconds...")
-                        try await Task.CC_sleep(seconds: 1)
+                        try await Task.sleep(for: .seconds(1))
                     }
 
                     try await adapter.cancelSendingPeriodically()

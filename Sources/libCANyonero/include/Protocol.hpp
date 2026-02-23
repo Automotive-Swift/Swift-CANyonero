@@ -89,8 +89,6 @@ enum class ChannelProtocol: uint8_t {
     kline                 = 0x02,
     /// Raw CAN FD frames. Maximum length = 64 Bytes.
     raw_fd                = 0x03,
-    /// Backwards-compatible alias for raw CAN FD frames.
-    can_fd                = raw_fd,
     /// ISOTP w/ CANFD. Maximum Length = 4 GBytes.
     isotp_fd              = 0x04,
     /// Raw CAN frames with automatic Flow Control for ISOTP First Frames. Maximum length = 8 Byte.

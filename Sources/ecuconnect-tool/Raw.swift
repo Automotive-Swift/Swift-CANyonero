@@ -46,21 +46,21 @@ struct Raw: ParsableCommand {
                 let voltage = try await adapter.readSystemVoltage()
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
-                let channel = try await Cornucopia.Core.Spinner.run("Opening channel") {
-                    try await adapter.openChannel(proto: .passthrough, bitrate: 500000)
+                let _ = try await Cornucopia.Core.Spinner.run("Opening channel") {
+                    try await adapter.openChannel(proto: .raw, bitrate: 500000)
                 }
                 print("Channel opened.")
 #if true
                 while true {
 
-                    var message = Automotive.Message(addressing: .oneshot(id: 0x777), bytes: [
+                    let message = Automotive.Message(addressing: .oneshot(id: 0x777), bytes: [
                         0x08, 0x02, 0x3E, 0x80, 0xAA, 0xAA, 0xAA, 0xAA,
                         0x03, 0xFF, 0xFF, 0xFF, 0x08, 0x02, 0x3E, 0x00,
                         0xAB, 0xAB, 0xAB, 0xAB, /* implicit padding */
                     ])
                     try await adapter.sendMessageReceiveNothing(message)
 
-                    try await Task.CC_sleep(seconds: 0.5)
+                    try await Task.sleep(for: .seconds(0.5))
                 }
 #endif
             } catch {

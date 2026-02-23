@@ -217,7 +217,6 @@ class EcuconnectClient:
         tx_code = canyonero.PDU.separation_time_code_from_microseconds(tx_separation_us)
         fd_protocols = {
             canyonero.ChannelProtocol.raw_fd,
-            canyonero.ChannelProtocol.can_fd,
             canyonero.ChannelProtocol.isotp_fd,
         }
         if protocol in fd_protocols:

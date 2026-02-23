@@ -44,7 +44,7 @@ struct Monitor: ParsableCommand {
                     try await adapter.monitor(bitrate: bps)
                 }
                 var lastTime = CFAbsoluteTimeGetCurrent()
-                for try await (id, ext, data) in monitorStream {
+                for try await (id, _, data) in monitorStream {
                     let now = CFAbsoluteTimeGetCurrent()
                     let timeDiff = CFAbsoluteTimeGetCurrent() - lastTime
                     let timestamp = String(format: "%010.06f", timeDiff)

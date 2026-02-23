@@ -71,7 +71,6 @@ enum class ChannelProtocol : uint8_t {
     ISOTP       = 0x01,     // ISO 15765-2 (max 4095 bytes)
     KLine       = 0x02,     // ISO 9141
     RawFD       = 0x03,     // Raw CAN FD (max 64 bytes)
-    CANFD       = RawFD,    // Backwards-compatible alias
     ISOTP_FD    = 0x04,     // ISOTP with CAN FD
     RawWithFC   = 0x05,     // Raw CAN with auto Flow Control
     ENET        = 0x06,     // Ethernet frames

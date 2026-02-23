@@ -68,7 +68,7 @@ struct Update: ParsableCommand {
                 adapter.shutdown()
 
                 let nextInfo = try await Cornucopia.Core.Spinner.run("Waiting to reconnect") {
-                    try await Task.CC_sleep(seconds: 3)
+                    try await Task.sleep(for: .seconds(3))
                     return try await adapter.identify()
                 }
                 print("Connected to ECUconnect: \(nextInfo).")

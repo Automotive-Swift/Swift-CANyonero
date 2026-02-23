@@ -24,7 +24,7 @@
       "location" : "https://github.com/Cornucopia-Swift/CornucopiaCore",
       "state" : {
         "branch" : "master",
-        "revision" : "76a78d88117a9c5ecc7f72892a58ead8cf574543"
+        "revision" : "e01622d5a704c2a7ec007e3b3ebbd32224a061b7"
       }
     },
     {
@@ -33,7 +33,7 @@
       "location" : "https://github.com/Cornucopia-Swift/CornucopiaStreams",
       "state" : {
         "branch" : "master",
-        "revision" : "62eb6a159934eae5b95977cdad8864b17f332857"
+        "revision" : "bd1d2c6de225de97cde83f108bb2beb9026616ea"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
-        "version" : "1.4.0"
+        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
+        "version" : "1.5.1"
       }
     },
     {
@@ -105,7 +105,7 @@
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
         "branch" : "master",
-        "revision" : "2008cef57afc1f16b1aa75886c5da77044747de6"
+        "revision" : "d7646d7443c2de61b939eb64b3fd6b53b03736be"
       }
     },
     {

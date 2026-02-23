@@ -430,8 +430,8 @@ struct Term: ParsableCommand {
     @Argument(help: "Bitrate")
     var bitrate: Int = 500000
 
-    @Option(name: .shortAndLong, help: "Channel protocol (passthrough, isotp, kline, raw_fd, or isotp_fd)")
-    var proto: String = "passthrough"
+    @Option(name: .shortAndLong, help: "Channel protocol (raw, isotp, kline, raw_fd, or isotp_fd)")
+    var proto: String = "raw"
 
     @Option(name: .long, help: "CAN-FD data bitrate (used for raw_fd/isotp_fd)")
     var dataBitrate: Int = 2_000_000
@@ -443,18 +443,18 @@ struct Term: ParsableCommand {
 
         let channelProto: ECUconnect.ChannelProtocol
         switch proto.lowercased() {
-            case "passthrough", "raw":
-                channelProto = .passthrough
+            case "raw":
+                channelProto = .raw
             case "isotp":
                 channelProto = .isotp
             case "kline":
                 channelProto = .kline
-            case "raw_fd", "can_fd":
+            case "raw_fd":
                 channelProto = .rawFD
             case "isotp_fd":
                 channelProto = .isotpFD
             default:
-                throw ValidationError("Invalid protocol '\(proto)'. Use 'passthrough', 'isotp', 'kline', 'raw_fd', or 'isotp_fd'.")
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'raw', 'isotp', 'kline', 'raw_fd', or 'isotp_fd'.")
         }
         let selectedDataBitrate: Int? = (channelProto == .rawFD || channelProto == .isotpFD) ? dataBitrate : nil
 
@@ -483,7 +483,7 @@ struct Term: ParsableCommand {
                 }
                 let channelDescription: String
                 switch channelProto {
-                    case .passthrough: channelDescription = "Passthrough"
+                    case .raw: channelDescription = "Raw"
                     case .isotp: channelDescription = "ISOTP"
                     case .kline: channelDescription = "KLine"
                     case .rawFD: channelDescription = "Raw CAN-FD"

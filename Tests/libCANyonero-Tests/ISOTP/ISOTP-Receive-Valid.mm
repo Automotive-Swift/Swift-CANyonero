@@ -108,13 +108,13 @@ using namespace CANyonero::ISOTP;
 -(void)testMaxPayloadWithFlowControl {
     
     auto blockSize = 5;
-    auto _isotp = new Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, blockSize, 0, 0);
+    auto isotp = new Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, blockSize, 0, 0);
     
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
     
     auto firstFrame = std::vector<uint8_t>{ 0x1F, 0xFF } + vector_drop_first(pdu, 6);
-    auto action = _isotp->didReceiveFrame(firstFrame);
+    auto action = isotp->didReceiveFrame(firstFrame);
     XCTAssertEqual(action.type, Transceiver::Action::Type::writeFrames);
     XCTAssertEqual(action.frames.size(), 1);
     auto flowControl = action.frames[0];
@@ -131,7 +131,7 @@ using namespace CANyonero::ISOTP;
         auto chunkSize = std::min(size_t(7), pdu.size());
         auto consecutive = std::vector<uint8_t>(1, 0x20 + sequenceNumber) + vector_drop_first(pdu, chunkSize);
         consecutive.resize(8, padding);
-        auto consecutiveAction = _isotp->didReceiveFrame(consecutive);
+        auto consecutiveAction = isotp->didReceiveFrame(consecutive);
         sequenceNumber = (sequenceNumber + 1) & 0x0F;
         unconfirmedBlocks--;
         
@@ -153,7 +153,7 @@ using namespace CANyonero::ISOTP;
             XCTAssertEqual(consecutiveAction.data, pdu);
         }
     }
-    delete _isotp;
+    delete isotp;
 }
 
 @end
