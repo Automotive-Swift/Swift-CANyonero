@@ -8,7 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-REQUIRED_PYTHON_PACKAGES = ["typer", "rich", "pybind11", "python-can"]
+REQUIRED_PYTHON_PACKAGES = {
+    "typer": "typer",
+    "rich": "rich",
+    "pybind11": "pybind11",
+    "python-can": "can",
+}
 
 
 def run(cmd: list[str], allow_failure: bool = False, **kwargs) -> int:
@@ -21,11 +26,11 @@ def run(cmd: list[str], allow_failure: bool = False, **kwargs) -> int:
 
 def ensure_packages(python: str, skip_install: bool) -> None:
     missing: list[str] = []
-    for package in REQUIRED_PYTHON_PACKAGES:
+    for pip_name, import_name in REQUIRED_PYTHON_PACKAGES.items():
         try:
-            __import__(package)
+            __import__(import_name)
         except Exception:
-            missing.append(package)
+            missing.append(pip_name)
     if not missing:
         return
     if skip_install:
