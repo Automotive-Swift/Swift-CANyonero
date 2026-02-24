@@ -65,6 +65,7 @@ See `Sources/ecuconnect-j2534/README.md` for detailed build instructions, API us
 ```bash
 swift run ecuconnect-tool --help
 swift run ecuconnect-tool term --channel-protocol isotp --addressing :7df,7e8
+swift run ecuconnect-tool login --port 4242
 ```
 
 The tool uses the Swift bindings in this package so it is a convenient way to validate PDUs, poll ECU information, or keep a periodic tester-present running without writing your own app.
@@ -76,6 +77,7 @@ Python users can also use the rebuilt CLI in `python/ecuconnect_tool` (default W
 ```bash
 python -m pip install -e ./python/ecuconnect_tool
 ecuconnect-tool info
+ecuconnect-tool login
 ecuconnect-tool test --can-interface can0 --busload 20 --duration 5
 ```
 

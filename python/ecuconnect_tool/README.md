@@ -12,6 +12,7 @@ python -m pip install -e ./python/ecuconnect_tool
 
 ```bash
 ecuconnect-tool info
+ecuconnect-tool login
 ecuconnect-tool ping 512 --count 10
 ecuconnect-tool benchmark --count 32
 ecuconnect-tool term 500000 --proto raw

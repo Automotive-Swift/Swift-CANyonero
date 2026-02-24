@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import statistics
 import socket as py_socket
+import select
 import sys
 from dataclasses import dataclass
 from urllib.parse import urlparse
@@ -431,6 +432,46 @@ def _is_tcp_endpoint(endpoint: str) -> bool:
     return "tcp" in scheme or scheme in {"ecuconnect", "ecuconnect-wifi"}
 
 
+def _resolve_login_host(endpoint: str, explicit_host: Optional[str]) -> str:
+    if explicit_host:
+        return explicit_host
+    if "://" in endpoint:
+        parsed = urlparse(endpoint)
+        scheme = (parsed.scheme or "").lower()
+        if scheme in {"tcp", "ecuconnect", "ecuconnect-wifi"} and parsed.hostname:
+            return parsed.hostname
+    elif ":" in endpoint:
+        host_part = endpoint.rsplit(":", 1)[0].strip()
+        if host_part:
+            return host_part
+    return "192.168.42.42"
+
+
+def _drain_socket_output(
+    sock: py_socket.socket,
+    first_byte_timeout: float = 2.0,
+    idle_timeout: float = 0.20,
+) -> bool:
+    chunks: list[bytes] = []
+    timeout = first_byte_timeout
+    while True:
+        readable, _, _ = select.select([sock], [], [], timeout)
+        if not readable:
+            break
+        chunk = sock.recv(4096)
+        if not chunk:
+            if chunks:
+                sys.stdout.write(b"".join(chunks).decode("utf-8", errors="replace"))
+                sys.stdout.flush()
+            return False
+        chunks.append(chunk)
+        timeout = idle_timeout
+    if chunks:
+        sys.stdout.write(b"".join(chunks).decode("utf-8", errors="replace"))
+        sys.stdout.flush()
+    return True
+
+
 def _format_rate(bytes_per_second: float) -> str:
     kib = 1024.0
     mib = kib * 1024.0
@@ -820,6 +861,95 @@ def benchmark(
                 f"avg latency {recommended.average * 1000:.2f} ms)"
             )
         console.print(f"Average latency: {overall_avg * 1000:.2f} ms")
+
+
+@app.command()
+def login(
+    ctx: typer.Context,
+    host: Optional[str] = typer.Option(
+        None,
+        "--host",
+        help="Login shell host (defaults to endpoint host or 192.168.42.42).",
+    ),
+    port: int = typer.Option(4242, "--port", min=1, max=65535, help="Login shell TCP port."),
+    reconnect: bool = typer.Option(False, "--reconnect", help="Reconnect when the shell disconnects."),
+    reconnect_delay: float = typer.Option(
+        1.0,
+        "--reconnect-delay",
+        min=0.0,
+        help="Seconds to wait before reconnecting.",
+    ),
+    connect_timeout: float = typer.Option(
+        5.0,
+        "--connect-timeout",
+        min=0.1,
+        help="TCP connection timeout in seconds.",
+    ),
+    response_timeout: float = typer.Option(
+        2.0,
+        "--response-timeout",
+        min=0.01,
+        help="Seconds to wait for first response byte after each command.",
+    ),
+    idle_timeout: float = typer.Option(
+        0.20,
+        "--idle-timeout",
+        min=0.01,
+        help="Seconds of RX inactivity that mark end of current output chunk.",
+    ),
+    local_prompt: str = typer.Option(
+        "",
+        "--local-prompt",
+        help="Local input prompt. Empty string disables client-side prompt.",
+    ),
+) -> None:
+    """Open an interactive ECOS login shell (TCP)."""
+    endpoint = ctx.obj["endpoint"]
+    target_host = _resolve_login_host(endpoint, host)
+
+    while True:
+        try:
+            with py_socket.create_connection((target_host, port), timeout=connect_timeout) as sock:
+                sock.settimeout(None)
+                console.print(f"ECUconnect connected and ready ({target_host}:{port}).")
+                if not _drain_socket_output(
+                    sock,
+                    first_byte_timeout=0.50,
+                    idle_timeout=idle_timeout,
+                ):
+                    console.print("Connection closed by remote host.")
+                    break
+
+                while True:
+                    try:
+                        line = input(local_prompt)
+                    except (EOFError, KeyboardInterrupt):
+                        print("^D")
+                        return
+
+                    trimmed = line.strip()
+                    if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
+                        print("")
+                        return
+
+                    sock.sendall((line + "\r\n").encode("utf-8"))
+                    if not _drain_socket_output(
+                        sock,
+                        first_byte_timeout=response_timeout,
+                        idle_timeout=idle_timeout,
+                    ):
+                        console.print("Connection closed by remote host.")
+                        break
+        except OSError as exc:
+            if not reconnect:
+                console.print(f"[red]Login connection failed:[/red] {exc}")
+                raise typer.Exit(code=1)
+            console.print(f"[yellow]Connection error:[/yellow] {exc}")
+
+        if not reconnect:
+            return
+        console.print(f"Reconnecting in {reconnect_delay:.1f}s...")
+        time.sleep(reconnect_delay)
 
 
 @app.command()
