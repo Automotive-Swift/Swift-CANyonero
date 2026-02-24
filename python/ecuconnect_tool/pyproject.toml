@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "ecuconnect-tool"
-version = "0.1.0"
+version = "0.9.1"
 description = "Python ECUconnect CLI and CANyonero protocol bindings"
 requires-python = ">=3.9"
 readme = "README.md"
