@@ -20,11 +20,10 @@ namespace ISOTP {
 constexpr size_t maximumTransferSize = 0xFFF; // 4095 bytes
 constexpr uint8_t standardFrameWidth = 8;
 constexpr uint8_t extendedFrameWidth = 7;
-constexpr uint8_t maximumFrameWidth = 64;
 constexpr uint8_t padding = 0xAA;
 
 constexpr uint8_t singleFramePayloadCapacity(uint8_t width) {
-    return width > standardFrameWidth ? static_cast<uint8_t>(width - 2) : static_cast<uint8_t>(width - 1);
+    return static_cast<uint8_t>(width - 1);
 }
 
 constexpr size_t maxUnconfirmedBlocksForWidth(uint8_t width) {
@@ -82,14 +81,8 @@ struct Frame {
     /// Returns an SF.
     static Frame single(const Bytes& bytes, uint8_t width) {
         assert(bytes.size() <= singleFramePayloadCapacity(width));
-        std::vector<uint8_t> vector;
-        if (width > standardFrameWidth) {
-            // CAN-FD single-frame escape sequence: PCI nibble 0 and explicit SF length byte.
-            vector = { uint8_t(Type::single), static_cast<uint8_t>(bytes.size()) };
-        } else {
-            uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
-            vector = { pci };
-        }
+        uint8_t pci = uint8_t(Type::single) | uint8_t(bytes.size());
+        auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         vector.resize(width, ISOTP::padding);
         return Frame(vector);
@@ -147,17 +140,12 @@ struct Frame {
     /// Returns the PDU length for an SF.
     uint8_t singleLength(uint8_t frameWidth) {
         assert((bytes[0] & 0xF0) == 0x00); // ensure this is a single frame
-        auto nibbleLength = bytes[0] & 0x0F;
-        if (frameWidth > standardFrameWidth && nibbleLength == 0 && bytes.size() > 1) {
-            return bytes[1];
-        }
-        return nibbleLength;
+        (void) frameWidth;
+        return bytes[0] & 0x0F;
     }
 
     uint8_t singleHeaderSize(uint8_t frameWidth) {
-        if (frameWidth > standardFrameWidth && (bytes[0] & 0x0F) == 0) {
-            return 2;
-        }
+        (void) frameWidth;
         return 1;
     }
 
@@ -293,9 +281,17 @@ public:
     /// Create a new ``Transceiver`` with a custom configuration.
     /// The rxSeparationTime and txSeparationTime are in microseconds.
     /// NOTE: txSeparationTime is only considered, if it is larger than the one reported in the respective flow.
-    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00, uint8_t frameWidth = 0x00)
-        :behavior(behavior), width(resolveFrameWidth(mode, frameWidth)), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
+    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00)
+        :behavior(behavior), width(resolveFrameWidth(mode)), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
+    }
+
+    /// Backwards compatible constructor.
+    /// NOTE: ``frameWidth`` is ignored for classic ISO-TP.
+    Transceiver(Behavior behavior, Mode mode, uint8_t blockSize, uint16_t rxSeparationTime, uint16_t txSeparationTime, uint8_t frameWidth)
+        :Transceiver(behavior, mode, blockSize, rxSeparationTime, txSeparationTime)
+    {
+        (void) frameWidth;
     }
 
     /// Send a PDU. Short (`size < width`) PDUs are passed through, longer PDUs launch the state machine.
@@ -383,12 +379,8 @@ public:
     }
 
 private:
-    static uint8_t resolveFrameWidth(Mode mode, uint8_t requestedWidth) {
-        auto defaultWidth = mode == Mode::standard ? standardFrameWidth : extendedFrameWidth;
-        if (requestedWidth == 0) { return defaultWidth; }
-        auto minWidth = defaultWidth;
-        auto clamped = std::max(minWidth, std::min(requestedWidth, maximumFrameWidth));
-        return clamped;
+    static uint8_t resolveFrameWidth(Mode mode) {
+        return mode == Mode::standard ? standardFrameWidth : extendedFrameWidth;
     }
 
     Behavior behavior;
