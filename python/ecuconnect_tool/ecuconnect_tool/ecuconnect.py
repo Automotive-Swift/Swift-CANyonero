@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import queue
 import socket
 import sys
@@ -102,10 +103,20 @@ class EcuconnectClient:
         self._stop = threading.Event()
         self._stream = PDUStream(max_pdu_size=max_pdu_size)
         self._rpc_id = 1
+        self._debug_io = os.getenv("ECUCONNECT_DEBUG_IO", "").strip().lower() not in {"", "0", "false", "off"}
+        self._inline_reads = False
+
+    def _log_io(self, direction: str, payload: bytes) -> None:
+        if not self._debug_io:
+            return
+        preview = payload[:64].hex(" ")
+        suffix = " ..." if len(payload) > 64 else ""
+        print(f"[pdu:{direction}] {len(payload)} bytes: {preview}{suffix}", file=sys.stderr, flush=True)
 
     def connect(self) -> None:
         if self._sock:
             return
+        self._inline_reads = False
         if self.endpoint.scheme == "tcp":
             sock = socket.create_connection((self.endpoint.host, self.endpoint.port), timeout=5.0)
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -121,13 +132,23 @@ class EcuconnectClient:
                 timeout=5.0,
                 peer_uuid=self.endpoint.peer_uuid,
             )
-            sock.settimeout(1.0)
+            sock.settimeout(0.2)
+            self._inline_reads = True
         else:
             raise ValueError(f"Unsupported endpoint scheme: {self.endpoint.scheme}")
         self._sock = sock
+        if self._debug_io:
+            print(
+                f"[pdu:connect] scheme={self.endpoint.scheme} host={self.endpoint.host} port={self.endpoint.port}",
+                file=sys.stderr,
+                flush=True,
+            )
         self._stop.clear()
-        self._reader = threading.Thread(target=self._read_loop, name="ecuconnect-reader", daemon=True)
-        self._reader.start()
+        if self._inline_reads:
+            self._reader = None
+        else:
+            self._reader = threading.Thread(target=self._read_loop, name="ecuconnect-reader", daemon=True)
+            self._reader.start()
 
     def close(self) -> None:
         self._stop.set()
@@ -153,13 +174,47 @@ class EcuconnectClient:
     def send_pdu(self, pdu: canyonero.PDU) -> None:
         if not self._sock:
             raise RuntimeError("Not connected")
-        self._sock.sendall(pdu.frame())
+        frame = pdu.frame()
+        self._log_io("tx", frame)
+        self._sock.sendall(frame)
 
     def get_pdu(self, timeout: Optional[float] = None) -> Optional[canyonero.PDU]:
+        if self._inline_reads:
+            return self._get_pdu_inline(timeout)
         try:
             return self._rx_queue.get(timeout=timeout)
         except queue.Empty:
             return None
+
+    def _get_pdu_inline(self, timeout: Optional[float]) -> Optional[canyonero.PDU]:
+        if self._sock is None:
+            return None
+        deadline = None if timeout is None else (time.monotonic() + max(0.0, timeout))
+        while True:
+            try:
+                return self._rx_queue.get_nowait()
+            except queue.Empty:
+                pass
+
+            if deadline is not None and time.monotonic() >= deadline:
+                return None
+
+            try:
+                data = self._sock.recv(4096)
+            except socket.timeout:
+                continue
+            except OSError:
+                return None
+            if not data:
+                return None
+
+            self._log_io("rx-raw", data)
+            for pdu in self._stream.feed(data):
+                try:
+                    self._log_io("rx-pdu", pdu.frame())
+                except Exception:
+                    pass
+                self._rx_queue.put(pdu)
 
     def wait_for(self, predicate: Callable[[canyonero.PDU], bool], timeout: float) -> canyonero.PDU:
         deadline = time.monotonic() + timeout
@@ -279,7 +334,12 @@ class EcuconnectClient:
                 data = self._sock.recv(4096)
                 if not data:
                     break
+                self._log_io("rx-raw", data)
                 for pdu in self._stream.feed(data):
+                    try:
+                        self._log_io("rx-pdu", pdu.frame())
+                    except Exception:
+                        pass
                     self._rx_queue.put(pdu)
             except socket.timeout:
                 continue

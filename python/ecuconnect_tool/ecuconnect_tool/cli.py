@@ -64,6 +64,12 @@ def _connect_with_spinner(client: EcuconnectClient, endpoint: str) -> None:
         console.print(label)
         client.connect()
         return
+    if _is_ble_endpoint(endpoint):
+        # Keep BLE stream setup on the caller thread so CoreFoundation runloop ownership remains stable.
+        console.print(label)
+        client.connect()
+        console.print(f"{label} [ok]")
+        return
 
     frames = ["|", "/", "-", "\\"]
     connect_error: list[Exception] = []
