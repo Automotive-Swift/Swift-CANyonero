@@ -16,10 +16,30 @@ ecuconnect-tool login
 ecuconnect-tool ping 512 --count 10
 ecuconnect-tool benchmark --count 32
 ecuconnect-tool term 500000 --proto raw
-ecuconnect-tool --endpoint ecuconnect-l2cap://FFF1:129 term 500000 --proto raw
+ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 term 500000 --proto raw
 ecuconnect-tool monitor --bitrate 500000
 ecuconnect-tool send "02 3E 80" --tx-id 0x123 --rx-id 0x321
 ecuconnect-tool test --can-interface can0 --busload 1 --duration 5
+```
+
+## macOS BLE/L2CAP
+
+Install CoreBluetooth bindings:
+
+```bash
+python3 -m pip install pyobjc-framework-CoreBluetooth
+```
+
+Use the ECUconnect L2CAP endpoint format:
+
+```bash
+ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 info
+```
+
+Optionally target a specific peripheral UUID:
+
+```bash
+ecuconnect-tool --url ecuconnect-l2cap://FFF1:129/12345678-1234-1234-1234-123456789abc info
 ```
 
 ## Dev flow (no install)
@@ -46,4 +66,5 @@ Use `--traffic rx` for CAN->ECU only, `--traffic tx` for ECU->CAN only.
 
 - `ecuconnect-l2cap://` is supported on macOS via CoreBluetooth (L2CAP).
 - Linux and Windows currently support TCP endpoints only.
-- Socket buffers default to 4 MiB; override with `--rx-buffer/--tx-buffer`.
+- Socket buffers default to `4M`; override with `--rx-buffer/--tx-buffer` using bytes or `K/M/G` suffixes.
+- Set `ECUCONNECT_DEBUG_IO=1` to print raw TX/RX frame traces while debugging transport issues.

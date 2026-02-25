@@ -77,15 +77,21 @@ Python users can also use the rebuilt CLI in `python/ecuconnect_tool` (default W
 ```bash
 python -m pip install -e ./python/ecuconnect_tool
 ecuconnect-tool info
+ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 info
 ecuconnect-tool login
 ecuconnect-tool test --can-interface can0 --busload 20 --duration 5
 ```
+
+macOS BLE/L2CAP endpoints use the scheme `ecuconnect-l2cap://<service-uuid>:<psm>`, for example `ecuconnect-l2cap://FFF1:129`.  
+An optional peripheral UUID selector can be appended as the URL path: `ecuconnect-l2cap://FFF1:129/<peripheral-uuid>`.
+
+Python CLI socket buffers default to `4M` and accept friendly sizes (`200`, `10K`, `4M`, `1G`) via `--rx-buffer` and `--tx-buffer`.
 
 ## PDU Examples
 
 ### Request Information
 
-`1F 10 0000` – Request device information.
+`1F 11 0000` – Request device information.
 
 ### Open Channel
 

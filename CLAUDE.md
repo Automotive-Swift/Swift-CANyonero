@@ -102,6 +102,12 @@ Registry entries are created at:
      - `canyonero_protocol.cpp`: CANyonero PDU encoding/decoding and Arbitration serialization
      - `transport_tcp.cpp`: TCP transport layer (connects to 192.168.42.42:129)
 
+5. **python/ecuconnect_tool** (Python CLI)
+   - Location: `python/ecuconnect_tool/`
+   - CLI supports TCP endpoints (`host:port`, `ecuconnect://`, `ecuconnect-wifi://`) and macOS BLE/L2CAP (`ecuconnect-l2cap://<service-uuid>:<psm>[/<peer-uuid>]`)
+   - BLE transport is implemented with CoreBluetooth + NSStream and requires `pyobjc-framework-CoreBluetooth`
+   - Socket buffer CLI options (`--rx-buffer`, `--tx-buffer`) accept bytes or `K/M/G` suffixes, default `4M`
+
 ### Protocol Implementation
 
 The CANyonero protocol communicates with embedded hardware running CANyonerOS (FreeRTOS-based). Key protocol features:
@@ -122,6 +128,12 @@ Tests are organized by component with comprehensive ISOTP protocol testing:
 - `Tests/ObjC-CANyonero-Tests/`: Objective-C wrapper tests
 
 All tests use XCTest framework and are written in Objective-C++ (.mm files).
+
+## Python BLE/L2CAP Notes
+
+- Keep BLE connect/read/write on the same thread/runloop context when using NSInputStream/NSOutputStream.
+- Avoid moving BLE connection setup into a background spinner worker thread; runloop ownership matters for stream readiness.
+- For transport diagnostics in the Python CLI, set `ECUCONNECT_DEBUG_IO=1` to log raw TX/RX frames.
 
 ## Important Protocol Constants
 

@@ -68,7 +68,7 @@ def _connect_with_spinner(client: EcuconnectClient, endpoint: str) -> None:
         # Keep BLE stream setup on the caller thread so CoreFoundation runloop ownership remains stable.
         console.print(label)
         client.connect()
-        console.print(f"{label} [ok]")
+        console.print("Adapter connection established.")
         return
 
     frames = ["|", "/", "-", "\\"]
@@ -1209,7 +1209,7 @@ def term(
             finally:
                 try:
                     client.close_channel(channel, timeout=timeout)
-                except (TimeoutError, RuntimeError):
+                except (TimeoutError, RuntimeError, OSError, py_socket.timeout):
                     pass
     except (TimeoutError, py_socket.timeout):
         console.print(f"[red]Connection timed out while connecting to adapter {endpoint}.[/red]")

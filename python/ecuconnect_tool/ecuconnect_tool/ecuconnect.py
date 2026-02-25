@@ -161,7 +161,10 @@ class EcuconnectClient:
                 self._sock.shutdown(socket.SHUT_RDWR)
             except OSError:
                 pass
-            self._sock.close()
+            try:
+                self._sock.close()
+            except OSError:
+                pass
         self._sock = None
 
     def __enter__(self) -> "EcuconnectClient":
