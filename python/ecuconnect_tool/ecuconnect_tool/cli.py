@@ -481,7 +481,7 @@ def _is_ble_endpoint(endpoint: str) -> bool:
         return False
     parsed = urlparse(endpoint)
     scheme = (parsed.scheme or "").lower()
-    if "ble" in scheme:
+    if "ble" in scheme or scheme in {"ecuconnect-l2cap", "l2cap"}:
         return True
     return "ecuconnect-ble" in endpoint.lower()
 
@@ -580,7 +580,7 @@ def main(
         DEFAULT_ENDPOINT,
         "--endpoint",
         "--url",
-        help="ECUconnect endpoint (default: 192.168.42.42:129). Use host:port for mocks.",
+        help="ECUconnect endpoint (default: 192.168.42.42:129). Use host:port for mocks or ecuconnect-l2cap://FFF1:129 on macOS.",
     ),
     rx_buffer: str = typer.Option("4M", help="Socket receive buffer size (bytes or K/M/G suffix). Default: 4M."),
     tx_buffer: str = typer.Option("4M", help="Socket send buffer size (bytes or K/M/G suffix). Default: 4M."),
@@ -1208,6 +1208,12 @@ def term(
     except (TimeoutError, py_socket.timeout):
         console.print(f"[red]Connection timed out while connecting to adapter {endpoint}.[/red]")
         console.print("Check adapter power/network reachability and verify the endpoint URL.")
+        raise typer.Exit(code=1)
+    except NotImplementedError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
+    except RuntimeError as exc:
+        console.print(f"[red]Connection setup failed:[/red] {exc}")
         raise typer.Exit(code=1)
     except OSError as exc:
         console.print(f"[red]Connection failed for adapter {endpoint}:[/red] {exc}")

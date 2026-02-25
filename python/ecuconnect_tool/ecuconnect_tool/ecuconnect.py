@@ -3,13 +3,16 @@ from __future__ import annotations
 import json
 import queue
 import socket
+import sys
 import threading
 import time
+import uuid
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 from urllib.parse import urlparse
 
 from . import canyonero
+from .macos_l2cap import connect_l2cap
 
 DEFAULT_ENDPOINT = "192.168.42.42:129"
 MAX_PDU_SIZE = 0x10003
@@ -20,6 +23,7 @@ class Endpoint:
     host: str
     port: int
     scheme: str = "tcp"
+    peer_uuid: Optional[str] = None
 
 
 def parse_endpoint(value: str) -> Endpoint:
@@ -27,7 +31,20 @@ def parse_endpoint(value: str) -> Endpoint:
         parsed = urlparse(value)
         scheme = parsed.scheme.lower()
         if scheme in {"ecuconnect-l2cap", "l2cap", "ble"}:
-            raise NotImplementedError("L2CAP transport is not implemented on Linux yet")
+            host = parsed.hostname or ""
+            port = parsed.port or 129
+            if not host:
+                raise ValueError(f"Invalid endpoint: {value}")
+            if not (1 <= int(port) <= 65535):
+                raise ValueError(f"Invalid endpoint port: {port}")
+            peer_uuid: Optional[str] = None
+            if parsed.path and parsed.path != "/":
+                candidate = parsed.path.lstrip("/")
+                try:
+                    peer_uuid = str(uuid.UUID(candidate))
+                except ValueError as exc:
+                    raise ValueError(f"Invalid BLE peer UUID in endpoint path: {candidate}") from exc
+            return Endpoint(host=host.upper(), port=int(port), scheme="ble", peer_uuid=peer_uuid)
         if scheme in {"ecuconnect-wifi", "ecuconnect", "tcp"}:
             host = parsed.hostname or ""
             port = parsed.port or 0
@@ -79,7 +96,7 @@ class EcuconnectClient:
         self.rx_buffer = rx_buffer
         self.tx_buffer = tx_buffer
         self.max_pdu_size = max_pdu_size
-        self._sock: Optional[socket.socket] = None
+        self._sock: Optional[Any] = None
         self._rx_queue: queue.Queue[canyonero.PDU] = queue.Queue()
         self._reader: Optional[threading.Thread] = None
         self._stop = threading.Event()
@@ -89,11 +106,24 @@ class EcuconnectClient:
     def connect(self) -> None:
         if self._sock:
             return
-        sock = socket.create_connection((self.endpoint.host, self.endpoint.port), timeout=5.0)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.rx_buffer)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.tx_buffer)
-        sock.settimeout(1.0)
+        if self.endpoint.scheme == "tcp":
+            sock = socket.create_connection((self.endpoint.host, self.endpoint.port), timeout=5.0)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.rx_buffer)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.tx_buffer)
+            sock.settimeout(1.0)
+        elif self.endpoint.scheme == "ble":
+            if sys.platform != "darwin":
+                raise NotImplementedError("BLE/L2CAP transport is only supported on macOS.")
+            sock = connect_l2cap(
+                service_uuid=self.endpoint.host,
+                psm=self.endpoint.port,
+                timeout=5.0,
+                peer_uuid=self.endpoint.peer_uuid,
+            )
+            sock.settimeout(1.0)
+        else:
+            raise ValueError(f"Unsupported endpoint scheme: {self.endpoint.scheme}")
         self._sock = sock
         self._stop.clear()
         self._reader = threading.Thread(target=self._read_loop, name="ecuconnect-reader", daemon=True)
