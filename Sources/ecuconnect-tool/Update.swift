@@ -39,7 +39,7 @@ struct Update: ParsableCommand {
 
     mutating func run() throws {
 
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
         let fileUrl = URL(fileURLWithPath: self.filename)
         let data = try Data(contentsOf: fileUrl)
 

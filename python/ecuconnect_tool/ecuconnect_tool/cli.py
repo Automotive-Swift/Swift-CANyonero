@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import re
 import statistics
 import socket as py_socket
 import select
 import sys
+import threading
 from dataclasses import dataclass
 from urllib.parse import urlparse
 import time
@@ -33,6 +35,66 @@ def _parse_int(value: str) -> int:
         return int(value, 0)
     except ValueError as exc:
         raise typer.BadParameter(f"Invalid integer value: {value}") from exc
+
+
+def _parse_size_bytes(value: str, option_name: str) -> int:
+    match = re.fullmatch(r"\s*(\d+)\s*([kmgKMG]?)\s*", value)
+    if not match:
+        raise typer.BadParameter(
+            f"Invalid {option_name} value '{value}'. Use bytes or suffix K/M/G (examples: 200, 10K, 4M)."
+        )
+
+    amount = int(match.group(1), 10)
+    if amount <= 0:
+        raise typer.BadParameter(f"{option_name} must be greater than 0.")
+
+    suffix = match.group(2).upper()
+    multiplier = {
+        "": 1,
+        "K": 1024,
+        "M": 1024 * 1024,
+        "G": 1024 * 1024 * 1024,
+    }[suffix]
+    return amount * multiplier
+
+
+def _connect_with_spinner(client: EcuconnectClient, endpoint: str) -> None:
+    label = f"Connecting to adapter {endpoint}"
+    if not sys.stdout.isatty():
+        console.print(label)
+        client.connect()
+        return
+
+    frames = ["|", "/", "-", "\\"]
+    connect_error: list[Exception] = []
+    done = threading.Event()
+
+    def _worker() -> None:
+        try:
+            client.connect()
+        except Exception as exc:
+            connect_error.append(exc)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=_worker, name="ecuconnect-connect", daemon=True)
+    worker.start()
+
+    frame_index = 0
+    while not done.wait(0.10):
+        frame = frames[frame_index % len(frames)]
+        frame_index += 1
+        sys.stdout.write(f"\r{label} {frame}")
+        sys.stdout.flush()
+
+    worker.join()
+    if connect_error:
+        sys.stdout.write(f"\r{label} [failed]\n")
+        sys.stdout.flush()
+        raise connect_error[0]
+
+    sys.stdout.write(f"\r{label} [ok]\n")
+    sys.stdout.flush()
 
 
 def _parse_hex_bytes(data: str) -> bytes:
@@ -520,13 +582,13 @@ def main(
         "--url",
         help="ECUconnect endpoint (default: 192.168.42.42:129). Use host:port for mocks.",
     ),
-    rx_buffer: int = typer.Option(4 * 1024 * 1024, help="Socket receive buffer size."),
-    tx_buffer: int = typer.Option(4 * 1024 * 1024, help="Socket send buffer size."),
+    rx_buffer: str = typer.Option("4M", help="Socket receive buffer size (bytes or K/M/G suffix). Default: 4M."),
+    tx_buffer: str = typer.Option("4M", help="Socket send buffer size (bytes or K/M/G suffix). Default: 4M."),
 ) -> None:
     ctx.ensure_object(dict)
     ctx.obj["endpoint"] = endpoint
-    ctx.obj["rx_buffer"] = rx_buffer
-    ctx.obj["tx_buffer"] = tx_buffer
+    ctx.obj["rx_buffer"] = _parse_size_bytes(rx_buffer, "--rx-buffer")
+    ctx.obj["tx_buffer"] = _parse_size_bytes(tx_buffer, "--tx-buffer")
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit()
@@ -1017,129 +1079,139 @@ def term(
         )
         client.set_arbitration(channel, arbitration)
 
-    with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
-        info = client.request_info()
-        voltage = client.read_voltage()
-        console.print(f"Connected to ECUconnect: {info.vendor} {info.model}.")
-        console.print(f"Reported system voltage is {voltage:.2f} V.")
+    client = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
+    try:
+        _connect_with_spinner(client, endpoint)
+        with client:
+            info = client.request_info()
+            voltage = client.read_voltage()
+            console.print(f"Connected to ECUconnect: {info.vendor} {info.model}.")
+            console.print(f"Reported system voltage is {voltage:.2f} V.")
 
-        channel = open_channel_with_retry(
-            client,
-            bitrate=bitrate,
-            protocol=channel_proto,
-            data_bitrate=selected_data_bitrate,
-            open_timeout=5.0,
-            open_retries=3,
-            open_retry_delay=1.0,
-        )
-        apply_addressing(client, channel, default_addressing)
+            channel = open_channel_with_retry(
+                client,
+                bitrate=bitrate,
+                protocol=channel_proto,
+                data_bitrate=selected_data_bitrate,
+                open_timeout=5.0,
+                open_retries=3,
+                open_retry_delay=1.0,
+            )
+            apply_addressing(client, channel, default_addressing)
 
-        channel_desc = {
-            canyonero.ChannelProtocol.raw: "Raw",
-            canyonero.ChannelProtocol.isotp: "ISOTP",
-            canyonero.ChannelProtocol.kline: "KLine",
-            canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
-            canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
-        }.get(channel_proto, str(channel_proto))
-        if selected_data_bitrate:
-            console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
-        else:
-            console.print(f"{channel_desc} channel opened at {bitrate} bps.")
-        console.print("Commands:")
-        console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
-        console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
-        console.print("  0902           - Send hex data with current addressing")
-        console.print("  quit           - Exit")
-        console.print("")
+            channel_desc = {
+                canyonero.ChannelProtocol.raw: "Raw",
+                canyonero.ChannelProtocol.isotp: "ISOTP",
+                canyonero.ChannelProtocol.kline: "KLine",
+                canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
+                canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
+            }.get(channel_proto, str(channel_proto))
+            if selected_data_bitrate:
+                console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
+            else:
+                console.print(f"{channel_desc} channel opened at {bitrate} bps.")
+            console.print("Commands:")
+            console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
+            console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
+            console.print("  0902           - Send hex data with current addressing")
+            console.print("  quit           - Exit")
+            console.print("")
 
-        current_addressing = default_addressing
+            current_addressing = default_addressing
 
-        try:
-            while True:
-                prompt = "> " if current_addressing else "> (set addressing first with :7df or :7df,7e8) "
-                try:
-                    line = input(prompt)
-                except (EOFError, KeyboardInterrupt):
-                    console.print("Goodbye!")
-                    return
-                trimmed = line.strip()
-                if not trimmed:
-                    continue
-                if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
-                    console.print("Goodbye!")
-                    return
-                if trimmed.startswith(":"):
-                    addressing = _parse_addressing(trimmed[1:])
-                    if addressing is None:
-                        console.print(
-                            "SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 "
-                            "(or :18DA33F1/10,18DAF110/20 for extended addressing)"
-                        )
+            try:
+                while True:
+                    prompt = "> " if current_addressing else "> (set addressing first with :7df or :7df,7e8) "
+                    try:
+                        line = input(prompt)
+                    except (EOFError, KeyboardInterrupt):
+                        console.print("Goodbye!")
+                        return
+                    trimmed = line.strip()
+                    if not trimmed:
                         continue
-                    current_addressing = addressing
-                    apply_addressing(client, channel, addressing)
-                    console.print(f"Addressing set to: {_format_addressing(addressing)}")
-                    continue
+                    if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
+                        console.print("Goodbye!")
+                        return
+                    if trimmed.startswith(":"):
+                        addressing = _parse_addressing(trimmed[1:])
+                        if addressing is None:
+                            console.print(
+                                "SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 "
+                                "(or :18DA33F1/10,18DAF110/20 for extended addressing)"
+                            )
+                            continue
+                        current_addressing = addressing
+                        apply_addressing(client, channel, addressing)
+                        console.print(f"Addressing set to: {_format_addressing(addressing)}")
+                        continue
 
-                payload = _parse_hex_bytes(trimmed)
-                if not payload:
-                    console.print("SyntaxError: Invalid message format. Use hex bytes like: 0902")
-                    continue
+                    payload = _parse_hex_bytes(trimmed)
+                    if not payload:
+                        console.print("SyntaxError: Invalid message format. Use hex bytes like: 0902")
+                        continue
 
-                client.send(channel, payload)
+                    client.send(channel, payload)
 
-                if current_addressing.mode == "multicast":
-                    responses: list[tuple[int, int, bytes]] = []
+                    if current_addressing.mode == "multicast":
+                        responses: list[tuple[int, int, bytes]] = []
+                        deadline = time.time() + timeout
+                        while time.time() < deadline:
+                            remaining = max(0.0, deadline - time.time())
+                            pdu = client.get_pdu(timeout=min(idle_timeout, remaining))
+                            if pdu is None:
+                                if responses:
+                                    break
+                                continue
+                            if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                                continue
+                            if pdu.channel() != channel:
+                                continue
+                            decoded = _decode_received_pdu(pdu)
+                            if decoded:
+                                responses.append(decoded)
+                        for can_id, _ext, data in responses:
+                            print(_format_message(can_id, data))
+                            interpretation = _interpret_response(data)
+                            if interpretation:
+                                print(f" info: {interpretation}")
+                        continue
+
+                    # Unicast
+                    response = None
                     deadline = time.time() + timeout
                     while time.time() < deadline:
                         remaining = max(0.0, deadline - time.time())
-                        pdu = client.get_pdu(timeout=min(idle_timeout, remaining))
+                        pdu = client.get_pdu(timeout=remaining)
                         if pdu is None:
-                            if responses:
-                                break
-                            continue
+                            break
                         if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
                             continue
                         if pdu.channel() != channel:
                             continue
-                        decoded = _decode_received_pdu(pdu)
-                        if decoded:
-                            responses.append(decoded)
-                    for can_id, _ext, data in responses:
-                        print(_format_message(can_id, data))
-                        interpretation = _interpret_response(data)
-                        if interpretation:
-                            print(f" info: {interpretation}")
-                    continue
-
-                # Unicast
-                response = None
-                deadline = time.time() + timeout
-                while time.time() < deadline:
-                    remaining = max(0.0, deadline - time.time())
-                    pdu = client.get_pdu(timeout=remaining)
-                    if pdu is None:
-                        break
-                    if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                        response = _decode_received_pdu(pdu)
+                        if response:
+                            break
+                    if response is None:
+                        console.print("Timeout waiting for response.")
                         continue
-                    if pdu.channel() != channel:
-                        continue
-                    response = _decode_received_pdu(pdu)
-                    if response:
-                        break
-                if response is None:
-                    console.print("Timeout waiting for response.")
-                    continue
-                can_id, _ext, data = response
-                print(_format_message(can_id, data))
-                interpretation = _interpret_response(data)
-                if interpretation:
-                    print(f" info: {interpretation}")
-        finally:
-            try:
-                client.close_channel(channel, timeout=timeout)
-            except (TimeoutError, RuntimeError):
-                pass
+                    can_id, _ext, data = response
+                    print(_format_message(can_id, data))
+                    interpretation = _interpret_response(data)
+                    if interpretation:
+                        print(f" info: {interpretation}")
+            finally:
+                try:
+                    client.close_channel(channel, timeout=timeout)
+                except (TimeoutError, RuntimeError):
+                    pass
+    except (TimeoutError, py_socket.timeout):
+        console.print(f"[red]Connection timed out while connecting to adapter {endpoint}.[/red]")
+        console.print("Check adapter power/network reachability and verify the endpoint URL.")
+        raise typer.Exit(code=1)
+    except OSError as exc:
+        console.print(f"[red]Connection failed for adapter {endpoint}:[/red] {exc}")
+        raise typer.Exit(code=1)
 
 
 @app.command()

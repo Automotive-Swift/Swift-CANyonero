@@ -116,7 +116,7 @@ struct ConfigMode: ParsableCommand {
     var mode: ConfigAppMode
 
     mutating func run() throws {
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
         let modeId = mode.id
         let modeName = mode.rawValue
 
@@ -155,7 +155,7 @@ struct ConfigReboot: ParsableCommand {
     @OptionGroup() var parentOptions: ECUconnectCommand.Options
 
     mutating func run() throws {
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
 
         Task {
             do {
@@ -192,7 +192,7 @@ struct ConfigShow: ParsableCommand {
     @OptionGroup() var parentOptions: ECUconnectCommand.Options
 
     mutating func run() throws {
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
 
         Task {
             do {
@@ -270,7 +270,7 @@ struct ConfigCANvoyGet: ParsableCommand {
     @OptionGroup() var parentOptions: ECUconnectCommand.Options
 
     mutating func run() throws {
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
 
         Task {
             do {
@@ -326,7 +326,7 @@ struct ConfigCANvoySet: ParsableCommand {
     var termination: Bool = false
 
     mutating func run() throws {
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
         let roleId = role.id
         let roleName = role.rawValue
         let bitrateValue = bitrate

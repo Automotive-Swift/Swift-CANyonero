@@ -36,7 +36,7 @@ struct Ping: ParsableCommand {
 
     mutating func run() throws {
 
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
         let ps = payloadSize
         let count = numberOfPings
         let protocolPayloadCap = Int(UInt16.max)

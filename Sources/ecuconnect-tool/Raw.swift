@@ -33,7 +33,7 @@ struct Raw: ParsableCommand {
 
     mutating func run() throws {
 
-        let url: URL = URL(string: parentOptions.url)!
+        let url = try parseECUconnectURL(parentOptions.url)
 
         Task {
             do {
