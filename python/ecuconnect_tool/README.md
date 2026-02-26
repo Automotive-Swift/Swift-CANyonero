@@ -2,10 +2,25 @@
 
 Python CLI for ECUconnect using libCANyonero bindings. The default transport is WiFi/TCP at `192.168.42.42:129` (override with `--endpoint` for mocks or other adapters).
 
-## Build + install
+## Install
+
+From PyPI (TCP transport only):
 
 ```bash
-python -m pip install -e ./python/ecuconnect_tool
+pipx install ecuconnect-tool
+```
+
+With BLE/L2CAP support on Linux (needs system `python3-dbus` and `python3-gi`):
+
+```bash
+sudo apt install python3-dbus python3-gi
+pipx install --system-site-packages ecuconnect-tool
+```
+
+From the repo (editable, for development):
+
+```bash
+python3 -m pip install -e ./python/ecuconnect_tool
 ```
 
 ## Quick start
@@ -46,13 +61,7 @@ ecuconnect-tool --url ecuconnect-l2cap://FFF1:129/12345678-1234-1234-1234-123456
 
 ### Linux
 
-Requires BlueZ and the system D-Bus/GLib Python packages (usually pre-installed):
-
-```bash
-sudo apt install python3-dbus python3-gi
-```
-
-Discovery uses the BlueZ D-Bus API; the L2CAP connection uses the kernel socket API directly (no extra pip dependencies).
+See install section above for dependencies. Discovery uses the BlueZ D-Bus API; the L2CAP connection uses the kernel socket API directly.
 
 Optionally filter by BD_ADDR:
 
