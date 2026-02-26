@@ -39,8 +39,14 @@ def _discover_device(
     *peer_filter*, when given, is matched as a case-insensitive substring
     against the device BD_ADDR (e.g. ``"DC:DA:0C"``).
     """
-    import dbus  # type: ignore[import-untyped]
-    from gi.repository import GLib  # type: ignore[import-untyped]
+    try:
+        import dbus  # type: ignore[import-untyped]
+        from gi.repository import GLib  # type: ignore[import-untyped]
+    except ImportError as exc:
+        raise RuntimeError(
+            "Linux BLE/L2CAP requires python3-dbus and python3-gi. "
+            "Install with: sudo apt install python3-dbus python3-gi"
+        ) from exc
 
     bus = dbus.SystemBus()
 
@@ -159,7 +165,7 @@ def _discover_device(
 
 def _find_adapter(bus) -> str:
     """Return the D-Bus object path for the first Bluetooth adapter."""
-    import dbus  # type: ignore[import-untyped]
+    import dbus  # type: ignore[import-untyped]  # already validated in caller
 
     om = dbus.Interface(
         bus.get_object(_BLUEZ_BUS_NAME, "/"),
