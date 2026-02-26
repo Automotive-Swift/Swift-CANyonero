@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
 import socket
 import sys
 import threading
@@ -13,10 +14,24 @@ from typing import Any, Callable, Optional, Tuple
 from urllib.parse import urlparse
 
 from . import canyonero
-from .macos_l2cap import connect_l2cap
+
+if sys.platform == "darwin":
+    from .macos_l2cap import connect_l2cap
+elif sys.platform == "linux":
+    from .linux_l2cap import connect_l2cap
+else:
+    def connect_l2cap(**kwargs):  # type: ignore[misc]
+        raise NotImplementedError("BLE/L2CAP transport is not supported on this platform.")
 
 DEFAULT_ENDPOINT = "192.168.42.42:129"
 MAX_PDU_SIZE = 0x10003
+
+_BDADDR_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+
+def _is_bdaddr(value: str) -> bool:
+    """Return True if *value* looks like a Bluetooth BD_ADDR (``AA:BB:CC:DD:EE:FF``)."""
+    return bool(_BDADDR_RE.match(value))
 
 
 @dataclass
@@ -41,10 +56,13 @@ def parse_endpoint(value: str) -> Endpoint:
             peer_uuid: Optional[str] = None
             if parsed.path and parsed.path != "/":
                 candidate = parsed.path.lstrip("/")
-                try:
-                    peer_uuid = str(uuid.UUID(candidate))
-                except ValueError as exc:
-                    raise ValueError(f"Invalid BLE peer UUID in endpoint path: {candidate}") from exc
+                if _is_bdaddr(candidate):
+                    peer_uuid = candidate.upper()
+                else:
+                    try:
+                        peer_uuid = str(uuid.UUID(candidate))
+                    except ValueError as exc:
+                        raise ValueError(f"Invalid BLE peer identifier in endpoint path: {candidate}") from exc
             return Endpoint(host=host.upper(), port=int(port), scheme="ble", peer_uuid=peer_uuid)
         if scheme in {"ecuconnect-wifi", "ecuconnect", "tcp"}:
             host = parsed.hostname or ""
@@ -124,8 +142,6 @@ class EcuconnectClient:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.tx_buffer)
             sock.settimeout(1.0)
         elif self.endpoint.scheme == "ble":
-            if sys.platform != "darwin":
-                raise NotImplementedError("BLE/L2CAP transport is only supported on macOS.")
             sock = connect_l2cap(
                 service_uuid=self.endpoint.host,
                 psm=self.endpoint.port,
@@ -133,7 +149,10 @@ class EcuconnectClient:
                 peer_uuid=self.endpoint.peer_uuid,
             )
             sock.settimeout(0.2)
-            self._inline_reads = True
+            # macOS MacOSL2CAPSocket needs inline reads (NSRunLoop on caller
+            # thread).  Linux returns a standard socket that works fine in a
+            # background reader thread.
+            self._inline_reads = sys.platform == "darwin"
         else:
             raise ValueError(f"Unsupported endpoint scheme: {self.endpoint.scheme}")
         self._sock = sock

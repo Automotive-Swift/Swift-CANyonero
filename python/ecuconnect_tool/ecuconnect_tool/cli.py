@@ -64,8 +64,10 @@ def _connect_with_spinner(client: EcuconnectClient, endpoint: str) -> None:
         console.print(label)
         client.connect()
         return
-    if _is_ble_endpoint(endpoint):
-        # Keep BLE stream setup on the caller thread so CoreFoundation runloop ownership remains stable.
+    if _is_ble_endpoint(endpoint) and sys.platform == "darwin":
+        # macOS only: keep BLE stream setup on the caller thread so
+        # CoreFoundation runloop ownership remains stable.  On Linux the
+        # kernel socket API has no such constraint, so the spinner works.
         console.print(label)
         client.connect()
         console.print("Adapter connection established.")

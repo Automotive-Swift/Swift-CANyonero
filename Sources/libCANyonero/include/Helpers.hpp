@@ -2,6 +2,7 @@
 #define HELPERS_HPP
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <iomanip>
 #include <vector>
