@@ -1,0 +1,5 @@
+csrc/
+build/
+dist/
+*.egg-info/
+*.so
