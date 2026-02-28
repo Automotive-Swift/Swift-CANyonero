@@ -37,6 +37,37 @@ def _parse_int(value: str) -> int:
         raise typer.BadParameter(f"Invalid integer value: {value}") from exc
 
 
+def _resolve_channel_proto(value: str) -> canyonero.ChannelProtocol:
+    normalized = value.lower()
+    if normalized == "raw":
+        return canyonero.ChannelProtocol.raw
+    if normalized == "isotp":
+        return canyonero.ChannelProtocol.isotp
+    if normalized == "kline":
+        return canyonero.ChannelProtocol.kline
+    if normalized == "raw_fd":
+        return canyonero.ChannelProtocol.raw_fd
+    if normalized == "isotp_fd":
+        return canyonero.ChannelProtocol.isotp_fd
+    raise typer.BadParameter("Invalid protocol. Use raw, isotp, kline, raw_fd, or isotp_fd.")
+
+
+def _selected_data_bitrate(protocol: canyonero.ChannelProtocol, data_bitrate: int) -> Optional[int]:
+    if protocol in {canyonero.ChannelProtocol.raw_fd, canyonero.ChannelProtocol.isotp_fd}:
+        return data_bitrate
+    return None
+
+
+def _channel_proto_description(protocol: canyonero.ChannelProtocol) -> str:
+    return {
+        canyonero.ChannelProtocol.raw: "Raw",
+        canyonero.ChannelProtocol.isotp: "ISOTP",
+        canyonero.ChannelProtocol.kline: "KLine",
+        canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
+        canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
+    }.get(protocol, str(protocol))
+
+
 def _parse_size_bytes(value: str, option_name: str) -> int:
     match = re.fullmatch(r"\s*(\d+)\s*([kmgKMG]?)\s*", value)
     if not match:
@@ -1038,25 +1069,8 @@ def term(
     rx_buffer = ctx.obj["rx_buffer"]
     tx_buffer = ctx.obj["tx_buffer"]
 
-    proto_normalized = proto.lower()
-    if proto_normalized == "raw":
-        channel_proto = canyonero.ChannelProtocol.raw
-    elif proto_normalized == "isotp":
-        channel_proto = canyonero.ChannelProtocol.isotp
-    elif proto_normalized == "kline":
-        channel_proto = canyonero.ChannelProtocol.kline
-    elif proto_normalized == "raw_fd":
-        channel_proto = canyonero.ChannelProtocol.raw_fd
-    elif proto_normalized == "isotp_fd":
-        channel_proto = canyonero.ChannelProtocol.isotp_fd
-    else:
-        raise typer.BadParameter("Invalid protocol. Use raw, isotp, kline, raw_fd, or isotp_fd.")
-
-    fd_protocols = {
-        canyonero.ChannelProtocol.raw_fd,
-        canyonero.ChannelProtocol.isotp_fd,
-    }
-    selected_data_bitrate = data_bitrate if channel_proto in fd_protocols else None
+    channel_proto = _resolve_channel_proto(proto)
+    selected_data_bitrate = _selected_data_bitrate(channel_proto, data_bitrate)
 
     if channel_proto == canyonero.ChannelProtocol.kline:
         default_addressing = Addressing(
@@ -1107,13 +1121,7 @@ def term(
             )
             apply_addressing(client, channel, default_addressing)
 
-            channel_desc = {
-                canyonero.ChannelProtocol.raw: "Raw",
-                canyonero.ChannelProtocol.isotp: "ISOTP",
-                canyonero.ChannelProtocol.kline: "KLine",
-                canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
-                canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
-            }.get(channel_proto, str(channel_proto))
+            channel_desc = _channel_proto_description(channel_proto)
             if selected_data_bitrate:
                 console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
             else:
@@ -1232,6 +1240,10 @@ def term(
 def monitor(
     ctx: typer.Context,
     bitrate: int = typer.Option(500000, help="CAN bitrate."),
+    proto: str = typer.Option(
+        "raw", "--proto", "-p", help="Channel protocol (raw or raw_fd)."
+    ),
+    data_bitrate: int = typer.Option(2000000, "--data-bitrate", help="CAN-FD data bitrate (used for raw_fd)."),
     rx_id: Optional[str] = typer.Option(None, help="Filter RX ID (hex or int)."),
     rx_mask: Optional[str] = typer.Option(None, help="Filter RX mask (hex or int)."),
     rx_extended: bool = typer.Option(False, help="Use extended RX ID."),
@@ -1249,12 +1261,17 @@ def monitor(
     else:
         rx_mask_value = _parse_int(rx_mask)
 
+    channel_proto = _resolve_channel_proto(proto)
+    if channel_proto not in (canyonero.ChannelProtocol.raw, canyonero.ChannelProtocol.raw_fd):
+        raise typer.BadParameter("monitor supports only 'raw' or 'raw_fd' protocol.")
+    selected_data_bitrate = _selected_data_bitrate(channel_proto, data_bitrate)
+
     with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
         channel = open_channel_with_retry(
             client,
             bitrate=bitrate,
-            protocol=canyonero.ChannelProtocol.raw,
-            data_bitrate=None,
+            protocol=channel_proto,
+            data_bitrate=selected_data_bitrate,
             open_timeout=5.0,
             open_retries=3,
             open_retry_delay=1.0,
@@ -1267,6 +1284,11 @@ def monitor(
             reply_extension=0,
         )
         client.set_arbitration(channel, arbitration)
+        channel_desc = _channel_proto_description(channel_proto)
+        if selected_data_bitrate:
+            console.print(f"{channel_desc} monitor opened at {bitrate}/{selected_data_bitrate} bps.")
+        else:
+            console.print(f"{channel_desc} monitor opened at {bitrate} bps.")
         if rx_id is None and rx_mask is None:
             console.print("Monitoring ECUconnect... (pass-all filter)")
         else:

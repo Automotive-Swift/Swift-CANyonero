@@ -24,10 +24,26 @@ struct Monitor: ParsableCommand {
     @Argument(help: "Bitrate")
     var bitrate: Int = 500000
 
+    @Option(name: .shortAndLong, help: "Channel protocol (raw or raw_fd)")
+    var proto: String = "raw"
+
+    @Option(name: .long, help: "CAN-FD data bitrate (used for raw_fd)")
+    var dataBitrate: Int = 2_000_000
+
     mutating func run() throws {
 
         let url = try parseECUconnectURL(parentOptions.url)
         let bps = bitrate
+        let channelProto: ECUconnect.ChannelProtocol
+        switch proto.lowercased() {
+            case "raw":
+                channelProto = .raw
+            case "raw_fd":
+                channelProto = .rawFD
+            default:
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'raw' or 'raw_fd'.")
+        }
+        let selectedDataBitrate: Int = channelProto == .rawFD ? dataBitrate : 0
 
         Task {
             do {
@@ -41,7 +57,12 @@ struct Monitor: ParsableCommand {
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
                 let monitorStream = try await Cornucopia.Core.Spinner.run("Starting monitor") {
-                    try await adapter.monitor(bitrate: bps)
+                    try await adapter.monitor(bitrate: bps, proto: channelProto, dataBitrate: selectedDataBitrate)
+                }
+                if channelProto == .rawFD {
+                    print("Raw CAN-FD monitor opened at \(bps)/\(selectedDataBitrate) bps.")
+                } else {
+                    print("Raw monitor opened at \(bps) bps.")
                 }
                 var lastTime = CFAbsoluteTimeGetCurrent()
                 for try await (id, _, data) in monitorStream {

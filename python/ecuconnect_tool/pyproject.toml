@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "ecuconnect-tool"
-version = "0.9.5"
+version = "0.9.6"
 description = "Python ECUconnect CLI and CANyonero protocol bindings"
 requires-python = ">=3.9"
 readme = "README.md"
