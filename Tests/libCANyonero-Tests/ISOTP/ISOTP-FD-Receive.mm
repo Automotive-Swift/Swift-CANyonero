@@ -93,7 +93,7 @@ static std::vector<uint8_t> makeSingleFrame(size_t payloadLength, uint8_t base =
     XCTAssertEqual(firstAction.type, TransceiverFD::Action::Type::writeFrames);
     XCTAssertEqual(firstAction.frames.size(), 1);
     XCTAssertEqual(firstAction.frames[0].type(), Frame::Type::flowControl);
-    XCTAssertEqual(firstAction.frames[0].bytes.size(), 3);
+    XCTAssertEqual(firstAction.frames[0].bytes.size(), 8);
     XCTAssertEqual(firstAction.frames[0].bytes[0], 0x30);
 
     auto offset = size_t(10);
@@ -121,6 +121,24 @@ static std::vector<uint8_t> makeSingleFrame(size_t payloadLength, uint8_t base =
 
 -(void)testFlowControlReplyUsesShortestValidFrame {
     auto isotp = TransceiverFD(TransceiverFD::Behavior::strict, TransceiverFD::Mode::standard, 5, 200, 0, 64);
+    auto pdu = payloadForLength(30, 0x60);
+
+    auto first = std::vector<uint8_t> { 0x10, 0x1E };
+    first.insert(first.end(), pdu.begin(), pdu.begin() + 10);
+    first.resize(12, padding);
+
+    auto action = isotp.didReceiveFrame(first);
+    XCTAssertEqual(action.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertEqual(action.frames.size(), 1);
+    XCTAssertEqual(action.frames[0].type(), Frame::Type::flowControl);
+    XCTAssertEqual(action.frames[0].bytes.size(), 8);
+    XCTAssertEqual(action.frames[0].bytes[0], 0x30);
+    XCTAssertEqual(action.frames[0].bytes[1], 5);
+    XCTAssertEqual(action.frames[0].bytes[2], 200);
+}
+
+-(void)testFlowControlReplyCanUseShortestValidFrameWhenMinimumDLCIsZero {
+    auto isotp = TransceiverFD(TransceiverFD::Behavior::strict, TransceiverFD::Mode::standard, 5, 200, 0, 64, 0);
     auto pdu = payloadForLength(30, 0x60);
 
     auto first = std::vector<uint8_t> { 0x10, 0x1E };

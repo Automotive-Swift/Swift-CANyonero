@@ -15,6 +15,7 @@ namespace ISOTP {
 
 constexpr uint8_t maximumFDStandardFrameWidth = 64;
 constexpr uint8_t maximumFDExtendedFrameWidth = 63;
+constexpr uint8_t defaultFDMinimumDLC = 8;
 
 constexpr bool isValidCANFDLength(uint8_t length) {
     switch (length) {
@@ -72,6 +73,14 @@ constexpr uint8_t nextValidFDFrameWidth(uint8_t requiredWidth, bool extendedMode
     return nextValidCANFDLength(requiredWidth);
 }
 
+constexpr uint8_t physicalLengthFromFDFrameWidth(uint8_t width, bool extendedMode) {
+    return extendedMode ? static_cast<uint8_t>(width + 1) : width;
+}
+
+constexpr uint8_t frameWidthFromPhysicalCANFDLength(uint8_t length, bool extendedMode) {
+    return extendedMode ? static_cast<uint8_t>(length - 1) : length;
+}
+
 constexpr uint8_t singleFramePayloadCapacityFD(uint8_t width) {
     return width > standardFrameWidth ? static_cast<uint8_t>(width - 2) : static_cast<uint8_t>(width - 1);
 }
@@ -79,6 +88,9 @@ constexpr uint8_t singleFramePayloadCapacityFD(uint8_t width) {
 /// A dedicated ISO-TP transceiver for CAN-FD channels.
 /// This class enforces CAN-FD DLC validity and transmits frames using
 /// the shortest valid DLC that can hold the current payload chunk.
+/// A configurable minimum DLC floor applies to transmitted frames only.
+/// Incoming frames are validated against CAN-FD DLC legality and configured
+/// maximum frame width, but are not rejected for being below that floor.
 class TransceiverFD {
 public:
     using Behavior = Transceiver::Behavior;
@@ -87,15 +99,24 @@ public:
     using Action = Transceiver::Action;
 
     TransceiverFD()
-        :behavior(Behavior::defensive), mode(Mode::standard), maxFrameWidth(defaultFDMaximumFrameWidth(false)), blockSize(0), rxSeparationTime(0), txSeparationTime(0)
+        :behavior(Behavior::defensive), mode(Mode::standard),
+        maxFrameWidth(defaultFDMaximumFrameWidth(false)),
+        minFrameWidth(resolveMinimumFrameWidth(Mode::standard, defaultFDMinimumDLC, defaultFDMaximumFrameWidth(false))),
+        blockSize(0), rxSeparationTime(0), txSeparationTime(0)
     {
     }
 
     /// Create a new CAN-FD transceiver.
     /// The optional ``frameWidth`` parameter defines the maximum effective frame width.
     /// For standard addressing this is up to 64, for extended addressing up to 63.
-    TransceiverFD(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00, uint8_t frameWidth = 0x00)
-        :behavior(behavior), mode(mode), maxFrameWidth(resolveMaximumFrameWidth(mode, frameWidth)), blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
+    /// The optional ``minimumDLC`` parameter defines a lower bound for outgoing CAN-FD DLC.
+    /// `0` disables the floor and restores shortest-frame behavior.
+    /// This setting affects TX frame sizing only; RX accepts any valid CAN-FD length.
+    TransceiverFD(Behavior behavior, Mode mode, uint8_t blockSize = 0x00, uint16_t rxSeparationTime = 0x00, uint16_t txSeparationTime = 0x00, uint8_t frameWidth = 0x00, uint8_t minimumDLC = defaultFDMinimumDLC)
+        :behavior(behavior), mode(mode),
+        maxFrameWidth(resolveMaximumFrameWidth(mode, frameWidth)),
+        minFrameWidth(resolveMinimumFrameWidth(mode, minimumDLC, maxFrameWidth)),
+        blockSize(blockSize), rxSeparationTime(rxSeparationTime), txSeparationTime(txSeparationTime)
     {
     }
 
@@ -120,6 +141,7 @@ public:
     }
 
     /// Call this for any incoming frame.
+    /// RX does not enforce ``minimumDLC``; only CAN-FD validity and max width are checked.
     Action didReceiveFrame(const Bytes& bytes) {
         if (bytes.empty()) { return { Action::Type::protocolViolation, "Incoming frame is empty." }; }
         if (bytes.size() > maxFrameWidth) { return { Action::Type::protocolViolation, "Incoming frame exceeds configured CAN-FD width." }; }
@@ -186,8 +208,23 @@ private:
         return std::min(clamped, maximumWidth);
     }
 
+    static uint8_t resolveMinimumFrameWidth(Mode mode, uint8_t requestedMinimumDLC, uint8_t maximumFrameWidth) {
+        if (requestedMinimumDLC == 0) { return 0; }
+
+        const bool extendedMode = mode == Mode::extended;
+        auto minimumDLC = nextValidCANFDLength(requestedMinimumDLC);
+        const auto maximumDLC = physicalLengthFromFDFrameWidth(maximumFrameWidth, extendedMode);
+        if (minimumDLC > maximumDLC) {
+            minimumDLC = maximumDLC;
+        }
+        return frameWidthFromPhysicalCANFDLength(minimumDLC, extendedMode);
+    }
+
     uint8_t dynamicFrameWidthFor(uint8_t requiredBytes) const {
         auto width = nextValidFDFrameWidth(requiredBytes, mode == Mode::extended);
+        if (width < minFrameWidth) {
+            width = minFrameWidth;
+        }
         return std::min(width, maxFrameWidth);
     }
 
@@ -235,6 +272,7 @@ private:
     Behavior behavior;
     Mode mode;
     uint8_t maxFrameWidth;
+    uint8_t minFrameWidth;
     uint8_t blockSize;
     uint16_t rxSeparationTime;
     uint16_t txSeparationTime;

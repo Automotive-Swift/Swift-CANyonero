@@ -26,6 +26,14 @@ static size_t nextCANFDLengthExtended(size_t required) {
     return nextCANFDLength(required + 1) - 1;
 }
 
+static size_t applyStandardMinimumDLC(size_t frameLength) {
+    return frameLength < 8 ? 8 : frameLength;
+}
+
+static size_t applyExtendedMinimumDLC(size_t frameLength) {
+    return frameLength < 7 ? 7 : frameLength;
+}
+
 static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10) {
     auto payload = std::vector<uint8_t>(length);
     std::iota(payload.begin(), payload.end(), base);
@@ -52,6 +60,7 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
         auto expectedLength = payloadLength <= 7
             ? nextCANFDLength(payloadLength + 1)
             : nextCANFDLength(payloadLength + 2);
+        expectedLength = applyStandardMinimumDLC(expectedLength);
         XCTAssertEqual(frame.bytes.size(), expectedLength);
 
         if (payloadLength <= 7) {
@@ -95,7 +104,8 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
         auto consecutive = secondAction.frames[0];
         XCTAssertEqual(consecutive.type(), Frame::Type::consecutive);
         XCTAssertEqual(consecutive.bytes[0], 0x21);
-        XCTAssertEqual(consecutive.bytes.size(), nextCANFDLength(1 + remainder));
+        auto expectedLength = applyStandardMinimumDLC(nextCANFDLength(1 + remainder));
+        XCTAssertEqual(consecutive.bytes.size(), expectedLength);
         for (size_t i = 0; i < remainder; ++i) {
             XCTAssertEqual(consecutive.bytes[i + 1], message[62 + i]);
         }
@@ -126,7 +136,8 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
         XCTAssertEqual(thirdAction.type, TransceiverFD::Action::Type::writeFrames);
         XCTAssertEqual(thirdAction.frames.size(), 1);
         XCTAssertEqual(thirdAction.frames[0].bytes[0], 0x22);
-        XCTAssertEqual(thirdAction.frames[0].bytes.size(), nextCANFDLength(1 + remainder));
+        auto expectedLength = applyStandardMinimumDLC(nextCANFDLength(1 + remainder));
+        XCTAssertEqual(thirdAction.frames[0].bytes.size(), expectedLength);
         XCTAssertEqual(isotp.machineState(), TransceiverFD::State::idle);
     }
 }
@@ -139,7 +150,7 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
     XCTAssertEqual(singleAction.type, TransceiverFD::Action::Type::writeFrames);
     XCTAssertEqual(singleAction.frames.size(), 1);
     XCTAssertEqual(singleAction.frames[0].type(), Frame::Type::single);
-    XCTAssertEqual(singleAction.frames[0].bytes.size(), nextCANFDLengthExtended(10));
+    XCTAssertEqual(singleAction.frames[0].bytes.size(), applyExtendedMinimumDLC(nextCANFDLengthExtended(10)));
     XCTAssertEqual(singleAction.frames[0].bytes[0], 0x00);
     XCTAssertEqual(singleAction.frames[0].bytes[1], 8);
 
@@ -154,8 +165,30 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
     XCTAssertEqual(secondAction.type, TransceiverFD::Action::Type::writeFrames);
     XCTAssertEqual(secondAction.frames.size(), 1);
     XCTAssertEqual(secondAction.frames[0].type(), Frame::Type::consecutive);
-    XCTAssertEqual(secondAction.frames[0].bytes.size(), nextCANFDLengthExtended(2));
+    XCTAssertEqual(secondAction.frames[0].bytes.size(), applyExtendedMinimumDLC(nextCANFDLengthExtended(2)));
     XCTAssertEqual(secondAction.frames[0].bytes[0], 0x21);
+}
+
+-(void)testMinimumDLCZeroAllowsShortestFrames {
+    auto isotp = TransceiverFD(TransceiverFD::Behavior::strict, TransceiverFD::Mode::standard, 0, 0, 0, 64, 0);
+
+    auto singlePayload = payloadForLength(1, 0x11);
+    auto singleAction = isotp.writePDU(singlePayload);
+    XCTAssertEqual(singleAction.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertEqual(singleAction.frames.size(), 1);
+    XCTAssertEqual(singleAction.frames[0].bytes.size(), 2);
+
+    auto multiPayload = payloadForLength(63, 0x20);
+    auto firstAction = isotp.writePDU(multiPayload);
+    XCTAssertEqual(firstAction.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertEqual(firstAction.frames.size(), 1);
+    XCTAssertEqual(firstAction.frames[0].bytes.size(), 64);
+
+    auto flowControl = std::vector<uint8_t> { 0x30, 0x00, 0x00 };
+    auto secondAction = isotp.didReceiveFrame(flowControl);
+    XCTAssertEqual(secondAction.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertEqual(secondAction.frames.size(), 1);
+    XCTAssertEqual(secondAction.frames[0].bytes.size(), 2);
 }
 
 @end
