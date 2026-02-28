@@ -46,7 +46,7 @@ struct ECUconnectCommand: ParsableCommand {
 
     static var configuration = CommandConfiguration(
         abstract: "A tool for the ECUconnect OBD2 adapter.",
-        version: "0.9.6",
+        version: "0.9.7",
         subcommands: [
             Benchmark.self,
             Config.self,
