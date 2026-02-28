@@ -23,6 +23,7 @@ fileprivate class REPL {
     }
 
     private var lineNoise: LineNoise = .init()
+    private var historyPath: String?
     private var lastAddressing: Automotive.Addressing?
     private var payloadProtocol: Automotive.PayloadProtocol
 
@@ -43,6 +44,12 @@ fileprivate class REPL {
         if let addressing = defaultAddressing {
             print("Default addressing: \(Self.describe(addressing))")
         }
+        self.historyPath = InteractiveHistory.configure(lineNoise, scope: "term")
+    }
+
+    private func addHistory(_ line: String) {
+        lineNoise.addHistory(line)
+        InteractiveHistory.persist(lineNoise, historyPath: historyPath)
     }
 
     func read() throws -> Command {
@@ -74,7 +81,7 @@ fileprivate class REPL {
                 if trimmed.hasPrefix(":") {
                     if let addressing = parseAddressing(String(trimmed.dropFirst())) {
                         command = .setAddressing(addressing)
-                        self.lineNoise.addHistory(trimmed)
+                        self.addHistory(trimmed)
                         print("")
                     } else {
                         print("SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 (or :18DA33F1/10,18DAF110/20 for extended addressing)")
@@ -87,7 +94,7 @@ fileprivate class REPL {
 
                     if let message = parseMessage(trimmed, addressing: addressing) {
                         command = .sendMessage(message)
-                        self.lineNoise.addHistory(trimmed)
+                        self.addHistory(trimmed)
                         print("")
                     } else {
                         print("SyntaxError: Invalid message format. Use hex bytes like: 0902")

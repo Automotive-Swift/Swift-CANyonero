@@ -79,6 +79,10 @@ fileprivate func runLoginSession(host: String, port: Int, responseTimeout: TimeI
 
     let remote = LoginRemote(socket: socket)
     let lineNoise = LineNoise()
+    let historyPath = InteractiveHistory.configure(lineNoise, scope: "login")
+    defer {
+        InteractiveHistory.persist(lineNoise, historyPath: historyPath)
+    }
     if try remote.drainOutput(firstByteTimeout: 0.50, idleTimeout: idleTimeout) == .closed {
         print("Connection closed by remote host.")
         return true
@@ -94,6 +98,10 @@ fileprivate func runLoginSession(host: String, port: Int, responseTimeout: TimeI
         }
 
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            lineNoise.addHistory(input)
+            InteractiveHistory.persist(lineNoise, historyPath: historyPath)
+        }
         if trimmed.lowercased().hasPrefix("quit") || trimmed.lowercased().hasPrefix("exit") {
             print("")
             return false

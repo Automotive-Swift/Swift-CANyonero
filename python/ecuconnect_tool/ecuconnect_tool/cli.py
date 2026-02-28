@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import statistics
 import socket as py_socket
@@ -7,6 +8,7 @@ import select
 import sys
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import urlparse
 import time
 from typing import List, Optional
@@ -22,12 +24,63 @@ from .test_runner import (
     run_ecuconnect_test,
 )
 
+try:
+    import readline
+except ImportError:  # pragma: no cover - platform dependent
+    readline = None  # type: ignore[assignment]
+
 app = typer.Typer(help="ECUconnect tool (Python) for CANyonero adapters", add_completion=False)
 console = Console()
 config_app = typer.Typer(help="Configure ECUconnect via JSON-RPC.")
 config_canvoy_app = typer.Typer(help="Configure CANvoy settings.")
 config_app.add_typer(config_canvoy_app, name="canvoy")
 app.add_typer(config_app, name="config")
+
+_HISTORY_MAX_LENGTH = 1000
+_HISTORY_DIR_ENV = "ECUCONNECT_TOOL_HISTORY_DIR"
+
+
+def _history_file_path(scope: str) -> Optional[Path]:
+    configured_dir = os.environ.get(_HISTORY_DIR_ENV, "").strip()
+    history_dir = Path(configured_dir).expanduser() if configured_dir else (Path.home() / ".ecuconnect-tool" / "history")
+    try:
+        history_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    return history_dir / f"{scope}.history"
+
+
+def _setup_interactive_history(scope: str) -> Optional[Path]:
+    if readline is None or not sys.stdin.isatty():
+        return None
+
+    history_path = _history_file_path(scope)
+    if history_path is None:
+        return None
+
+    try:
+        readline.clear_history()
+        readline.set_history_length(_HISTORY_MAX_LENGTH)
+        doc = (getattr(readline, "__doc__", "") or "").lower()
+        if "libedit" in doc:
+            readline.parse_and_bind("bind -e")
+        else:
+            readline.parse_and_bind("set editing-mode emacs")
+        if history_path.exists():
+            readline.read_history_file(str(history_path))
+    except Exception:
+        return None
+    return history_path
+
+
+def _save_interactive_history(history_path: Optional[Path]) -> None:
+    if readline is None or history_path is None:
+        return
+    try:
+        readline.set_history_length(_HISTORY_MAX_LENGTH)
+        readline.write_history_file(str(history_path))
+    except OSError:
+        pass
 
 
 def _parse_int(value: str) -> int:
@@ -1007,50 +1060,55 @@ def login(
     """Open an interactive ECOS login shell (TCP)."""
     endpoint = ctx.obj["endpoint"]
     target_host = _resolve_login_host(endpoint, host)
-
-    while True:
-        try:
-            with py_socket.create_connection((target_host, port), timeout=connect_timeout) as sock:
-                sock.settimeout(None)
-                console.print(f"ECUconnect connected and ready ({target_host}:{port}).")
-                if not _drain_socket_output(
-                    sock,
-                    first_byte_timeout=0.50,
-                    idle_timeout=idle_timeout,
-                ):
-                    console.print("Connection closed by remote host.")
-                    break
-
-                while True:
-                    try:
-                        line = input(local_prompt)
-                    except (EOFError, KeyboardInterrupt):
-                        print("^D")
-                        return
-
-                    trimmed = line.strip()
-                    if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
-                        print("")
-                        return
-
-                    sock.sendall((line + "\r\n").encode("utf-8"))
+    history_path = _setup_interactive_history("login")
+    try:
+        while True:
+            try:
+                with py_socket.create_connection((target_host, port), timeout=connect_timeout) as sock:
+                    sock.settimeout(None)
+                    console.print(f"ECUconnect connected and ready ({target_host}:{port}).")
                     if not _drain_socket_output(
                         sock,
-                        first_byte_timeout=response_timeout,
+                        first_byte_timeout=0.50,
                         idle_timeout=idle_timeout,
                     ):
                         console.print("Connection closed by remote host.")
                         break
-        except OSError as exc:
-            if not reconnect:
-                console.print(f"[red]Login connection failed:[/red] {exc}")
-                raise typer.Exit(code=1)
-            console.print(f"[yellow]Connection error:[/yellow] {exc}")
 
-        if not reconnect:
-            return
-        console.print(f"Reconnecting in {reconnect_delay:.1f}s...")
-        time.sleep(reconnect_delay)
+                    while True:
+                        try:
+                            line = input(local_prompt)
+                        except (EOFError, KeyboardInterrupt):
+                            print("^D")
+                            return
+
+                        trimmed = line.strip()
+                        if trimmed:
+                            _save_interactive_history(history_path)
+                        if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
+                            print("")
+                            return
+
+                        sock.sendall((line + "\r\n").encode("utf-8"))
+                        if not _drain_socket_output(
+                            sock,
+                            first_byte_timeout=response_timeout,
+                            idle_timeout=idle_timeout,
+                        ):
+                            console.print("Connection closed by remote host.")
+                            break
+            except OSError as exc:
+                if not reconnect:
+                    console.print(f"[red]Login connection failed:[/red] {exc}")
+                    raise typer.Exit(code=1)
+                console.print(f"[yellow]Connection error:[/yellow] {exc}")
+
+            if not reconnect:
+                return
+            console.print(f"Reconnecting in {reconnect_delay:.1f}s...")
+            time.sleep(reconnect_delay)
+    finally:
+        _save_interactive_history(history_path)
 
 
 @app.command()
@@ -1071,6 +1129,7 @@ def term(
 
     channel_proto = _resolve_channel_proto(proto)
     selected_data_bitrate = _selected_data_bitrate(channel_proto, data_bitrate)
+    history_path = _setup_interactive_history("term")
 
     if channel_proto == canyonero.ChannelProtocol.kline:
         default_addressing = Addressing(
@@ -1103,137 +1162,141 @@ def term(
 
     client = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
     try:
-        _connect_with_spinner(client, endpoint)
-        with client:
-            info = client.request_info()
-            voltage = client.read_voltage()
-            console.print(f"Connected to ECUconnect: {info.vendor} {info.model}.")
-            console.print(f"Reported system voltage is {voltage:.2f} V.")
+        try:
+            _connect_with_spinner(client, endpoint)
+            with client:
+                info = client.request_info()
+                voltage = client.read_voltage()
+                console.print(f"Connected to ECUconnect: {info.vendor} {info.model}.")
+                console.print(f"Reported system voltage is {voltage:.2f} V.")
 
-            channel = open_channel_with_retry(
-                client,
-                bitrate=bitrate,
-                protocol=channel_proto,
-                data_bitrate=selected_data_bitrate,
-                open_timeout=5.0,
-                open_retries=3,
-                open_retry_delay=1.0,
-            )
-            apply_addressing(client, channel, default_addressing)
+                channel = open_channel_with_retry(
+                    client,
+                    bitrate=bitrate,
+                    protocol=channel_proto,
+                    data_bitrate=selected_data_bitrate,
+                    open_timeout=5.0,
+                    open_retries=3,
+                    open_retry_delay=1.0,
+                )
+                apply_addressing(client, channel, default_addressing)
 
-            channel_desc = _channel_proto_description(channel_proto)
-            if selected_data_bitrate:
-                console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
-            else:
-                console.print(f"{channel_desc} channel opened at {bitrate} bps.")
-            console.print("Commands:")
-            console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
-            console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
-            console.print("  0902           - Send hex data with current addressing")
-            console.print("  quit           - Exit")
-            console.print("")
+                channel_desc = _channel_proto_description(channel_proto)
+                if selected_data_bitrate:
+                    console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
+                else:
+                    console.print(f"{channel_desc} channel opened at {bitrate} bps.")
+                console.print("Commands:")
+                console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
+                console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
+                console.print("  0902           - Send hex data with current addressing")
+                console.print("  quit           - Exit")
+                console.print("")
 
-            current_addressing = default_addressing
+                current_addressing = default_addressing
 
-            try:
-                while True:
-                    prompt = "> " if current_addressing else "> (set addressing first with :7df or :7df,7e8) "
-                    try:
-                        line = input(prompt)
-                    except (EOFError, KeyboardInterrupt):
-                        console.print("Goodbye!")
-                        return
-                    trimmed = line.strip()
-                    if not trimmed:
-                        continue
-                    if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
-                        console.print("Goodbye!")
-                        return
-                    if trimmed.startswith(":"):
-                        addressing = _parse_addressing(trimmed[1:])
-                        if addressing is None:
-                            console.print(
-                                "SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 "
-                                "(or :18DA33F1/10,18DAF110/20 for extended addressing)"
-                            )
+                try:
+                    while True:
+                        prompt = "> " if current_addressing else "> (set addressing first with :7df or :7df,7e8) "
+                        try:
+                            line = input(prompt)
+                        except (EOFError, KeyboardInterrupt):
+                            console.print("Goodbye!")
+                            return
+                        trimmed = line.strip()
+                        if not trimmed:
                             continue
-                        current_addressing = addressing
-                        apply_addressing(client, channel, addressing)
-                        console.print(f"Addressing set to: {_format_addressing(addressing)}")
-                        continue
+                        _save_interactive_history(history_path)
+                        if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
+                            console.print("Goodbye!")
+                            return
+                        if trimmed.startswith(":"):
+                            addressing = _parse_addressing(trimmed[1:])
+                            if addressing is None:
+                                console.print(
+                                    "SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 "
+                                    "(or :18DA33F1/10,18DAF110/20 for extended addressing)"
+                                )
+                                continue
+                            current_addressing = addressing
+                            apply_addressing(client, channel, addressing)
+                            console.print(f"Addressing set to: {_format_addressing(addressing)}")
+                            continue
 
-                    payload = _parse_hex_bytes(trimmed)
-                    if not payload:
-                        console.print("SyntaxError: Invalid message format. Use hex bytes like: 0902")
-                        continue
+                        payload = _parse_hex_bytes(trimmed)
+                        if not payload:
+                            console.print("SyntaxError: Invalid message format. Use hex bytes like: 0902")
+                            continue
 
-                    client.send(channel, payload)
+                        client.send(channel, payload)
 
-                    if current_addressing.mode == "multicast":
-                        responses: list[tuple[int, int, bytes]] = []
+                        if current_addressing.mode == "multicast":
+                            responses: list[tuple[int, int, bytes]] = []
+                            deadline = time.time() + timeout
+                            while time.time() < deadline:
+                                remaining = max(0.0, deadline - time.time())
+                                pdu = client.get_pdu(timeout=min(idle_timeout, remaining))
+                                if pdu is None:
+                                    if responses:
+                                        break
+                                    continue
+                                if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                                    continue
+                                if pdu.channel() != channel:
+                                    continue
+                                decoded = _decode_received_pdu(pdu)
+                                if decoded:
+                                    responses.append(decoded)
+                            for can_id, _ext, data in responses:
+                                print(_format_message(can_id, data))
+                                interpretation = _interpret_response(data)
+                                if interpretation:
+                                    print(f" info: {interpretation}")
+                            continue
+
+                        # Unicast
+                        response = None
                         deadline = time.time() + timeout
                         while time.time() < deadline:
                             remaining = max(0.0, deadline - time.time())
-                            pdu = client.get_pdu(timeout=min(idle_timeout, remaining))
+                            pdu = client.get_pdu(timeout=remaining)
                             if pdu is None:
-                                if responses:
-                                    break
-                                continue
+                                break
                             if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
                                 continue
                             if pdu.channel() != channel:
                                 continue
-                            decoded = _decode_received_pdu(pdu)
-                            if decoded:
-                                responses.append(decoded)
-                        for can_id, _ext, data in responses:
-                            print(_format_message(can_id, data))
-                            interpretation = _interpret_response(data)
-                            if interpretation:
-                                print(f" info: {interpretation}")
-                        continue
-
-                    # Unicast
-                    response = None
-                    deadline = time.time() + timeout
-                    while time.time() < deadline:
-                        remaining = max(0.0, deadline - time.time())
-                        pdu = client.get_pdu(timeout=remaining)
-                        if pdu is None:
-                            break
-                        if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                            response = _decode_received_pdu(pdu)
+                            if response:
+                                break
+                        if response is None:
+                            console.print("Timeout waiting for response.")
                             continue
-                        if pdu.channel() != channel:
-                            continue
-                        response = _decode_received_pdu(pdu)
-                        if response:
-                            break
-                    if response is None:
-                        console.print("Timeout waiting for response.")
-                        continue
-                    can_id, _ext, data = response
-                    print(_format_message(can_id, data))
-                    interpretation = _interpret_response(data)
-                    if interpretation:
-                        print(f" info: {interpretation}")
-            finally:
-                try:
-                    client.close_channel(channel, timeout=timeout)
-                except (TimeoutError, RuntimeError, OSError, py_socket.timeout):
-                    pass
-    except (TimeoutError, py_socket.timeout):
-        console.print(f"[red]Connection timed out while connecting to adapter {endpoint}.[/red]")
-        console.print("Check adapter power/network reachability and verify the endpoint URL.")
-        raise typer.Exit(code=1)
-    except NotImplementedError as exc:
-        console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=1)
-    except RuntimeError as exc:
-        console.print(f"[red]Connection setup failed:[/red] {exc}")
-        raise typer.Exit(code=1)
-    except OSError as exc:
-        console.print(f"[red]Connection failed for adapter {endpoint}:[/red] {exc}")
-        raise typer.Exit(code=1)
+                        can_id, _ext, data = response
+                        print(_format_message(can_id, data))
+                        interpretation = _interpret_response(data)
+                        if interpretation:
+                            print(f" info: {interpretation}")
+                finally:
+                    try:
+                        client.close_channel(channel, timeout=timeout)
+                    except (TimeoutError, RuntimeError, OSError, py_socket.timeout):
+                        pass
+        except (TimeoutError, py_socket.timeout):
+            console.print(f"[red]Connection timed out while connecting to adapter {endpoint}.[/red]")
+            console.print("Check adapter power/network reachability and verify the endpoint URL.")
+            raise typer.Exit(code=1)
+        except NotImplementedError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=1)
+        except RuntimeError as exc:
+            console.print(f"[red]Connection setup failed:[/red] {exc}")
+            raise typer.Exit(code=1)
+        except OSError as exc:
+            console.print(f"[red]Connection failed for adapter {endpoint}:[/red] {exc}")
+            raise typer.Exit(code=1)
+    finally:
+        _save_interactive_history(history_path)
 
 
 @app.command()
