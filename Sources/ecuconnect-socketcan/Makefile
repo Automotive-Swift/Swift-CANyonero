@@ -14,7 +14,7 @@ RECONNECT_MS ?= 1000
 STATS_INTERVAL ?= 5
 EXTRA_ARGS ?=
 
-.PHONY: help configure build rebuild check-can run run-fd up vcan-up vcan-down wifi-connect wifi-connect-sudo clean distclean
+.PHONY: help configure build rebuild check-can run run-fd up down vcan-up vcan-down wifi-connect wifi-connect-sudo wifi-disconnect clean distclean
 
 help:
 	@echo "Targets:"
@@ -25,10 +25,12 @@ help:
 	@echo "  run         Run bridge in classic CAN mode"
 	@echo "  run-fd      Run bridge in CAN FD mode"
 	@echo "  up          Connect Wi-Fi, create vcan, then run"
+	@echo "  down        Bring down vcan and disconnect Wi-Fi"
 	@echo "  vcan-up     Create and bring up $(CAN_IF) (requires sudo)"
 	@echo "  vcan-down   Bring down and delete $(CAN_IF) (requires sudo)"
 	@echo "  wifi-connect Connect to first Wi-Fi SSID prefixed by ECUconnect"
 	@echo "  wifi-connect-sudo Same as wifi-connect but runs with sudo"
+	@echo "  wifi-disconnect Disconnect Wi-Fi interface (requires sudo)"
 	@echo "  clean       Remove CMake build artifacts (keeps cache)"
 	@echo "  distclean   Remove entire $(BUILD_DIR)"
 	@echo ""
@@ -88,11 +90,16 @@ vcan-down:
 
 up: wifi-connect-sudo vcan-up run
 
+down: vcan-down wifi-disconnect
+
 wifi-connect:
 	./scripts/connect-ecuconnect.sh --prefix ECUconnect $(if $(WIFI_IF),--ifname $(WIFI_IF),) $(EXTRA_ARGS)
 
 wifi-connect-sudo:
 	sudo ./scripts/connect-ecuconnect.sh --prefix ECUconnect $(if $(WIFI_IF),--ifname $(WIFI_IF),) $(EXTRA_ARGS)
+
+wifi-disconnect:
+	sudo nmcli device disconnect $(if $(WIFI_IF),$(WIFI_IF),$(shell nmcli -t -f DEVICE,TYPE device status | awk -F: '$$2 == "wifi" { print $$1; exit }'))
 
 clean:
 	@if [ -d "$(BUILD_DIR)" ]; then $(CMAKE) --build $(BUILD_DIR) --target clean; fi
