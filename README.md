@@ -58,6 +58,26 @@ The driver registers at:
 
 See `Sources/ecuconnect-j2534/README.md` for detailed build instructions, API usage examples, and architecture documentation.
 
+## Linux SocketCAN Bridge
+
+The `Sources/ecuconnect-socketcan` directory contains a Linux user-space bridge that exposes ECUconnect over SocketCAN for local tools (`candump`, `cansend`, `isotpdump`, ...).
+
+### Quick Start (Linux)
+
+```bash
+cd Sources/ecuconnect-socketcan
+make vcan-up
+make run ENDPOINT=192.168.42.42:129 CAN_IF=vcan0
+```
+
+Useful targets include:
+
+- `make wifi-connect-sudo` to connect to the first available ECUconnect SSID
+- `make run-fd` for CAN FD mode
+- `make up` for one-shot Wi-Fi connect + `vcan` setup + bridge start
+
+See `Sources/ecuconnect-socketcan/README.md` for full options and deployment notes (`vcan` vs `canX`).
+
 ## Tools
 
 `Sources/ecuconnect-tool` provides an interactive CLI for working with CANyonero hardware from macOS/Linux terminals. Launch it with:
