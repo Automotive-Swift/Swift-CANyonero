@@ -100,15 +100,6 @@
       }
     },
     {
-      "identity" : "swift-automotive",
-      "kind" : "remoteSourceControl",
-      "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
-      "state" : {
-        "branch" : "master",
-        "revision" : "3fe9eb0f54c1408d293b84a657d36439bd4ca409"
-      }
-    },
-    {
       "identity" : "swift-crypto",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto",

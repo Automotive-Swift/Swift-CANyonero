@@ -73,12 +73,15 @@ fileprivate class REPL {
                     throw Error.eof
                 }
 
-                guard trimmed.rangeOfCharacter(from: Self.allowedCharacterSet) == nil else {
-                    print("SyntaxError: Invalid characters (allowed: 0-9, A-F, a-f, :, ,, /)")
-                    continue
-                }
-
-                if trimmed.hasPrefix(":") {
+                if trimmed.hasPrefix(":filter") {
+                    command = parseFilterCommand(String(trimmed.dropFirst("filter".count + 1)))
+                    self.addHistory(trimmed)
+                    print("")
+                } else if trimmed.hasPrefix(":") {
+                    guard trimmed.dropFirst().rangeOfCharacter(from: Self.allowedCharacterSet) == nil else {
+                        print("SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 (or :18DA33F1/10,18DAF110/20 for extended addressing)")
+                        continue
+                    }
                     if let addressing = parseAddressing(String(trimmed.dropFirst())) {
                         command = .setAddressing(addressing)
                         self.addHistory(trimmed)
@@ -87,6 +90,10 @@ fileprivate class REPL {
                         print("SyntaxError: Invalid addressing format. Use :7df or :7df,7e8 (or :18DA33F1/10,18DAF110/20 for extended addressing)")
                     }
                 } else {
+                    guard trimmed.rangeOfCharacter(from: Self.allowedCharacterSet) == nil else {
+                        print("SyntaxError: Invalid characters (allowed: 0-9, A-F, a-f, :, ,, /)")
+                        continue
+                    }
                     guard let addressing = lastAddressing else {
                         print("Error: Set addressing first with :7df,7e8")
                         continue
@@ -295,6 +302,25 @@ fileprivate class REPL {
         }
     }
 
+    func parseFilterCommand(_ input: String) -> Command? {
+        let arg = input.CC_trimmed()
+        if arg.isEmpty || arg.lowercased() == "auto" {
+            return .setFilter(.auto)
+        }
+        if arg.lowercased() == "off" {
+            return .setFilter(.off)
+        }
+        let hexComponents = arg.components(separatedBy: ",").compactMap { UInt8($0.CC_trimmed(), radix: 16) }
+        guard !hexComponents.isEmpty else {
+            print("Usage: :filter          – auto-derive from request SID")
+            print("       :filter 62       – accept only 0x62 as valid positive response")
+            print("       :filter 62,6A    – accept 0x62 or 0x6A")
+            print("       :filter off      – disable filtering")
+            return nil
+        }
+        return .setFilter(.explicit(.init(validResponseFirstBytes: hexComponents)))
+    }
+
     func parseAddressing(_ input: String) -> Automotive.Addressing? {
         let components = input.components(separatedBy: ",")
         guard components.count == 1 || components.count == 2 else { return nil }
@@ -421,8 +447,35 @@ fileprivate class REPL {
         }
     }
 
+    enum FilterMode: CustomStringConvertible {
+        case off
+        case auto
+        case explicit(Automotive.ResponseFilter)
+
+        var description: String {
+            switch self {
+                case .off: return "off"
+                case .auto: return "auto (SID + 0x40)"
+                case .explicit(let filter):
+                    let bytes = filter.validResponseFirstBytes.map { String(format: "%02X", $0) }.joined(separator: ", ")
+                    return "[\(bytes)]"
+            }
+        }
+
+        func resolve(for message: Automotive.Message) -> Automotive.ResponseFilter? {
+            switch self {
+                case .off: return nil
+                case .auto: return Automotive.ResponseFilter.defaultFilter(for: message)
+                case .explicit(let filter): return filter
+            }
+        }
+    }
+
+    var filterMode: FilterMode = .off
+
     enum Command {
         case setAddressing(Automotive.Addressing)
+        case setFilter(FilterMode)
         case sendMessage(Automotive.Message)
     }
 }
@@ -505,6 +558,9 @@ struct Term: ParsableCommand {
                 print("Commands:")
                 print("  :REQ,REPLY     - Set addressing (e.g. :7df,7e8 or :33,F1)")
                 print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
+                print("  :filter        - Enable auto response filtering (SID + 0x40)")
+                print("  :filter 62,6A  - Filter for specific response bytes")
+                print("  :filter off    - Disable response filtering")
                 print("  0902           - Send hex data with current addressing")
                 print("  quit           - Exit")
                 print("")
@@ -518,18 +574,23 @@ struct Term: ParsableCommand {
                         case .setAddressing(let addressing):
                             print("Addressing set to: \(REPL.describe(addressing))")
 
+                        case .setFilter(let mode):
+                            repl.filterMode = mode
+                            print("Response filter: \(mode)")
+
                         case .sendMessage(let message):
                             do {
+                                let filter = repl.filterMode.resolve(for: message)
                                 switch message.addressing {
                                     case .oneshot(_, _, _, _):
                                         try await adapter.sendMessageReceiveNothing(message)
                                     case .multicast(_, _, _, _, _), .broadcast(_, _, _, _):
-                                        let responses = try await adapter.sendMessageReceiveMultiple(message)
+                                        let responses = try await adapter.sendMessageReceiveMultiple(message, expectedResponseCount: nil, responseFilter: filter)
                                         for response in responses {
                                             repl.write(response)
                                         }
                                     default:
-                                        let response = try await adapter.sendMessageReceiveSingle(message)
+                                        let response = try await adapter.sendMessageReceiveSingle(message, responseFilter: filter)
                                         repl.write(response)
                                 }
                             } catch {
