@@ -49,12 +49,12 @@ struct Ping: ParsableCommand {
             var count = count
             do {
                 let delegate = Delegate()
-                let adapter = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
+                let (adapter, info, voltage) = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
                     guard let adapter = try await Automotive.BaseAdapter.create(for: url, delegate: delegate) as? ECUconnect.Adapter else { throw ValidationError("Not an ECUconnect adapter") }
-                    return adapter
+                    let info = try await adapter.identify()
+                    let voltage = try await adapter.readSystemVoltage()
+                    return (adapter, info, voltage)
                 }
-                let info = try await adapter.identify()
-                let voltage = try await adapter.readSystemVoltage()
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
