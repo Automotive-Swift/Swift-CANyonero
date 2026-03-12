@@ -587,13 +587,13 @@ struct Term: ParsableCommand {
             throw ValidationError("--tp20-setup-retries must be greater than 0.")
         }
 
-        let tp20OpenParameters: (target: UInt8, activeReplyId: Automotive.Header, applicationType: UInt8)?
+        let tp20OpenParameters: (target: UInt8, replyId: Automotive.Header, applicationType: TP20.ApplicationType)?
         if channelProto == .tp20, !noTP20Setup {
             let targetValue = tp20Target ?? "0x01"
             let target = try UInt8(Self.parseUnsignedInteger(targetValue, optionName: "TP2.0 target address", max: 0xFF))
-            let activeReplyId = Automotive.Header(try Self.parseUnsignedInteger(tp20ReplyId, optionName: "TP2.0 tester active reply CAN ID", max: 0x1FFFFFFF))
-            let applicationType = try UInt8(Self.parseUnsignedInteger(tp20ApplicationType, optionName: "TP2.0 application type", max: 0xFF))
-            tp20OpenParameters = (target: target, activeReplyId: activeReplyId, applicationType: applicationType)
+            let replyId = Automotive.Header(try Self.parseUnsignedInteger(tp20ReplyId, optionName: "TP2.0 tester active reply CAN ID", max: 0x1FFFFFFF))
+            let applicationType = TP20.ApplicationType(rawValue: try UInt8(Self.parseUnsignedInteger(tp20ApplicationType, optionName: "TP2.0 application type", max: 0xFF)))
+            tp20OpenParameters = (target: target, replyId: replyId, applicationType: applicationType)
         } else {
             tp20OpenParameters = nil
         }
@@ -611,7 +611,7 @@ struct Term: ParsableCommand {
         let tp20SetupTimeoutMs = self.tp20SetupTimeoutMs
         let tp20SetupRetries = self.tp20SetupRetries
 
-        Task<Void, Never> {
+        Task {
             do {
                 let delegate = Delegate()
                 let (adapter, info, voltage) = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
@@ -623,14 +623,14 @@ struct Term: ParsableCommand {
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
-                var negotiatedTP20Channel: ECUconnect.TP20.NegotiatedChannel?
+                var negotiatedTP20Channel: TP20.NegotiatedChannel?
                 try await Cornucopia.Core.Spinner.run("Opening channel") {
                     if let tp20OpenParameters {
                         negotiatedTP20Channel = try await adapter.openTP20Channel(
                             targetAddress: tp20OpenParameters.target,
                             bitrate: bps,
                             applicationType: tp20OpenParameters.applicationType,
-                            activeReplyId: tp20OpenParameters.activeReplyId,
+                            replyId: tp20OpenParameters.replyId,
                             setupTimeout: .milliseconds(tp20SetupTimeoutMs),
                             setupRetries: tp20SetupRetries
                         )

@@ -452,13 +452,15 @@ private:
         return localParameters.effectiveBlockSize(remoteParameters);
     }
 
-    void resetSending() {
+    void resetSending(bool resetSequence = true) {
         sendingPayload.clear();
         sendingOffset = 0;
-        nextSendSequence = 0;
         nextExpectedAckSequence = 0;
         retransmitRequestCount = 0;
         lastTransmittedBlock.clear();
+        if (resetSequence) {
+            nextSendSequence = 0;
+        }
     }
 
     void resetReceiving() {
@@ -519,7 +521,7 @@ private:
             }
 
             if (sendingOffset >= sendingPayload.size()) {
-                resetSending();
+                resetSending(false);
                 state = State::connected;
                 return waitAction();
             }
