@@ -512,11 +512,40 @@ struct Term: ParsableCommand {
     @Argument(help: "Bitrate")
     var bitrate: Int = 500000
 
-    @Option(name: .shortAndLong, help: "Channel protocol (raw, isotp, kline, raw_fd, or isotp_fd)")
+    @Option(name: .shortAndLong, help: "Channel protocol (raw, isotp, kline, raw_fd, isotp_fd, or tp20)")
     var proto: String = "raw"
 
     @Option(name: .long, help: "CAN-FD data bitrate (used for raw_fd/isotp_fd)")
     var dataBitrate: Int = 2_000_000
+
+    @Option(name: .long, help: "TP2.0 target address (hex or decimal), e.g. 0x01")
+    var tp20Target: String?
+
+    @Option(name: .long, help: "TP2.0 tester active reply CAN ID used during setup (hex or decimal)")
+    var tp20ReplyId: String = "0x300"
+
+    @Option(name: .long, help: "TP2.0 application type byte (hex or decimal)")
+    var tp20ApplicationType: String = "0x01"
+
+    @Option(name: .long, help: "TP2.0 setup timeout in milliseconds")
+    var tp20SetupTimeoutMs: Int = 750
+
+    @Option(name: .long, help: "TP2.0 setup retries")
+    var tp20SetupRetries: Int = 5
+
+    private static func parseUnsignedInteger(_ rawValue: String, optionName: String, max: UInt64) throws -> UInt64 {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value: UInt64?
+        if trimmed.lowercased().hasPrefix("0x") {
+            value = UInt64(trimmed.dropFirst(2), radix: 16)
+        } else {
+            value = UInt64(trimmed, radix: 10) ?? UInt64(trimmed, radix: 16)
+        }
+        guard let parsed = value, parsed <= max else {
+            throw ValidationError("Invalid \(optionName) '\(rawValue)'.")
+        }
+        return parsed
+    }
 
     mutating func run() throws {
 
@@ -535,18 +564,45 @@ struct Term: ParsableCommand {
                 channelProto = .rawFD
             case "isotp_fd":
                 channelProto = .isotpFD
+            case "tp20":
+                channelProto = .tp20
             default:
-                throw ValidationError("Invalid protocol '\(proto)'. Use 'raw', 'isotp', 'kline', 'raw_fd', or 'isotp_fd'.")
+                throw ValidationError("Invalid protocol '\(proto)'. Use 'raw', 'isotp', 'kline', 'raw_fd', 'isotp_fd', or 'tp20'.")
         }
         let selectedDataBitrate: Int? = (channelProto == .rawFD || channelProto == .isotpFD) ? dataBitrate : nil
 
-        let defaultAddressing: Automotive.Addressing
+        if channelProto != .tp20, tp20Target != nil {
+            throw ValidationError("--tp20-target requires --proto tp20.")
+        }
+        if tp20SetupTimeoutMs <= 0 {
+            throw ValidationError("--tp20-setup-timeout-ms must be greater than 0.")
+        }
+        if tp20SetupRetries <= 0 {
+            throw ValidationError("--tp20-setup-retries must be greater than 0.")
+        }
+
+        let tp20OpenParameters: (target: UInt8, activeReplyId: Automotive.Header, applicationType: UInt8)?
+        if channelProto == .tp20, let tp20Target {
+            let target = try UInt8(Self.parseUnsignedInteger(tp20Target, optionName: "TP2.0 target address", max: 0xFF))
+            let activeReplyId = Automotive.Header(try Self.parseUnsignedInteger(tp20ReplyId, optionName: "TP2.0 tester active reply CAN ID", max: 0x1FFFFFFF))
+            let applicationType = try UInt8(Self.parseUnsignedInteger(tp20ApplicationType, optionName: "TP2.0 application type", max: 0xFF))
+            tp20OpenParameters = (target: target, activeReplyId: activeReplyId, applicationType: applicationType)
+        } else {
+            tp20OpenParameters = nil
+        }
+
+        var defaultAddressing: Automotive.Addressing?
         switch channelProto {
             case .kline:
                 defaultAddressing = .broadcast(id: 0x33, reply: 0xF1)
+            case .tp20:
+                defaultAddressing = nil
             default:
                 defaultAddressing = .unicast(id: 0x7DF, reply: 0x7E8)
         }
+
+        let tp20SetupTimeoutMs = self.tp20SetupTimeoutMs
+        let tp20SetupRetries = self.tp20SetupRetries
 
         Task<Void, Never> {
             do {
@@ -560,8 +616,20 @@ struct Term: ParsableCommand {
                 print("Connected to ECUconnect: \(info).")
                 print("Reported system voltage is \(voltage)V.")
 
+                var negotiatedTP20Channel: ECUconnect.TP20.NegotiatedChannel?
                 try await Cornucopia.Core.Spinner.run("Opening channel") {
-                    try await adapter.openChannel(proto: channelProto, bitrate: bps, dataBitrate: selectedDataBitrate ?? 0)
+                    if let tp20OpenParameters {
+                        negotiatedTP20Channel = try await adapter.openTP20Channel(
+                            targetAddress: tp20OpenParameters.target,
+                            bitrate: bps,
+                            applicationType: tp20OpenParameters.applicationType,
+                            activeReplyId: tp20OpenParameters.activeReplyId,
+                            setupTimeout: .milliseconds(tp20SetupTimeoutMs),
+                            setupRetries: tp20SetupRetries
+                        )
+                    } else {
+                        try await adapter.openChannel(proto: channelProto, bitrate: bps, dataBitrate: selectedDataBitrate ?? 0)
+                    }
                 }
                 let channelDescription: String
                 switch channelProto {
@@ -570,12 +638,21 @@ struct Term: ParsableCommand {
                     case .kline: channelDescription = "KLine"
                     case .rawFD: channelDescription = "Raw CAN-FD"
                     case .isotpFD: channelDescription = "ISOTP-FD"
+                    case .tp20: channelDescription = "VW TP2.0"
                     default: channelDescription = "\(channelProto)"
                 }
                 if let selectedDataBitrate {
                     print("\(channelDescription) channel opened at \(bps)/\(selectedDataBitrate) bps.")
                 } else {
                     print("\(channelDescription) channel opened at \(bps) bps.")
+                }
+                if let negotiatedTP20Channel {
+                    defaultAddressing = .unicast(id: negotiatedTP20Channel.dynamicRequestId, reply: negotiatedTP20Channel.dynamicReplyId)
+                    print(
+                        "TP2.0 setup complete for target 0x\(String(format: "%02X", negotiatedTP20Channel.targetAddress)): " +
+                        "TX=0x\(String(negotiatedTP20Channel.dynamicRequestId, radix: 16, uppercase: true)) " +
+                        "RX=0x\(String(negotiatedTP20Channel.dynamicReplyId, radix: 16, uppercase: true))"
+                    )
                 }
                 print("Commands:")
                 print("  :REQ,REPLY     - Set addressing (e.g. :7df,7e8 or :33,F1)")
@@ -585,6 +662,9 @@ struct Term: ParsableCommand {
                 print("  :filter off    - Disable response filtering")
                 print("  0902           - Send hex data with current addressing")
                 print("  quit           - Exit")
+                if channelProto == .tp20, negotiatedTP20Channel == nil {
+                    print("  Note: TP2.0 requires negotiated dynamic CAN IDs. Set them manually, e.g. :740,300")
+                }
                 print("")
 
                 let repl = REPL(defaultAddressing: defaultAddressing, channelProtocol: channelProto)

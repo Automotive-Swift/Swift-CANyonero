@@ -417,6 +417,151 @@ def _decode_received_pdu(pdu: canyonero.PDU) -> tuple[int, int, bytes] | None:
     return can_id, ext, data
 
 
+@dataclass(frozen=True)
+class TP20NegotiatedChannel:
+    target_address: int
+    application_type: int
+    dynamic_request_id: int
+    dynamic_reply_id: int
+
+
+def _tp20_fixed_reply_id(target_address: int) -> int:
+    return 0x200 | target_address
+
+
+def _tp20_encode_channel_id(channel_id: int) -> tuple[int, int]:
+    return channel_id & 0xFF, (channel_id >> 8) & 0x07
+
+
+def _tp20_make_channel_setup_request(target_address: int, active_reply_id: int, application_type: int) -> bytes:
+    low, high_and_flags = _tp20_encode_channel_id(active_reply_id)
+    return bytes([target_address, 0xC0, 0x00, 0x10, low, high_and_flags, application_type])
+
+
+def _tp20_parse_channel_setup_reply(
+    *,
+    target_address: int,
+    payload: bytes,
+    received_id: int,
+    active_reply_id: int,
+    application_type: int,
+) -> TP20NegotiatedChannel | None:
+    if received_id != _tp20_fixed_reply_id(target_address):
+        return None
+    if len(payload) < 7 or payload[0] != 0x00:
+        return None
+
+    if payload[1] == 0xD0:
+        if payload[6] != application_type:
+            return None
+        dynamic_request_id = ((payload[5] & 0x07) << 8) | payload[4]
+        return TP20NegotiatedChannel(
+            target_address=target_address,
+            application_type=application_type,
+            dynamic_request_id=dynamic_request_id,
+            dynamic_reply_id=active_reply_id,
+        )
+
+    if payload[1] in {0xD6, 0xD7, 0xD8}:
+        return None
+    return None
+
+
+def _open_tp20_channel_with_retry(
+    client: EcuconnectClient,
+    *,
+    bitrate: int,
+    target_address: int,
+    active_reply_id: int,
+    application_type: int,
+    setup_timeout: float,
+    setup_retries: int,
+) -> tuple[int, TP20NegotiatedChannel]:
+    raw_channel = open_channel_with_retry(
+        client,
+        bitrate=bitrate,
+        protocol=canyonero.ChannelProtocol.raw,
+        data_bitrate=None,
+        open_timeout=max(2.0, setup_timeout),
+        open_retries=3,
+        open_retry_delay=1.0,
+    )
+    fixed_arbitration = canyonero.Arbitration(
+        request=0x200,
+        reply_pattern=_tp20_fixed_reply_id(target_address),
+        reply_mask=0x7FF,
+        request_extension=0,
+        reply_extension=0,
+    )
+    negotiated: TP20NegotiatedChannel | None = None
+    try:
+        client.set_arbitration(raw_channel, fixed_arbitration, timeout=max(2.0, setup_timeout))
+        request = _tp20_make_channel_setup_request(target_address, active_reply_id, application_type)
+
+        for attempt in range(setup_retries):
+            try:
+                client.send(raw_channel, request)
+                client.wait_for(lambda p: p.type == canyonero.PDUType.ok, setup_timeout)
+                deadline = time.monotonic() + setup_timeout
+                while time.monotonic() < deadline:
+                    remaining = max(0.0, deadline - time.monotonic())
+                    pdu = client.get_pdu(timeout=remaining)
+                    if pdu is None:
+                        continue
+                    if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+                        continue
+                    if pdu.channel() != raw_channel:
+                        continue
+                    decoded = _decode_received_pdu(pdu)
+                    if decoded is None:
+                        continue
+                    received_id, _ext, data = decoded
+                    negotiated = _tp20_parse_channel_setup_reply(
+                        target_address=target_address,
+                        payload=data,
+                        received_id=received_id,
+                        active_reply_id=active_reply_id,
+                        application_type=application_type,
+                    )
+                    if negotiated is not None:
+                        break
+                    if received_id == _tp20_fixed_reply_id(target_address) and len(data) >= 2 and data[1] in {0xD6, 0xD7, 0xD8}:
+                        raise RuntimeError(f"TP2.0 channel setup rejected with 0x{data[1]:02X}")
+                if negotiated is not None:
+                    break
+            except TimeoutError:
+                if attempt + 1 >= setup_retries:
+                    raise RuntimeError(
+                        f"No TP2.0 channel setup reply for target 0x{target_address:02X}"
+                    ) from None
+        if negotiated is None:
+            raise RuntimeError(f"No TP2.0 channel setup reply for target 0x{target_address:02X}")
+    finally:
+        try:
+            client.close_channel(raw_channel, timeout=max(2.0, setup_timeout))
+        except Exception:
+            pass
+
+    tp20_channel = open_channel_with_retry(
+        client,
+        bitrate=bitrate,
+        protocol=canyonero.ChannelProtocol.tp20,
+        data_bitrate=None,
+        open_timeout=max(2.0, setup_timeout),
+        open_retries=3,
+        open_retry_delay=1.0,
+    )
+    dynamic_arbitration = canyonero.Arbitration(
+        request=negotiated.dynamic_request_id,
+        reply_pattern=negotiated.dynamic_reply_id,
+        reply_mask=0x7FF,
+        request_extension=0,
+        reply_extension=0,
+    )
+    client.set_arbitration(tp20_channel, dynamic_arbitration, timeout=max(2.0, setup_timeout))
+    return tp20_channel, negotiated
+
+
 def _format_message(can_id: int, data: bytes) -> str:
     width = 3 if can_id <= 0x7FF else 8
     header = f"{can_id:0{width}X}"
@@ -1119,9 +1264,14 @@ def term(
     ctx: typer.Context,
     bitrate: int = typer.Argument(500000, help="Bitrate."),
     proto: str = typer.Option(
-        "raw", "--proto", "-p", help="Channel protocol (raw, isotp, kline, raw_fd, or isotp_fd)."
+        "raw", "--proto", "-p", help="Channel protocol (raw, isotp, kline, raw_fd, isotp_fd, or tp20)."
     ),
     data_bitrate: int = typer.Option(2000000, "--data-bitrate", help="CAN-FD data bitrate (used for raw_fd/isotp_fd)."),
+    tp20_target: Optional[str] = typer.Option(None, "--tp20-target", help="TP2.0 target address (hex or decimal), e.g. 0x01."),
+    tp20_reply_id: str = typer.Option("0x300", "--tp20-reply-id", help="TP2.0 tester active reply CAN ID used during setup."),
+    tp20_application_type: str = typer.Option("0x01", "--tp20-application-type", help="TP2.0 application type byte."),
+    tp20_setup_timeout: float = typer.Option(0.75, "--tp20-setup-timeout", help="TP2.0 setup timeout in seconds."),
+    tp20_setup_retries: int = typer.Option(5, "--tp20-setup-retries", help="TP2.0 setup retries."),
     timeout: float = typer.Option(1.0, help="Response timeout in seconds."),
     idle_timeout: float = typer.Option(0.25, help="Idle timeout for multicast responses."),
 ) -> None:
@@ -1134,6 +1284,26 @@ def term(
     selected_data_bitrate = _selected_data_bitrate(channel_proto, data_bitrate)
     history_path = _setup_interactive_history("term")
 
+    if channel_proto != canyonero.ChannelProtocol.tp20 and tp20_target is not None:
+        raise typer.BadParameter("--tp20-target requires --proto tp20.")
+    if tp20_setup_timeout <= 0:
+        raise typer.BadParameter("--tp20-setup-timeout must be greater than 0.")
+    if tp20_setup_retries <= 0:
+        raise typer.BadParameter("--tp20-setup-retries must be greater than 0.")
+
+    tp20_open_parameters: tuple[int, int, int] | None = None
+    if channel_proto == canyonero.ChannelProtocol.tp20 and tp20_target is not None:
+        target_address = _parse_int(tp20_target)
+        active_reply_id = _parse_int(tp20_reply_id)
+        application_type = _parse_int(tp20_application_type)
+        if not 0 <= target_address <= 0xFF:
+            raise typer.BadParameter("--tp20-target must be in the range 0x00..0xFF.")
+        if not 0 <= active_reply_id <= 0x1FFFFFFF:
+            raise typer.BadParameter("--tp20-reply-id must be a valid CAN identifier.")
+        if not 0 <= application_type <= 0xFF:
+            raise typer.BadParameter("--tp20-application-type must be in the range 0x00..0xFF.")
+        tp20_open_parameters = (target_address, active_reply_id, application_type)
+
     if channel_proto == canyonero.ChannelProtocol.kline:
         default_addressing = Addressing(
             mode="unicast",
@@ -1143,6 +1313,8 @@ def term(
             reply_mask=0x7FF,
             reply_ext=0,
         )
+    elif channel_proto == canyonero.ChannelProtocol.tp20:
+        default_addressing = None
     else:
         default_addressing = Addressing(
             mode="unicast",
@@ -1173,27 +1345,56 @@ def term(
                 console.print(f"Connected to ECUconnect: {info.vendor} {info.model}.")
                 console.print(f"Reported system voltage is {voltage:.2f} V.")
 
-                channel = open_channel_with_retry(
-                    client,
-                    bitrate=bitrate,
-                    protocol=channel_proto,
-                    data_bitrate=selected_data_bitrate,
-                    open_timeout=5.0,
-                    open_retries=3,
-                    open_retry_delay=1.0,
-                )
-                apply_addressing(client, channel, default_addressing)
+                negotiated_tp20: TP20NegotiatedChannel | None = None
+                if tp20_open_parameters is not None:
+                    channel, negotiated_tp20 = _open_tp20_channel_with_retry(
+                        client,
+                        bitrate=bitrate,
+                        target_address=tp20_open_parameters[0],
+                        active_reply_id=tp20_open_parameters[1],
+                        application_type=tp20_open_parameters[2],
+                        setup_timeout=tp20_setup_timeout,
+                        setup_retries=tp20_setup_retries,
+                    )
+                    default_addressing = Addressing(
+                        mode="unicast",
+                        request_id=negotiated_tp20.dynamic_request_id,
+                        request_ext=0,
+                        reply_pattern=negotiated_tp20.dynamic_reply_id,
+                        reply_mask=0x7FF,
+                        reply_ext=0,
+                    )
+                else:
+                    channel = open_channel_with_retry(
+                        client,
+                        bitrate=bitrate,
+                        protocol=channel_proto,
+                        data_bitrate=selected_data_bitrate,
+                        open_timeout=5.0,
+                        open_retries=3,
+                        open_retry_delay=1.0,
+                    )
+                if default_addressing is not None:
+                    apply_addressing(client, channel, default_addressing)
 
                 channel_desc = _channel_proto_description(channel_proto)
                 if selected_data_bitrate:
                     console.print(f"{channel_desc} channel opened at {bitrate}/{selected_data_bitrate} bps.")
                 else:
                     console.print(f"{channel_desc} channel opened at {bitrate} bps.")
+                if negotiated_tp20 is not None:
+                    console.print(
+                        f"TP2.0 setup complete for target 0x{negotiated_tp20.target_address:02X}: "
+                        f"TX=0x{negotiated_tp20.dynamic_request_id:X} "
+                        f"RX=0x{negotiated_tp20.dynamic_reply_id:X}"
+                    )
                 console.print("Commands:")
                 console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
                 console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
                 console.print("  0902           - Send hex data with current addressing")
                 console.print("  quit           - Exit")
+                if channel_proto == canyonero.ChannelProtocol.tp20 and negotiated_tp20 is None:
+                    console.print("  Note: TP2.0 requires negotiated dynamic CAN IDs. Set them manually, e.g. :740,300")
                 console.print("")
 
                 current_addressing = default_addressing

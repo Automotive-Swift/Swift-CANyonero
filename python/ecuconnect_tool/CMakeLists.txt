@@ -7,14 +7,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(LIBCAN_ROOT
+    ${CMAKE_CURRENT_LIST_DIR}/../../Sources/libCANyonero
+)
 set(LIBCAN_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/csrc/Protocol.cpp
+    ${LIBCAN_ROOT}/Protocol.cpp
 )
 set(LZ4_SOURCE
-    ${CMAKE_CURRENT_LIST_DIR}/csrc/lz4.c
+    ${LIBCAN_ROOT}/lz4.c
 )
 set(LIBCAN_INCLUDE
-    ${CMAKE_CURRENT_LIST_DIR}/csrc/include
+    ${LIBCAN_ROOT}/include
 )
 
 pybind11_add_module(canyonero_py
