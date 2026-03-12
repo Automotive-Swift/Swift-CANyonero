@@ -74,6 +74,7 @@ enum class ChannelProtocol : uint8_t {
     ISOTP_FD    = 0x04,     // ISOTP with CAN FD
     RawWithFC   = 0x05,     // Raw CAN with auto Flow Control
     ENET        = 0x06,     // Ethernet frames
+    TP20        = 0x07,     // VW TP2.0 dynamic transport channel
 };
 
 /**

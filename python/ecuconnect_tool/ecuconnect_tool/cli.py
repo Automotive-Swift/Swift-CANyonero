@@ -102,7 +102,9 @@ def _resolve_channel_proto(value: str) -> canyonero.ChannelProtocol:
         return canyonero.ChannelProtocol.raw_fd
     if normalized == "isotp_fd":
         return canyonero.ChannelProtocol.isotp_fd
-    raise typer.BadParameter("Invalid protocol. Use raw, isotp, kline, raw_fd, or isotp_fd.")
+    if normalized == "tp20":
+        return canyonero.ChannelProtocol.tp20
+    raise typer.BadParameter("Invalid protocol. Use raw, isotp, kline, raw_fd, isotp_fd, or tp20.")
 
 
 def _selected_data_bitrate(protocol: canyonero.ChannelProtocol, data_bitrate: int) -> Optional[int]:
@@ -118,6 +120,7 @@ def _channel_proto_description(protocol: canyonero.ChannelProtocol) -> str:
         canyonero.ChannelProtocol.kline: "KLine",
         canyonero.ChannelProtocol.raw_fd: "Raw CAN-FD",
         canyonero.ChannelProtocol.isotp_fd: "ISOTP-FD",
+        canyonero.ChannelProtocol.tp20: "VW TP2.0",
     }.get(protocol, str(protocol))
 
 

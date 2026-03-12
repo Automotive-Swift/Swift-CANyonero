@@ -95,6 +95,8 @@ enum class ChannelProtocol: uint8_t {
     raw_with_fc           = 0x05,
     /// ENET frames. Maximum length = 4095 Bytes.
     enet                  = 0x06,
+    /// VW TP2.0 dynamic transport channel. Fixed-ID setup stays outside this channel.
+    tp20                  = 0x07,
 };
 
 /// Periodic message payload type.

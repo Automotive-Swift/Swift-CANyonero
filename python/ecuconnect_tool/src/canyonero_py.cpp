@@ -29,6 +29,7 @@ PYBIND11_MODULE(canyonero_py, m) {
         .value("isotp_fd", CANyonero::ChannelProtocol::isotp_fd)
         .value("raw_with_fc", CANyonero::ChannelProtocol::raw_with_fc)
         .value("enet", CANyonero::ChannelProtocol::enet)
+        .value("tp20", CANyonero::ChannelProtocol::tp20)
         .export_values();
 
     py::enum_<CANyonero::PDUType>(m, "PDUType")
