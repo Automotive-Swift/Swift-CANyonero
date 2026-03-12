@@ -51,6 +51,26 @@ static void AssertBytesEqual(const CANyonero::Bytes& actual, std::initializer_li
     XCTAssertEqual(tp20.machineState(), Transceiver::State::connected);
 }
 
+- (void)testSubsequentPDUContinuesTransmitSequence {
+    auto tp20 = Transceiver();
+    using CANyonero::Bytes;
+    (void) tp20.requestConnection();
+    (void) tp20.didReceiveFrame(Bytes { 0xA1, 0x0F, 0x8A, 0xFF, 0x0A, 0xFF });
+
+    auto firstSendAction = tp20.writePDU(Bytes { 0x27, 0x01 });
+    XCTAssertEqual(firstSendAction.type, Transceiver::Action::Type::writeFrames);
+    AssertBytesEqual(firstSendAction.frames.front().bytes, { 0x10, 0x00, 0x02, 0x27, 0x01 });
+
+    auto firstAckAction = tp20.didReceiveFrame(Bytes { 0xB1 });
+    XCTAssertEqual(firstAckAction.type, Transceiver::Action::Type::waitForMore);
+    XCTAssertEqual(tp20.machineState(), Transceiver::State::connected);
+
+    auto secondSendAction = tp20.writePDU(Bytes { 0x1A, 0x9B });
+    XCTAssertEqual(secondSendAction.type, Transceiver::Action::Type::writeFrames);
+    AssertBytesEqual(secondSendAction.frames.front().bytes, { 0x11, 0x00, 0x02, 0x1A, 0x9B });
+    XCTAssertEqual(tp20.machineState(), Transceiver::State::sending);
+}
+
 - (void)testReceiveSingleFrameReturnsPayloadAndAck {
     auto tp20 = Transceiver();
     using CANyonero::Bytes;

@@ -346,7 +346,6 @@ public:
 
         sendingPayload = std::move(bytes);
         sendingOffset = 0;
-        nextSendSequence = 0;
         retransmitRequestCount = 0;
         lastTransmittedBlock.clear();
         state = State::sending;
