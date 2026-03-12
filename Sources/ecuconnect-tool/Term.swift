@@ -518,7 +518,7 @@ struct Term: ParsableCommand {
     @Option(name: .long, help: "CAN-FD data bitrate (used for raw_fd/isotp_fd)")
     var dataBitrate: Int = 2_000_000
 
-    @Option(name: .long, help: "TP2.0 target address (hex or decimal), e.g. 0x01")
+    @Option(name: .long, help: "TP2.0 target address (hex or decimal), e.g. 0x01. Defaults to 0x01 for term unless --no-tp20-setup is used.")
     var tp20Target: String?
 
     @Option(name: .long, help: "TP2.0 tester active reply CAN ID used during setup (hex or decimal)")
@@ -532,6 +532,9 @@ struct Term: ParsableCommand {
 
     @Option(name: .long, help: "TP2.0 setup retries")
     var tp20SetupRetries: Int = 5
+
+    @Flag(name: .long, help: "Skip TP2.0 fixed-ID setup and open only the dynamic TP2.0 channel.")
+    var noTP20Setup: Bool = false
 
     private static func parseUnsignedInteger(_ rawValue: String, optionName: String, max: UInt64) throws -> UInt64 {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -574,6 +577,9 @@ struct Term: ParsableCommand {
         if channelProto != .tp20, tp20Target != nil {
             throw ValidationError("--tp20-target requires --proto tp20.")
         }
+        if channelProto != .tp20, noTP20Setup {
+            throw ValidationError("--no-tp20-setup requires --proto tp20.")
+        }
         if tp20SetupTimeoutMs <= 0 {
             throw ValidationError("--tp20-setup-timeout-ms must be greater than 0.")
         }
@@ -582,8 +588,9 @@ struct Term: ParsableCommand {
         }
 
         let tp20OpenParameters: (target: UInt8, activeReplyId: Automotive.Header, applicationType: UInt8)?
-        if channelProto == .tp20, let tp20Target {
-            let target = try UInt8(Self.parseUnsignedInteger(tp20Target, optionName: "TP2.0 target address", max: 0xFF))
+        if channelProto == .tp20, !noTP20Setup {
+            let targetValue = tp20Target ?? "0x01"
+            let target = try UInt8(Self.parseUnsignedInteger(targetValue, optionName: "TP2.0 target address", max: 0xFF))
             let activeReplyId = Automotive.Header(try Self.parseUnsignedInteger(tp20ReplyId, optionName: "TP2.0 tester active reply CAN ID", max: 0x1FFFFFFF))
             let applicationType = try UInt8(Self.parseUnsignedInteger(tp20ApplicationType, optionName: "TP2.0 application type", max: 0xFF))
             tp20OpenParameters = (target: target, activeReplyId: activeReplyId, applicationType: applicationType)

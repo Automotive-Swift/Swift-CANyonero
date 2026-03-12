@@ -88,6 +88,8 @@ swift run ecuconnect-tool term --channel-protocol isotp --addressing :7df,7e8
 swift run ecuconnect-tool login --port 4242
 ```
 
+For VW TP2.0 diagnostics, `term --proto tp20` now runs the fixed-ID setup handshake against target `0x01` by default, matching the common `TPOPEN` workflow. Use `--tp20-target` to select a different ECU target, or `--no-tp20-setup` to skip fixed-ID setup and attach only to an already-known dynamic TP2.0 channel.
+
 The tool uses the Swift bindings in this package so it is a convenient way to validate PDUs, poll ECU information, or keep a periodic tester-present running without writing your own app.
 
 The `benchmark` subcommand uses ECUconnect `ping`, which echoes the full payload and verifies it byte-for-byte; reported bandwidth is round-trip (payload out + payload back).
@@ -99,8 +101,11 @@ python -m pip install -e ./python/ecuconnect_tool
 ecuconnect-tool info
 ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 info
 ecuconnect-tool login
+ecuconnect-tool term 500000 --proto tp20
 ecuconnect-tool test --can-interface can0 --busload 20 --duration 5
 ```
+
+For VW TP2.0, `ecuconnect-tool term --proto tp20` performs the fixed-ID setup handshake for target `0x01` by default. Override the target with `--tp20-target 0xNN`, or pass `--no-tp20-setup` if you want to skip setup and work with negotiated dynamic CAN IDs manually.
 
 macOS BLE/L2CAP endpoints use the scheme `ecuconnect-l2cap://<service-uuid>:<psm>`, for example `ecuconnect-l2cap://FFF1:129`.  
 An optional peripheral UUID selector can be appended as the URL path: `ecuconnect-l2cap://FFF1:129/<peripheral-uuid>`.

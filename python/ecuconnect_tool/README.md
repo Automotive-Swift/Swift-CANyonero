@@ -31,11 +31,22 @@ ecuconnect-tool login
 ecuconnect-tool ping 512 --count 10
 ecuconnect-tool benchmark --count 32
 ecuconnect-tool term 500000 --proto raw
+ecuconnect-tool term 500000 --proto tp20
 ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 term 500000 --proto raw
 ecuconnect-tool monitor --bitrate 500000
 ecuconnect-tool send "02 3E 80" --tx-id 0x123 --rx-id 0x321
 ecuconnect-tool test --can-interface can0 --busload 1 --duration 5
 ```
+
+## TP2.0 terminal behavior
+
+`ecuconnect-tool term --proto tp20` performs the fixed-ID TP2.0 setup handshake against target `0x01` by default, which matches the common VAG `TPOPEN` flow.
+
+Use these options when you need different behavior:
+
+- `--tp20-target 0xNN` to negotiate with a different TP2.0 target address.
+- `--no-tp20-setup` to skip fixed-ID setup and open only the dynamic TP2.0 channel.
+- `--tp20-reply-id` and `--tp20-application-type` to override the tester-side setup parameters.
 
 ## BLE/L2CAP
 

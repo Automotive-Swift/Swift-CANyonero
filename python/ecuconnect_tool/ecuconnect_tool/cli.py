@@ -1267,11 +1267,12 @@ def term(
         "raw", "--proto", "-p", help="Channel protocol (raw, isotp, kline, raw_fd, isotp_fd, or tp20)."
     ),
     data_bitrate: int = typer.Option(2000000, "--data-bitrate", help="CAN-FD data bitrate (used for raw_fd/isotp_fd)."),
-    tp20_target: Optional[str] = typer.Option(None, "--tp20-target", help="TP2.0 target address (hex or decimal), e.g. 0x01."),
+    tp20_target: Optional[str] = typer.Option(None, "--tp20-target", help="TP2.0 target address (hex or decimal), e.g. 0x01. Defaults to 0x01 for term unless --no-tp20-setup is used."),
     tp20_reply_id: str = typer.Option("0x300", "--tp20-reply-id", help="TP2.0 tester active reply CAN ID used during setup."),
     tp20_application_type: str = typer.Option("0x01", "--tp20-application-type", help="TP2.0 application type byte."),
     tp20_setup_timeout: float = typer.Option(0.75, "--tp20-setup-timeout", help="TP2.0 setup timeout in seconds."),
     tp20_setup_retries: int = typer.Option(5, "--tp20-setup-retries", help="TP2.0 setup retries."),
+    tp20_setup: bool = typer.Option(True, "--tp20-setup/--no-tp20-setup", help="Run TP2.0 fixed-ID setup before opening the dynamic TP2.0 channel."),
     timeout: float = typer.Option(1.0, help="Response timeout in seconds."),
     idle_timeout: float = typer.Option(0.25, help="Idle timeout for multicast responses."),
 ) -> None:
@@ -1286,14 +1287,16 @@ def term(
 
     if channel_proto != canyonero.ChannelProtocol.tp20 and tp20_target is not None:
         raise typer.BadParameter("--tp20-target requires --proto tp20.")
+    if channel_proto != canyonero.ChannelProtocol.tp20 and not tp20_setup:
+        raise typer.BadParameter("--no-tp20-setup requires --proto tp20.")
     if tp20_setup_timeout <= 0:
         raise typer.BadParameter("--tp20-setup-timeout must be greater than 0.")
     if tp20_setup_retries <= 0:
         raise typer.BadParameter("--tp20-setup-retries must be greater than 0.")
 
     tp20_open_parameters: tuple[int, int, int] | None = None
-    if channel_proto == canyonero.ChannelProtocol.tp20 and tp20_target is not None:
-        target_address = _parse_int(tp20_target)
+    if channel_proto == canyonero.ChannelProtocol.tp20 and tp20_setup:
+        target_address = _parse_int(tp20_target) if tp20_target is not None else 0x01
         active_reply_id = _parse_int(tp20_reply_id)
         application_type = _parse_int(tp20_application_type)
         if not 0 <= target_address <= 0xFF:
