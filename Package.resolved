@@ -100,6 +100,15 @@
       }
     },
     {
+      "identity" : "swift-automotive",
+      "kind" : "remoteSourceControl",
+      "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
+      "state" : {
+        "branch" : "wip/tp20",
+        "revision" : "0e7f5919d435fdde34a7804376a09406ed914d17"
+      }
+    },
+    {
       "identity" : "swift-crypto",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto",

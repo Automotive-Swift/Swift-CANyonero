@@ -318,7 +318,7 @@ fileprivate class REPL {
             print("       :filter off      – disable filtering")
             return nil
         }
-        return .setFilter(.explicit(.init(validResponseFirstBytes: hexComponents)))
+        return .setFilter(.explicit(hexComponents))
     }
 
     func parseAddressing(_ input: String) -> Automotive.Addressing? {
@@ -450,23 +450,45 @@ fileprivate class REPL {
     enum FilterMode: CustomStringConvertible {
         case off
         case auto
-        case explicit(Automotive.ResponseFilter)
+        case explicit([UInt8])
 
         var description: String {
             switch self {
                 case .off: return "off"
                 case .auto: return "auto (SID + 0x40)"
-                case .explicit(let filter):
-                    let bytes = filter.validResponseFirstBytes.map { String(format: "%02X", $0) }.joined(separator: ", ")
+                case .explicit(let validResponseFirstBytes):
+                    let bytes = validResponseFirstBytes.map { String(format: "%02X", $0) }.joined(separator: ", ")
                     return "[\(bytes)]"
             }
         }
 
-        func resolve(for message: Automotive.Message) -> Automotive.ResponseFilter? {
+        func resolve(for message: Automotive.Message) -> Automotive.ResponseClassifier? {
             switch self {
                 case .off: return nil
-                case .auto: return Automotive.ResponseFilter.defaultFilter(for: message)
-                case .explicit(let filter): return filter
+                case .auto:
+                    return message.payloadProtocol.defaultResponseClassifier(for: message.bytes, mode: .full)
+                case .explicit(let validResponseFirstBytes):
+                    let uniqueBytes = validResponseFirstBytes.reduce(into: [UInt8]()) { bytes, value in
+                        if !bytes.contains(value) {
+                            bytes.append(value)
+                        }
+                    }
+                    return Automotive.ResponseClassifier { responseBytes, requestBytes in
+                        guard let first = responseBytes.first else { return .ignore }
+
+                        if first == UDS.NegativeResponse {
+                            guard responseBytes.count >= 3 else { return .ignore }
+                            if let requestSid = requestBytes.first, responseBytes[1] != requestSid {
+                                return .ignore
+                            }
+                            if responseBytes[2] == UDS.NegativeResponseCode.requestCorrectlyReceivedResponsePending.rawValue {
+                                return .pending
+                            }
+                            return .final
+                        }
+
+                        return uniqueBytes.contains(first) ? .final : .ignore
+                    }
             }
         }
     }
@@ -526,7 +548,7 @@ struct Term: ParsableCommand {
                 defaultAddressing = .unicast(id: 0x7DF, reply: 0x7E8)
         }
 
-        Task {
+        Task<Void, Never> {
             do {
                 let delegate = Delegate()
                 let (adapter, info, voltage) = try await Cornucopia.Core.Spinner.run("Connecting to adapter") {
@@ -580,17 +602,24 @@ struct Term: ParsableCommand {
 
                         case .sendMessage(let message):
                             do {
-                                let filter = repl.filterMode.resolve(for: message)
+                                let responseClassifier = repl.filterMode.resolve(for: message)
                                 switch message.addressing {
                                     case .oneshot(_, _, _, _):
                                         try await adapter.sendMessageReceiveNothing(message)
                                     case .multicast(_, _, _, _, _), .broadcast(_, _, _, _):
-                                        let responses = try await adapter.sendMessageReceiveMultiple(message, expectedResponseCount: nil, responseFilter: filter)
+                                        let responses = try await adapter.sendMessageReceiveMultiple(
+                                            message,
+                                            expectedResponseCount: nil,
+                                            responseClassifier: responseClassifier
+                                        )
                                         for response in responses {
                                             repl.write(response)
                                         }
                                     default:
-                                        let response = try await adapter.sendMessageReceiveSingle(message, responseFilter: filter)
+                                        let response = try await adapter.sendMessageReceiveSingle(
+                                            message,
+                                            responseClassifier: responseClassifier
+                                        )
                                         repl.write(response)
                                 }
                             } catch {
