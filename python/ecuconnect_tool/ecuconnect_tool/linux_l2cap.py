@@ -41,6 +41,7 @@ def _discover_device(
     """
     try:
         import dbus  # type: ignore[import-untyped]
+        from dbus.mainloop.glib import DBusGMainLoop  # type: ignore[import-untyped]
         from gi.repository import GLib  # type: ignore[import-untyped]
     except ImportError as exc:
         raise RuntimeError(
@@ -48,6 +49,7 @@ def _discover_device(
             "Install with: sudo apt install python3-dbus python3-gi"
         ) from exc
 
+    DBusGMainLoop(set_as_default=True)
     bus = dbus.SystemBus()
 
     # Normalise the service UUID to the full 128-bit lowercase form that

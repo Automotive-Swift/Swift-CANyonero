@@ -49,7 +49,7 @@ def main() -> int:
     parser.add_argument("--configure-only", action="store_true", help="Only run CMake configure.")
     parser.add_argument("--build-only", action="store_true", help="Only build the extension.")
     parser.add_argument("cli_args", nargs=argparse.REMAINDER, help="Arguments passed to ecuconnect-tool.")
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
 
     if shutil.which("cmake") is None:
         raise SystemExit("cmake is required and was not found in PATH")
@@ -85,7 +85,7 @@ def main() -> int:
     if args.build_only:
         return 0
 
-    cli_args = args.cli_args
+    cli_args = [*unknown_args, *args.cli_args]
     if cli_args and cli_args[0] == "--":
         cli_args = cli_args[1:]
 
