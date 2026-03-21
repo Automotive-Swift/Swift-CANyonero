@@ -453,7 +453,7 @@ std::optional<uint8_t> Protocol::openChannel(ChannelProtocol protocol,
         protocol == ChannelProtocol::ISOTP_FD;
     if (fdProtocol) {
         if (!dataBitrate.has_value() || dataBitrate.value() == 0) {
-            setLastError("Missing data bitrate for CAN-FD channel");
+            lastError_ = "Missing data bitrate for CAN-FD channel";
             return std::nullopt;
         }
         if (!send(PDU::openFDChannel(protocol, bitrate, dataBitrate.value()))) return std::nullopt;
@@ -492,8 +492,25 @@ bool Protocol::sendMessage(uint8_t handle, const std::vector<uint8_t>& data,
 
 bool Protocol::sendMessages(uint8_t handle, const std::vector<std::vector<uint8_t>>& frames,
                              uint32_t timeout_ms) {
-    // Fire and forget batch send
-    return send(PDU::sendBatch(handle, frames));
+    // Concatenate individual Send PDUs into one TCP write for throughput,
+    // using the standard wire format the firmware understands.
+    if (!transport_ || !transport_->isConnected()) {
+        lastError_ = "Not connected";
+        return false;
+    }
+
+    std::vector<uint8_t> buffer;
+    for (const auto& frame : frames) {
+        auto pdu = PDU::send(handle, frame);
+        auto bytes = pdu.serialize();
+        buffer.insert(buffer.end(), bytes.begin(), bytes.end());
+    }
+
+    if (transport_->send(buffer) < 0) {
+        lastError_ = transport_->getLastError();
+        return false;
+    }
+    return true;
 }
 
 std::vector<CANFrame> Protocol::receiveMessages(uint32_t timeout_ms) {
