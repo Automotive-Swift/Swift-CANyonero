@@ -1,0 +1,89 @@
+;
+; ECUconnect L2CAP Profile Driver Installation
+;
+; This driver provides L2CAP communication with ECUconnect devices
+; for the CANyonero protocol (PSM 129).
+;
+; Installed as a software/root-enumerated device so it's always available
+; for user-mode applications to connect to arbitrary BLE devices.
+;
+; Copyright (c) ECUconnect Project
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System
+ClassGuid   = {4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderString%
+CatalogFile = ecuconnect_l2cap.cat
+DriverVer   = 01/20/2026,1.0.0.0
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 13  ; Driver Store
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+ecuconnect_l2cap.sys = 1,,
+
+;
+; Manufacturer Section
+;
+[Manufacturer]
+%ManufacturerString% = Standard,NTamd64
+
+[Standard.NTamd64]
+%DeviceDesc% = ECUconnect_Install, Root\ECUconnectL2CAP
+
+;
+; Install Section
+;
+[ECUconnect_Install.NT]
+CopyFiles = ECUconnect_CopyFiles
+
+[ECUconnect_CopyFiles]
+ecuconnect_l2cap.sys
+
+;
+; Service Install Section
+;
+[ECUconnect_Install.NT.Services]
+AddService = ecuconnect_l2cap,0x00000002,ECUconnect_ServiceInstall
+
+[ECUconnect_ServiceInstall]
+DisplayName    = %ServiceDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\ecuconnect_l2cap.sys
+
+;
+; WDF Section
+;
+[ECUconnect_Install.NT.Wdf]
+KmdfService = ecuconnect_l2cap,ECUconnect_Wdf
+
+[ECUconnect_Wdf]
+KmdfLibraryVersion = 1.15
+
+;
+; Hardware Settings
+;
+[ECUconnect_Install.NT.HW]
+AddReg = ECUconnect_HW_AddReg
+
+[ECUconnect_HW_AddReg]
+; Allow all users to access the device interface
+HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;WD)"
+
+;
+; Strings Section
+;
+[Strings]
+ProviderString     = "ECUconnect Project"
+ManufacturerString = "ECUconnect"
+DeviceDesc         = "ECUconnect L2CAP Transport"
+ServiceDesc        = "ECUconnect L2CAP Service"
+DiskName           = "ECUconnect L2CAP Driver Installation Disk"

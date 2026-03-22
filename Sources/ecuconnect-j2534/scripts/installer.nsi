@@ -12,7 +12,7 @@
 ; General Configuration
 ; ============================================================================
 
-!define PRODUCT_NAME "ECUconnect J2534 Driver"
+!define PRODUCT_NAME "ECUconnect J2534 Drivers"
 !define PRODUCT_PUBLISHER "ECUconnect"
 !define PRODUCT_VERSION "1.0.0"
 !define DRIVER_NAME "ECUconnect"
@@ -20,6 +20,8 @@
 ; Registry paths for J2534 04.04 specification
 !define REG_PASSTHRU_64 "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}"
 !define REG_PASSTHRU_32 "SOFTWARE\WOW6432Node\PassThruSupport.04.04\${DRIVER_NAME}"
+!define REG_PASSTHRU_0500_64 "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}"
+!define REG_PASSTHRU_0500_32 "SOFTWARE\WOW6432Node\PassThruSupport.05.00\${DRIVER_NAME}"
 !define REG_UNINSTALL "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${DRIVER_NAME}"
 
 Name "${PRODUCT_NAME}"
@@ -41,11 +43,11 @@ SetCompressor /SOLID lzma
 
 ; Welcome page
 !define MUI_WELCOMEPAGE_TITLE "Welcome to ECUconnect J2534 Driver Setup"
-!define MUI_WELCOMEPAGE_TEXT "This wizard will install the ECUconnect J2534 PassThru driver on your computer.$\r$\n$\r$\nBoth 32-bit and 64-bit versions will be installed for maximum compatibility with diagnostic software.$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TEXT "This wizard will install the ECUconnect J2534 PassThru drivers on your computer.$\r$\n$\r$\nBoth API versions (04.04 and 05.00) and both architectures (32-bit and 64-bit) will be installed.$\r$\n$\r$\nClick Next to continue."
 
 ; Finish page
 !define MUI_FINISHPAGE_TITLE "Installation Complete"
-!define MUI_FINISHPAGE_TEXT "The ECUconnect J2534 driver has been installed successfully.$\r$\n$\r$\nThe driver will appear as 'ECUconnect' in J2534-compatible diagnostic applications."
+!define MUI_FINISHPAGE_TEXT "The ECUconnect J2534 drivers have been installed successfully.$\r$\n$\r$\nThe driver will appear as 'ECUconnect' in J2534-compatible diagnostic applications."
 
 ; Pages
 !insertmacro MUI_PAGE_WELCOME
@@ -68,9 +70,11 @@ Section "J2534 Driver (required)" SecDriver
 
     SetOutPath "$INSTDIR"
 
-    ; Install both DLLs
+    ; Install all four DLLs
     File "..\build64\Release\ecuconnect64.dll"
     File "..\build32\Release\ecuconnect32.dll"
+    File "..\..\ecuconnect-j2534-0500\build64\Release\ecuconnect050064.dll"
+    File "..\..\ecuconnect-j2534-0500\build32\Release\ecuconnect050032.dll"
 
     ; Create uninstaller
     WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -88,8 +92,8 @@ Section "J2534 Driver (required)" SecDriver
     WriteRegStr HKLM "${REG_PASSTHRU_64}" "ConfigApplication" ""
     WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "CAN" 1
     WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "ISO15765" 0
-    WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "ISO9141" 0
-    WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "ISO14230" 0
+    WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "ISO9141" 1
+    WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "ISO14230" 1
     WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "J1850VPW" 0
     WriteRegDWORD HKLM "${REG_PASSTHRU_64}" "J1850PWM" 0
 
@@ -102,10 +106,36 @@ Section "J2534 Driver (required)" SecDriver
     WriteRegStr HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ConfigApplication" ""
     WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "CAN" 1
     WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ISO15765" 0
-    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ISO9141" 0
-    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ISO14230" 0
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ISO9141" 1
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "ISO14230" 1
     WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "J1850VPW" 0
     WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}" "J1850PWM" 0
+
+    ; 05.00 registry (for 64-bit applications)
+    SetRegView 64
+    WriteRegStr HKLM "${REG_PASSTHRU_0500_64}" "Name" "${DRIVER_NAME}"
+    WriteRegStr HKLM "${REG_PASSTHRU_0500_64}" "Vendor" "${PRODUCT_PUBLISHER}"
+    WriteRegStr HKLM "${REG_PASSTHRU_0500_64}" "FunctionLibrary" "$INSTDIR\ecuconnect050064.dll"
+    WriteRegStr HKLM "${REG_PASSTHRU_0500_64}" "ConfigApplication" ""
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "CAN" 1
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "ISO15765" 0
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "ISO9141" 1
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "ISO14230" 1
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "J1850VPW" 0
+    WriteRegDWORD HKLM "${REG_PASSTHRU_0500_64}" "J1850PWM" 0
+
+    ; 05.00 registry (for 32-bit applications on 64-bit Windows)
+    SetRegView 32
+    WriteRegStr HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "Name" "${DRIVER_NAME}"
+    WriteRegStr HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "Vendor" "${PRODUCT_PUBLISHER}"
+    WriteRegStr HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "FunctionLibrary" "$INSTDIR\ecuconnect050032.dll"
+    WriteRegStr HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "ConfigApplication" ""
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "CAN" 1
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "ISO15765" 0
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "ISO9141" 1
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "ISO14230" 1
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "J1850VPW" 0
+    WriteRegDWORD HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}" "J1850PWM" 0
 
     ; ========================================================================
     ; Add/Remove Programs Entry
@@ -137,6 +167,8 @@ Section "Uninstall"
     ; Remove files
     Delete "$INSTDIR\ecuconnect64.dll"
     Delete "$INSTDIR\ecuconnect32.dll"
+    Delete "$INSTDIR\ecuconnect050064.dll"
+    Delete "$INSTDIR\ecuconnect050032.dll"
     Delete "$INSTDIR\uninstall.exe"
 
     ; Remove install directory (only if empty)
@@ -149,6 +181,12 @@ Section "Uninstall"
 
     SetRegView 32
     DeleteRegKey HKLM "SOFTWARE\PassThruSupport.04.04\${DRIVER_NAME}"
+
+    SetRegView 64
+    DeleteRegKey HKLM "${REG_PASSTHRU_0500_64}"
+
+    SetRegView 32
+    DeleteRegKey HKLM "SOFTWARE\PassThruSupport.05.00\${DRIVER_NAME}"
 
     ; Remove uninstall registry entry
     SetRegView 64

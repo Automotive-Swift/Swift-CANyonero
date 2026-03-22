@@ -12,6 +12,10 @@
 namespace ecuconnect {
 
 namespace {
+bool is_can_protocol(unsigned long protocol_id) {
+    return protocol_id == CAN || protocol_id == ISO15765;
+}
+
 uint8_t id_byte(uint32_t can_id, size_t index) {
     switch (index) {
         case 0: return static_cast<uint8_t>((can_id >> 24) & 0xFF);
@@ -236,10 +240,18 @@ long DeviceManager::connect(unsigned long deviceId, unsigned long protocolId,
         return ERR_CHANNEL_IN_USE;
     }
 
-    // Only support CAN for now
-    if (protocolId != CAN) {
+    ChannelProtocol ecuProtocol;
+    switch (protocolId) {
+        case CAN:
+            ecuProtocol = ChannelProtocol::Raw;
+            break;
+        case ISO9141:
+        case ISO14230:
+            ecuProtocol = ChannelProtocol::KLine;
+            break;
+        default:
         DBG("connect: unsupported protocol %lu", protocolId);
-        setLastError("Protocol not supported (only CAN supported)");
+        setLastError("Protocol not supported");
         return ERR_INVALID_PROTOCOL_ID;
     }
 
@@ -251,8 +263,8 @@ long DeviceManager::connect(unsigned long deviceId, unsigned long protocolId,
     }
 
     // Open channel on ECUconnect device
-    DBG("connect: opening channel (Raw, %lu bps)...", baudrate);
-    auto handle = device->protocol->openChannel(ChannelProtocol::Raw, baudrate, 1000);
+    DBG("connect: opening channel (%u, %lu bps)...", static_cast<unsigned>(ecuProtocol), baudrate);
+    auto handle = device->protocol->openChannel(ecuProtocol, baudrate, 1000);
     if (!handle) {
         DBG("connect: openChannel failed: %s", device->protocol->getLastError().c_str());
         setLastError("Failed to open channel: " + device->protocol->getLastError());
@@ -365,7 +377,8 @@ void DeviceManager::pollingThreadFunc(unsigned long deviceId) {
         auto& channel = device->channels.begin()->second;
 
         for (const auto& frame : frames) {
-            if (!message_passes_filters(*channel, frame.id, frame.data)) {
+            if (is_can_protocol(channel->protocolId) &&
+                !message_passes_filters(*channel, frame.id, frame.data)) {
                 continue;
             }
 
@@ -374,17 +387,23 @@ void DeviceManager::pollingThreadFunc(unsigned long deviceId) {
             msg.ProtocolID = channel->protocolId;
             msg.RxStatus = 0;
             msg.Timestamp = static_cast<unsigned long>(frame.timestamp & 0xFFFFFFFF);
-            msg.DataSize = static_cast<unsigned long>(4 + frame.data.size());
-            msg.ExtraDataIndex = msg.DataSize;
+            if (is_can_protocol(channel->protocolId)) {
+                msg.DataSize = static_cast<unsigned long>(4 + frame.data.size());
+                msg.ExtraDataIndex = msg.DataSize;
 
-            msg.Data[0] = static_cast<uint8_t>((frame.id >> 24) & 0xFF);
-            msg.Data[1] = static_cast<uint8_t>((frame.id >> 16) & 0xFF);
-            msg.Data[2] = static_cast<uint8_t>((frame.id >> 8) & 0xFF);
-            msg.Data[3] = static_cast<uint8_t>(frame.id & 0xFF);
-            std::memcpy(&msg.Data[4], frame.data.data(), frame.data.size());
+                msg.Data[0] = static_cast<uint8_t>((frame.id >> 24) & 0xFF);
+                msg.Data[1] = static_cast<uint8_t>((frame.id >> 16) & 0xFF);
+                msg.Data[2] = static_cast<uint8_t>((frame.id >> 8) & 0xFF);
+                msg.Data[3] = static_cast<uint8_t>(frame.id & 0xFF);
+                std::memcpy(&msg.Data[4], frame.data.data(), frame.data.size());
 
-            if (frame.id > 0x7FF) {
-                msg.RxStatus |= CAN_29BIT_ID;
+                if (frame.id > 0x7FF) {
+                    msg.RxStatus |= CAN_29BIT_ID;
+                }
+            } else {
+                msg.DataSize = static_cast<unsigned long>(frame.data.size());
+                msg.ExtraDataIndex = msg.DataSize;
+                std::memcpy(msg.Data, frame.data.data(), frame.data.size());
             }
 
             // Queue message and notify reader
@@ -483,17 +502,21 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
             return ERR_MSG_PROTOCOL_ID;
         }
 
-        if (firstMsg.DataSize < 4) {
+        const bool canProtocol = is_can_protocol(channel->protocolId);
+        if (canProtocol && firstMsg.DataSize < 4) {
             setLastError("Invalid message size");
             return ERR_INVALID_MSG;
         }
 
-        // Extract CAN ID for this batch
-        uint32_t batchCanId = (static_cast<uint32_t>(firstMsg.Data[0]) << 24) |
-                              (static_cast<uint32_t>(firstMsg.Data[1]) << 16) |
-                              (static_cast<uint32_t>(firstMsg.Data[2]) << 8) |
-                              static_cast<uint32_t>(firstMsg.Data[3]);
-        uint8_t batchExtension = (firstMsg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+        uint32_t batchCanId = 0;
+        uint8_t batchExtension = 0;
+        if (canProtocol) {
+            batchCanId = (static_cast<uint32_t>(firstMsg.Data[0]) << 24) |
+                         (static_cast<uint32_t>(firstMsg.Data[1]) << 16) |
+                         (static_cast<uint32_t>(firstMsg.Data[2]) << 8) |
+                         static_cast<uint32_t>(firstMsg.Data[3]);
+            batchExtension = (firstMsg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+        }
 
         // Collect all consecutive frames with the same CAN ID into a batch
         std::vector<std::vector<uint8_t>> batch;
@@ -507,29 +530,36 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
                 break;  // Protocol mismatch, start new batch
             }
 
-            if (msg.DataSize < 4) {
+            if (canProtocol && msg.DataSize < 4) {
                 break;  // Invalid message, will be caught next iteration
             }
 
-            uint32_t canId = (static_cast<uint32_t>(msg.Data[0]) << 24) |
-                             (static_cast<uint32_t>(msg.Data[1]) << 16) |
-                             (static_cast<uint32_t>(msg.Data[2]) << 8) |
-                             static_cast<uint32_t>(msg.Data[3]);
-            uint8_t extension = (msg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+            uint32_t canId = 0;
+            uint8_t extension = 0;
+            if (canProtocol) {
+                canId = (static_cast<uint32_t>(msg.Data[0]) << 24) |
+                        (static_cast<uint32_t>(msg.Data[1]) << 16) |
+                        (static_cast<uint32_t>(msg.Data[2]) << 8) |
+                        static_cast<uint32_t>(msg.Data[3]);
+                extension = (msg.TxFlags & CAN_29BIT_ID) ? 1 : 0;
+            }
 
-            // Stop batch if CAN ID changes
-            if (canId != batchCanId || extension != batchExtension) {
+            // Stop batch if CAN arbitration changes
+            if (canProtocol && (canId != batchCanId || extension != batchExtension)) {
                 break;
             }
 
             // Check if adding this frame would exceed batch size limit
-            size_t frameSize = 1 + (msg.DataSize - 4);  // length byte + payload
+            size_t payloadSize = canProtocol ? (msg.DataSize - 4) : msg.DataSize;
+            size_t frameSize = 1 + payloadSize;  // length byte + payload
             if (batchBytes + frameSize > MAX_BATCH_SIZE && !batch.empty()) {
                 break;  // Batch is full, send what we have
             }
 
             // Add frame to batch
-            std::vector<uint8_t> data(msg.Data + 4, msg.Data + msg.DataSize);
+            std::vector<uint8_t> data(
+                canProtocol ? (msg.Data + 4) : msg.Data,
+                msg.Data + msg.DataSize);
             batch.push_back(std::move(data));
             batchIndices.push_back(i);
             batchBytes += frameSize;
@@ -542,21 +572,23 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
             continue;
         }
 
-        // Set arbitration for this batch (only if changed)
-        Arbitration arb;
-        arb.request = batchCanId;
-        arb.requestExtension = batchExtension;
-        arb.replyPattern = 0;
-        arb.replyMask = 0;  // Pass all incoming messages
-        arb.replyExtension = 0;
+        if (canProtocol) {
+            // Set arbitration for this batch (only if changed)
+            Arbitration arb;
+            arb.request = batchCanId;
+            arb.requestExtension = batchExtension;
+            arb.replyPattern = 0;
+            arb.replyMask = 0;  // Pass all incoming messages
+            arb.replyExtension = 0;
 
-        if (!channel->hasTxArb || !arbitration_equals(channel->lastTxArb, arb)) {
-            if (!device->protocol->setArbitration(channel->ecuHandle, arb, timeout)) {
-                setLastError("Failed to set arbitration: " + device->protocol->getLastError());
-                return ERR_FAILED;
+            if (!channel->hasTxArb || !arbitration_equals(channel->lastTxArb, arb)) {
+                if (!device->protocol->setArbitration(channel->ecuHandle, arb, timeout)) {
+                    setLastError("Failed to set arbitration: " + device->protocol->getLastError());
+                    return ERR_FAILED;
+                }
+                channel->lastTxArb = arb;
+                channel->hasTxArb = true;
             }
-            channel->lastTxArb = arb;
-            channel->hasTxArb = true;
         }
 
         // Send the batch
@@ -577,10 +609,10 @@ long DeviceManager::writeMsgs(unsigned long channelId, const PASSTHRU_MSG* msgs,
             const auto& msg = msgs[idx];
             (*numMsgs)++;
 
-            if (channel->loopback && message_passes_filters(*channel, batchCanId, batch[j])) {
+            if (channel->loopback && (!canProtocol || message_passes_filters(*channel, batchCanId, batch[j]))) {
                 PASSTHRU_MSG loopbackMsg = msg;
                 loopbackMsg.RxStatus = TX_MSG_TYPE;
-                if (msg.TxFlags & CAN_29BIT_ID) {
+                if (canProtocol && (msg.TxFlags & CAN_29BIT_ID)) {
                     loopbackMsg.RxStatus |= CAN_29BIT_ID;
                 }
                 loopbackMsg.Timestamp = static_cast<unsigned long>(
@@ -620,6 +652,11 @@ long DeviceManager::startPeriodicMsg(unsigned long channelId, const PASSTHRU_MSG
     auto device = getDevice(devIt->second);
     auto chIt = device->channels.find(channelId);
     auto& channel = chIt->second;
+
+    if (!is_can_protocol(channel->protocolId)) {
+        setLastError("Periodic messaging only supported for CAN channels");
+        return ERR_NOT_SUPPORTED;
+    }
 
     // Extract CAN ID
     if (msg->DataSize < 4) {

@@ -1,13 +1,18 @@
 # ECUconnect J2534 Driver - Makefile
-# Builds both 32-bit and 64-bit versions
+# Builds both 04.04 and 05.00 driver lines in 32-bit and 64-bit variants
 
 # Configuration
 DRIVER_NAME     := ECUconnect
 DLL_NAME_32     := ecuconnect32.dll
 DLL_NAME_64     := ecuconnect64.dll
+DLL_NAME_0500_32 := ecuconnect050032.dll
+DLL_NAME_0500_64 := ecuconnect050064.dll
 VENDOR          := ECUconnect
 BUILD_DIR_32    := build32
 BUILD_DIR_64    := build64
+PROJECT_0500    := ../ecuconnect-j2534-0500
+BUILD_DIR_0500_32 := $(PROJECT_0500)/build32
+BUILD_DIR_0500_64 := $(PROJECT_0500)/build64
 INSTALL_DIR     := $(PROGRAMFILES)/ECUconnect/J2534
 
 # Registry paths for J2534 04.04 drivers
@@ -18,6 +23,7 @@ REG_PATH_WOW64  := $(REG_PARENT_WOW)\\$(DRIVER_NAME)
 
 .PHONY: all release debug clean rebuild install uninstall register unregister help
 .PHONY: release32 release64 debug32 debug64 clean32 clean64
+.PHONY: release050032 release050064 debug050032 debug050064 clean050032 clean050064
 .PHONY: install32 install64 register32 register64 unregister32 unregister64
 .PHONY: status list-drivers dev-register
 .PHONY: installer installer-full clean-dist
@@ -29,11 +35,13 @@ help:
 	@echo "ECUconnect J2534 Driver Build System"
 	@echo ""
 	@echo "Build Targets:"
-	@echo "  all / release  - Build both 32-bit and 64-bit release"
-	@echo "  release32      - Build 32-bit release only"
-	@echo "  release64      - Build 64-bit release only"
-	@echo "  debug          - Build both 32-bit and 64-bit debug"
-	@echo "  clean          - Remove all build directories"
+	@echo "  all / release  - Build all four DLLs (04.04 + 05.00, 32/64-bit)"
+	@echo "  release32      - Build 04.04 32-bit release only"
+	@echo "  release64      - Build 04.04 64-bit release only"
+	@echo "  release050032  - Build 05.00 32-bit release only"
+	@echo "  release050064  - Build 05.00 64-bit release only"
+	@echo "  debug          - Build all four DLLs in debug"
+	@echo "  clean          - Remove all build directories for both API versions"
 	@echo "  rebuild        - Clean and build release"
 	@echo ""
 	@echo "Installer Targets (require NSIS 3.x):"
@@ -61,13 +69,15 @@ help:
 # Build targets
 # ============================================================================
 
-release: release32 release64
+release: release32 release64 release050032 release050064
 	@echo ""
 	@echo "Build complete:"
 	@echo "  32-bit: $(BUILD_DIR_32)/Release/$(DLL_NAME_32)"
 	@echo "  64-bit: $(BUILD_DIR_64)/Release/$(DLL_NAME_64)"
+	@echo "  05.00 32-bit: $(BUILD_DIR_0500_32)/Release/$(DLL_NAME_0500_32)"
+	@echo "  05.00 64-bit: $(BUILD_DIR_0500_64)/Release/$(DLL_NAME_0500_64)"
 
-debug: debug32 debug64
+debug: debug32 debug64 debug050032 debug050064
 
 release32:
 	@echo "=== Building 32-bit Release ==="
@@ -81,6 +91,18 @@ release64:
 		cmake -S . -B $(BUILD_DIR_64) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_64)
 	@cmake --build $(BUILD_DIR_64) --config Release
 
+release050032:
+	@echo "=== Building 05.00 32-bit Release ==="
+	@cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_32) -A Win32 -DDLL_NAME=$(DLL_NAME_0500_32) 2>nul || \
+		cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_32) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_0500_32)
+	@cmake --build $(BUILD_DIR_0500_32) --config Release
+
+release050064:
+	@echo "=== Building 05.00 64-bit Release ==="
+	@cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_64) -A x64 -DDLL_NAME=$(DLL_NAME_0500_64) 2>nul || \
+		cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_64) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_0500_64)
+	@cmake --build $(BUILD_DIR_0500_64) --config Release
+
 debug32:
 	@echo "=== Building 32-bit Debug ==="
 	@cmake -S . -B $(BUILD_DIR_32) -A Win32 -DDLL_NAME=$(DLL_NAME_32) 2>nul || \
@@ -93,13 +115,31 @@ debug64:
 		cmake -S . -B $(BUILD_DIR_64) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_64)
 	@cmake --build $(BUILD_DIR_64) --config Debug
 
-clean: clean32 clean64
+debug050032:
+	@echo "=== Building 05.00 32-bit Debug ==="
+	@cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_32) -A Win32 -DDLL_NAME=$(DLL_NAME_0500_32) 2>nul || \
+		cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_32) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_0500_32)
+	@cmake --build $(BUILD_DIR_0500_32) --config Debug
+
+debug050064:
+	@echo "=== Building 05.00 64-bit Debug ==="
+	@cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_64) -A x64 -DDLL_NAME=$(DLL_NAME_0500_64) 2>nul || \
+		cmake -S $(PROJECT_0500) -B $(BUILD_DIR_0500_64) -G "MinGW Makefiles" -DDLL_NAME=$(DLL_NAME_0500_64)
+	@cmake --build $(BUILD_DIR_0500_64) --config Debug
+
+clean: clean32 clean64 clean050032 clean050064
 
 clean32:
 	@rm -rf $(BUILD_DIR_32)
 
 clean64:
 	@rm -rf $(BUILD_DIR_64)
+
+clean050032:
+	@rm -rf $(BUILD_DIR_0500_32)
+
+clean050064:
+	@rm -rf $(BUILD_DIR_0500_64)
 
 rebuild: clean release
 
@@ -142,7 +182,7 @@ list-drivers:
 
 # Development: register from build directories
 dev-register: release
-	@"$(POWERSHELL64)" -ExecutionPolicy Bypass -File scripts/j2534-util.ps1 -Action dev-register -BuildDir32 $(BUILD_DIR_32) -BuildDir64 $(BUILD_DIR_64)
+	@"$(POWERSHELL64)" -ExecutionPolicy Bypass -File scripts/j2534-util.ps1 -Action dev-register -BuildDir32 $(BUILD_DIR_32) -BuildDir64 $(BUILD_DIR_64) -BuildDir050032 $(BUILD_DIR_0500_32) -BuildDir050064 $(BUILD_DIR_0500_64)
 
 # ============================================================================
 # Installer targets

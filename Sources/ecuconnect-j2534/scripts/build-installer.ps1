@@ -3,7 +3,7 @@
     Build the ECUconnect J2534 Driver installer
 
 .DESCRIPTION
-    Builds both DLLs and creates an NSIS installer package.
+    Builds all four DLLs and creates an NSIS installer package.
     Requires NSIS 3.x to be installed (https://nsis.sourceforge.io)
 
 .PARAMETER SkipBuild
@@ -30,6 +30,7 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
 $ProjectDir = Split-Path -Parent $ScriptDir
+$ProjectDir0500 = Join-Path (Split-Path -Parent $ProjectDir) "ecuconnect-j2534-0500"
 $DistDir = Join-Path $ProjectDir "dist"
 
 function Write-Header {
@@ -117,6 +118,24 @@ if (-not $SkipBuild) {
         }
         & cmake --build build64 --config Release
         if ($LASTEXITCODE -ne 0) { throw "64-bit build failed" }
+
+        # Build 05.00 32-bit
+        Write-Step "Building 05.00 32-bit..."
+        & cmake -S $ProjectDir0500 -B "$ProjectDir0500\build32" -A Win32 -DDLL_NAME=ecuconnect050032 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            & cmake -S $ProjectDir0500 -B "$ProjectDir0500\build32" -G "MinGW Makefiles" -DDLL_NAME=ecuconnect050032
+        }
+        & cmake --build "$ProjectDir0500\build32" --config Release
+        if ($LASTEXITCODE -ne 0) { throw "05.00 32-bit build failed" }
+
+        # Build 05.00 64-bit
+        Write-Step "Building 05.00 64-bit..."
+        & cmake -S $ProjectDir0500 -B "$ProjectDir0500\build64" -A x64 -DDLL_NAME=ecuconnect050064 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            & cmake -S $ProjectDir0500 -B "$ProjectDir0500\build64" -G "MinGW Makefiles" -DDLL_NAME=ecuconnect050064
+        }
+        & cmake --build "$ProjectDir0500\build64" --config Release
+        if ($LASTEXITCODE -ne 0) { throw "05.00 64-bit build failed" }
     }
     finally {
         Pop-Location
@@ -126,6 +145,8 @@ if (-not $SkipBuild) {
 # Verify DLLs exist
 $dll32 = Join-Path $ProjectDir "build32\Release\ecuconnect32.dll"
 $dll64 = Join-Path $ProjectDir "build64\Release\ecuconnect64.dll"
+$dll050032 = Join-Path $ProjectDir0500 "build32\Release\ecuconnect050032.dll"
+$dll050064 = Join-Path $ProjectDir0500 "build64\Release\ecuconnect050064.dll"
 
 # Also check non-Release paths (MinGW)
 if (-not (Test-Path $dll32)) {
@@ -134,6 +155,12 @@ if (-not (Test-Path $dll32)) {
 if (-not (Test-Path $dll64)) {
     $dll64 = Join-Path $ProjectDir "build64\ecuconnect64.dll"
 }
+if (-not (Test-Path $dll050032)) {
+    $dll050032 = Join-Path $ProjectDir0500 "build32\ecuconnect050032.dll"
+}
+if (-not (Test-Path $dll050064)) {
+    $dll050064 = Join-Path $ProjectDir0500 "build64\ecuconnect050064.dll"
+}
 
 if (-not (Test-Path $dll32)) {
     throw "32-bit DLL not found: $dll32"
@@ -141,9 +168,17 @@ if (-not (Test-Path $dll32)) {
 if (-not (Test-Path $dll64)) {
     throw "64-bit DLL not found: $dll64"
 }
+if (-not (Test-Path $dll050032)) {
+    throw "05.00 32-bit DLL not found: $dll050032"
+}
+if (-not (Test-Path $dll050064)) {
+    throw "05.00 64-bit DLL not found: $dll050064"
+}
 
 Write-Step "Found 32-bit: $dll32"
 Write-Step "Found 64-bit: $dll64"
+Write-Step "Found 05.00 32-bit: $dll050032"
+Write-Step "Found 05.00 64-bit: $dll050064"
 
 # Create dist directory
 if (-not (Test-Path $DistDir)) {

@@ -13,6 +13,14 @@ Sources/ecuconnect-j2534/build32/
 Sources/ecuconnect-j2534/build64/
 Sources/ecuconnect-j2534/nul
 Sources/ecuconnect-j2534/.claude/
+Sources/ecuconnect-j2534-0500/build32/
+Sources/ecuconnect-j2534-0500/build64/
+
+# Compiled driver/test artifacts
+Sources/ecuconnect-j2534/driver/x64/
+Sources/ecuconnect-j2534/test/*.exe
+Sources/ecuconnect-j2534/test/*.obj
+Sources/ecuconnect-j2534/dist/
 
 # can-standin build artifacts
 Sources/can-standin/target/

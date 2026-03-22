@@ -1,0 +1,42 @@
+ECUconnect L2CAP Driver - Secure Boot Instructions
+===================================================
+
+STEP 1: Disable Secure Boot
+---------------------------
+1. Restart your PC
+
+2. Enter BIOS/UEFI setup - Press the key during boot:
+   - DEL or F2 (most common)
+   - F10, F12, or ESC (some systems)
+   - Look for a message like "Press F2 for Setup"
+
+3. Find Secure Boot setting - Usually under:
+   - "Security" menu
+   - "Boot" menu
+   - "Authentication" menu
+
+4. Set Secure Boot to DISABLED
+
+5. Save and Exit (usually F10)
+
+
+STEP 2: After Windows Boots
+---------------------------
+Open Administrator PowerShell and run:
+
+    cd "C:\Users\DrMic\Documents\late\Automotive-Swift\Swift-CANyonero\Sources\ecuconnect-j2534"
+    powershell -ExecutionPolicy Bypass -File .\scripts\driver-util.ps1 -Action reinstall
+
+
+STEP 3: Test the Driver
+-----------------------
+    .\test\test_l2cap_driver.exe
+
+If successful, you should see:
+    - "Driver interface opened successfully!"
+    - Driver status information
+
+To test with an actual ECUconnect device:
+    .\test\test_l2cap_driver.exe AA:BB:CC:DD:EE:FF
+
+Replace AA:BB:CC:DD:EE:FF with your ECUconnect's Bluetooth address.

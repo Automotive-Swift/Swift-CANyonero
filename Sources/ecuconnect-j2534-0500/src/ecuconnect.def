@@ -1,0 +1,20 @@
+EXPORTS
+    PassThruScanForDevices      @1
+    PassThruGetNextDevice       @2
+    PassThruOpen                @3
+    PassThruClose               @4
+    PassThruConnect             @5
+    PassThruDisconnect          @6
+    PassThruLogicalConnect      @7
+    PassThruLogicalDisconnect   @8
+    PassThruSelect              @9
+    PassThruReadMsgs            @10
+    PassThruQueueMsgs           @11
+    PassThruStartPeriodicMsg    @12
+    PassThruStopPeriodicMsg     @13
+    PassThruStartMsgFilter      @14
+    PassThruStopMsgFilter       @15
+    PassThruSetProgrammingVoltage @16
+    PassThruReadVersion         @17
+    PassThruGetLastError        @18
+    PassThruIoctl               @19
