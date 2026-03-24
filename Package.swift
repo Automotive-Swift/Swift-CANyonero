@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Cornucopia-Swift/CornucopiaCore", branch: "master"),
-        .package(url: "ssh://git@gitlab.com/a11086/swift-automotive", branch: "wip/tp20"),
+        .package(url: "ssh://git@gitlab.com/a11086/swift-automotive", branch: "master"),
         //.package(path: "../Swift-Automotive"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
         .package(url: "https://github.com/mxcl/Chalk", branch: "master"),

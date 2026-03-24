@@ -33,7 +33,7 @@
       "location" : "https://github.com/Cornucopia-Swift/CornucopiaStreams",
       "state" : {
         "branch" : "master",
-        "revision" : "bd1d2c6de225de97cde83f108bb2beb9026616ea"
+        "revision" : "964a71377711bf01e7f2dc1b2140e23c0c685b85"
       }
     },
     {
@@ -86,8 +86,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
       "state" : {
-        "revision" : "c5d11a805e765f52ba34ec7284bd4fcd6ba68615",
-        "version" : "1.7.0"
+        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version" : "1.7.1"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
-        "version" : "1.5.1"
+        "revision" : "9f542610331815e29cc3821d3b6f488db8715517",
+        "version" : "1.6.0"
       }
     },
     {
@@ -104,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
-        "branch" : "wip/tp20",
-        "revision" : "0e7f5919d435fdde34a7804376a09406ed914d17"
+        "branch" : "master",
+        "revision" : "b7fc4f0153165c502e53db67381ff38dabd1f3e9"
       }
     },
     {

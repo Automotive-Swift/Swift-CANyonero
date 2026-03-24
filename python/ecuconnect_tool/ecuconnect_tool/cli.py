@@ -559,7 +559,43 @@ def _open_tp20_channel_with_retry(
         reply_extension=0,
     )
     client.set_arbitration(tp20_channel, dynamic_arbitration, timeout=max(2.0, setup_timeout))
+    _prime_tp20_channel_if_needed(
+        client,
+        channel=tp20_channel,
+        application_type=application_type,
+        timeout=setup_timeout,
+    )
     return tp20_channel, negotiated
+
+
+def _prime_tp20_channel_if_needed(
+    client: EcuconnectClient,
+    *,
+    channel: int,
+    application_type: int,
+    timeout: float,
+) -> None:
+    # The ECUconnect TP2.0 transport initiates the dynamic A0/A1 connect only
+    # when the first payload is sent. For diagnostics channels in an interactive
+    # REPL, send a benign TesterPresent immediately so real ECUs do not time out
+    # and disconnect before the user types the first request.
+    if application_type != 0x01:
+        return
+
+    client.send(channel, bytes([0x3E, 0x00]))
+    client.wait_for(lambda p: p.type == canyonero.PDUType.ok, timeout)
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        remaining = max(0.0, deadline - time.monotonic())
+        pdu = client.get_pdu(timeout=remaining)
+        if pdu is None:
+            continue
+        if pdu.type not in (canyonero.PDUType.received, canyonero.PDUType.received_compressed):
+            continue
+        if pdu.channel() != channel:
+            continue
+        return
 
 
 def _format_message(can_id: int, data: bytes) -> str:

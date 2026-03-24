@@ -29,17 +29,25 @@ fileprivate class REPL {
 
     static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdefxX:,/").inverted
 
-    init(defaultAddressing: Automotive.Addressing? = nil, channelProtocol: ECUconnect.ChannelProtocol) {
+    init(
+        defaultAddressing: Automotive.Addressing? = nil,
+        channelProtocol: ECUconnect.ChannelProtocol,
+        payloadProtocol overridePayloadProtocol: Automotive.PayloadProtocol? = nil
+    ) {
         self.lastAddressing = defaultAddressing
-        switch channelProtocol {
-            case .isotp:
-                self.payloadProtocol = .uds
-            case .isotpFD:
-                self.payloadProtocol = .uds
-            case .kline:
-                self.payloadProtocol = .kwp
-            default:
-                self.payloadProtocol = .raw
+        if let overridePayloadProtocol {
+            self.payloadProtocol = overridePayloadProtocol
+        } else {
+            switch channelProtocol {
+                case .isotp:
+                    self.payloadProtocol = .uds
+                case .isotpFD:
+                    self.payloadProtocol = .uds
+                case .kline:
+                    self.payloadProtocol = .kwp
+                default:
+                    self.payloadProtocol = .raw
+            }
         }
         if let addressing = defaultAddressing {
             print("Default addressing: \(Self.describe(addressing))")
@@ -674,7 +682,17 @@ struct Term: ParsableCommand {
                 }
                 print("")
 
-                let repl = REPL(defaultAddressing: defaultAddressing, channelProtocol: channelProto)
+                let replPayloadProtocol: Automotive.PayloadProtocol?
+                if channelProto == .tp20, tp20OpenParameters?.applicationType == .diagnostics {
+                    replPayloadProtocol = .kwp
+                } else {
+                    replPayloadProtocol = nil
+                }
+                let repl = REPL(
+                    defaultAddressing: defaultAddressing,
+                    channelProtocol: channelProto,
+                    payloadProtocol: replPayloadProtocol
+                )
 
                 while true {
                     let command = try repl.read()
