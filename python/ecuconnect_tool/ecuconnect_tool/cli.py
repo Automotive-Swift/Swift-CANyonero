@@ -1003,18 +1003,26 @@ def config_canvoy_set(
 
 @app.command()
 def info(ctx: typer.Context) -> None:
-    """Query adapter info and voltage."""
+    """Query adapter info, voltage, and configuration."""
     endpoint = ctx.obj["endpoint"]
     rx_buffer = ctx.obj["rx_buffer"]
     tx_buffer = ctx.obj["tx_buffer"]
     with EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer) as client:
         info = client.request_info()
         voltage = client.read_voltage()
-    console.print(f"Connected to ECUconnect {info.vendor} {info.model}")
+        config = _rpc_best_effort(client, "app.config")
+    console.print(f"Vendor:   {info.vendor}")
+    console.print(f"Model:    {info.model}")
     console.print(f"Hardware: {info.hardware}")
-    console.print(f"Serial: {info.serial}")
+    console.print(f"Serial:   {info.serial}")
     console.print(f"Firmware: {info.firmware}")
-    console.print(f"Voltage: {voltage:.2f} V")
+    console.print(f"Voltage:  {voltage:.2f} V")
+    if config and "mode" in config:
+        console.print(f"Mode:     {_format_mode(config['mode'])}")
+        if isinstance(config.get("appstate"), str):
+            console.print(f"State:    {config['appstate']}")
+        elif isinstance(config.get("state"), str):
+            console.print(f"State:    {config['state']}")
 
 
 @app.command()
