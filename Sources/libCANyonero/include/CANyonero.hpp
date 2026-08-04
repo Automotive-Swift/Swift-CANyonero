@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <cassert>
+
 #include "Protocol.hpp"
 #include "ISOTP.hpp"
 #include "ISOTPFD.hpp"
