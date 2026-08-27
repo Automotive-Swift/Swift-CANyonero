@@ -33,6 +33,17 @@ The adapter runs CANyonerOS (FreeRTOS based) and exposes the CANyonero protocol 
 
 You can explore the exact field names and helper factories inside `Protocol.hpp`, which mirrors the documentation above in code form.
 
+### Streaming ISO-TP transmission
+
+Embedded transports should use `Transceiver::didReceiveFrameStreaming()` or
+`TransceiverFD::didReceiveFrameStreaming()` when handling a flow-control frame.
+The callback receives each consecutive frame as soon as it is encoded, together
+with the negotiated separation time and a flag indicating whether another frame
+follows in the current FC window. This lets a controller queue the first CF
+immediately instead of waiting for the complete block-size window to be
+materialized. The original `didReceiveFrame()` API remains compatible and
+collects the same frames for clients that require an owning action object.
+
 ## Windows J2534 Driver
 
 The `Sources/ecuconnect-j2534` directory contains a Windows J2534 (Pass-Thru) driver that enables any J2534-compatible application to communicate with ECUconnect hardware. This includes professional diagnostic tools, flash programmers, and custom applications.

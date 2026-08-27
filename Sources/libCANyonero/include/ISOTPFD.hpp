@@ -143,6 +143,24 @@ public:
     /// Call this for any incoming frame.
     /// RX does not enforce ``minimumDLC``; only CAN-FD validity and max width are checked.
     Action didReceiveFrame(const Bytes& bytes) {
+        if (state != State::sending) {
+            return didReceiveFrameStreaming(bytes, [](Frame&&, uint16_t, bool) {});
+        }
+        auto streamedFrames = std::deque<Frame> {};
+        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint16_t, bool) {
+            streamedFrames.emplace_back(std::move(frame));
+        });
+        if (!streamedFrames.empty()) {
+            action.frames = std::move(streamedFrames);
+        }
+        return action;
+    }
+
+    /// Streaming variant of ``didReceiveFrame()``. Consecutive frames released
+    /// by a flow-control frame are handed to the callback immediately instead
+    /// of first being accumulated in an allocated deque.
+    template <typename FrameWriter>
+    Action didReceiveFrameStreaming(const Bytes& bytes, FrameWriter&& writeFrame) {
         if (bytes.empty()) { return { Action::Type::protocolViolation, "Incoming frame is empty." }; }
         if (bytes.size() > maxFrameWidth) { return { Action::Type::protocolViolation, "Incoming frame exceeds configured CAN-FD width." }; }
         if (!isValidFDFrameWidth(static_cast<uint8_t>(bytes.size()), mode == Mode::extended)) {
@@ -152,7 +170,7 @@ public:
         switch (behavior) {
             case Behavior::strict: {
                 switch (state) {
-                    case State::sending: return parseFlowControlFrame(bytes);
+                    case State::sending: return parseFlowControlFrameStreaming(bytes, writeFrame);
                     default: return parseDataFrame(bytes);
                 }
             }
@@ -160,7 +178,7 @@ public:
                 Action action;
                 switch (state) {
                     case State::sending: {
-                        action = parseFlowControlFrame(bytes);
+                        action = parseFlowControlFrameStreaming(bytes, writeFrame);
                         break;
                     }
                     default:
@@ -247,7 +265,7 @@ private:
         }
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     Frame firstFrame(uint16_t pduLength, const Bytes& bytes, size_t payloadCount) const {
@@ -257,7 +275,7 @@ private:
         vector.insert(vector.end(), bytes.begin(), bytes.begin() + static_cast<std::ptrdiff_t>(payloadCount));
         auto width = dynamicFrameWidthFor(static_cast<uint8_t>(payloadCount + 2));
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     Frame consecutiveFrame(uint8_t sequenceNumber, const Bytes& bytes, size_t offset, uint8_t count) const {
@@ -266,7 +284,7 @@ private:
         vector.insert(vector.end(), bytes.begin() + static_cast<std::ptrdiff_t>(offset), bytes.begin() + static_cast<std::ptrdiff_t>(offset + count));
         auto width = dynamicFrameWidthFor(static_cast<uint8_t>(count + 1));
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     Behavior behavior;
@@ -288,7 +306,8 @@ private:
     uint16_t receivingUnconfirmedFramesCounter = 0;
 
 private:
-    Action parseFlowControlFrame(const Bytes& bytes) {
+    template <typename FrameWriter>
+    Action parseFlowControlFrameStreaming(const Bytes& bytes, FrameWriter& writeFrame) {
         if (bytes.size() < 3) {
             return { Action::Type::protocolViolation, "Received FLOW CONTROL shorter than minimum length 3." };
         }
@@ -310,7 +329,7 @@ private:
                     return { Action::Type::protocolViolation, "Sending payload offset exceeds payload size." };
                 }
 
-                auto nextFrames = std::deque<Frame> {};
+                const auto separationTime = std::max(frame.separationTime(), txSeparationTime);
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
                     auto remaining = sendingPayload.size() - sendingPayloadOffset;
                     if (remaining == 0) {
@@ -321,20 +340,22 @@ private:
                     auto nextChunkSize = static_cast<uint8_t>(std::min<size_t>(maxFrameWidth - 1, remaining));
                     auto nextFrame = consecutiveFrame(sendingSequenceNumber, sendingPayload, sendingPayloadOffset, nextChunkSize);
                     sendingPayloadOffset += nextChunkSize;
-                    nextFrames.insert(nextFrames.end(), nextFrame);
 
-                    if (sendingPayloadOffset >= sendingPayload.size()) {
+                    const bool transferComplete = sendingPayloadOffset >= sendingPayload.size();
+                    const bool hasMoreInWindow = !transferComplete && i + 1 < numberOfUnconfirmedFrames;
+                    if (transferComplete) {
                         reset();
-                        break;
+                    } else {
+                        sendingSequenceNumber = static_cast<uint8_t>((sendingSequenceNumber + 1) & 0x0F);
                     }
+                    writeFrame(std::move(nextFrame), separationTime, hasMoreInWindow);
 
-                    sendingSequenceNumber = static_cast<uint8_t>((sendingSequenceNumber + 1) & 0x0F);
+                    if (transferComplete) { break; }
                 }
 
                 return {
                     .type = Action::Type::writeFrames,
-                    .frames = nextFrames,
-                    .separationTime = std::max(frame.separationTime(), txSeparationTime),
+                    .separationTime = separationTime,
                 };
             }
 
