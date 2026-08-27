@@ -142,6 +142,37 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
     }
 }
 
+-(void)testFlowControlStreamingEmitsWindowWithoutMaterializingActionFrames {
+    auto isotp = TransceiverFD(TransceiverFD::Behavior::strict, TransceiverFD::Mode::standard, 0, 0, 300, 64);
+    auto message = payloadForLength(3074, 0x20);
+
+    auto firstAction = isotp.writePDU(message);
+    XCTAssertEqual(firstAction.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertEqual(firstAction.frames.size(), 1);
+
+    auto emitted = std::vector<std::vector<uint8_t>> {};
+    auto moreFlags = std::vector<bool> {};
+    auto flowControl = std::vector<uint8_t> { 0x30, 0x20, 0x00 };
+    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint16_t separationTime, bool hasMore) {
+        XCTAssertEqual(separationTime, 300);
+        emitted.emplace_back(std::move(frame.bytes));
+        moreFlags.emplace_back(hasMore);
+    });
+
+    XCTAssertEqual(action.type, TransceiverFD::Action::Type::writeFrames);
+    XCTAssertTrue(action.frames.empty());
+    XCTAssertEqual(action.separationTime, 300);
+    XCTAssertEqual(emitted.size(), 32);
+    XCTAssertEqual(moreFlags.size(), 32);
+    for (size_t i = 0; i + 1 < moreFlags.size(); ++i) {
+        XCTAssertTrue(moreFlags[i]);
+    }
+    XCTAssertFalse(moreFlags.back());
+    XCTAssertEqual(emitted.front()[0], 0x21);
+    XCTAssertEqual(emitted.back()[0], 0x20);
+    XCTAssertEqual(isotp.machineState(), TransceiverFD::State::sending);
+}
+
 -(void)testExtendedAddressingUsesShiftedDynamicDLC {
     auto isotp = TransceiverFD(TransceiverFD::Behavior::strict, TransceiverFD::Mode::extended, 0, 0, 0, 63);
 

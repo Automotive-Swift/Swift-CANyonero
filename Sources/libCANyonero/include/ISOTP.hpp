@@ -8,6 +8,7 @@
 #include "Helpers.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <deque>
 #include <string>
 #include <vector>
@@ -70,12 +71,18 @@ struct Frame {
     {
     }
 
+    /// Creates a frame while taking ownership of an encoded wire payload.
+    Frame(Bytes&& bytes)
+        :bytes(std::move(bytes))
+    {
+    }
+
     /// Returns an FC.
     static Frame flowControl(FlowStatus status, uint8_t blockSize, uint8_t separationTime, uint8_t width) {
         uint8_t pci = uint8_t(Type::flowControl) | uint8_t(status);
         std::vector<uint8_t> vector { pci, blockSize, separationTime };
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     /// Returns an SF.
@@ -85,7 +92,7 @@ struct Frame {
         auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin(), bytes.end());
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     /// Returns a FF.
@@ -94,7 +101,7 @@ struct Frame {
         uint8_t pciLo = uint8_t(pduLength & 0xFF);
         auto vector = std::vector<uint8_t> { pciHi, pciLo };
         vector.insert(vector.end(), bytes.begin(), bytes.begin() + width - 2);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     /// Returns a CF.
@@ -112,7 +119,7 @@ struct Frame {
         auto vector = std::vector<uint8_t> { pci };
         vector.insert(vector.end(), bytes.begin() + offset, bytes.begin() + offset + count);
         vector.resize(width, ISOTP::padding);
-        return Frame(vector);
+        return Frame(std::move(vector));
     }
 
     /// Returns the frame type.
@@ -319,6 +326,26 @@ public:
 
     /// Call this for any incoming frame.
     Action didReceiveFrame(const Bytes& bytes) {
+        if (state != State::sending) {
+            return didReceiveFrameStreaming(bytes, [](Frame&&, uint16_t, bool) {});
+        }
+        auto streamedFrames = std::deque<Frame> {};
+        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint16_t, bool) {
+            streamedFrames.emplace_back(std::move(frame));
+        });
+        if (!streamedFrames.empty()) {
+            action.frames = std::move(streamedFrames);
+        }
+        return action;
+    }
+
+    /// Call this for any incoming frame and emit outgoing consecutive frames as
+    /// soon as each one is encoded. The callback receives the frame, the
+    /// negotiated separation time, and whether another frame follows in the
+    /// current flow-control window. Unlike ``didReceiveFrame()``, this avoids
+    /// materializing the complete window before its first frame can be sent.
+    template <typename FrameWriter>
+    Action didReceiveFrameStreaming(const Bytes& bytes, FrameWriter&& writeFrame) {
         if (bytes.empty()) { return { Action::Type::protocolViolation, "Incoming frame is empty." }; }
         if (bytes.size() > width) {
             return { Action::Type::protocolViolation, "Incoming frame exceeds predefined width." };
@@ -328,7 +355,7 @@ public:
             case Behavior::strict: {
                 switch (state) {
                     case State::sending: {
-                        return parseFlowControlFrame(bytes);
+                        return parseFlowControlFrameStreaming(bytes, writeFrame);
                     default:
                         return parseDataFrame(bytes);
                     }
@@ -338,7 +365,7 @@ public:
                 Action action;
                 switch (state) {
                     case State::sending: {
-                        action = parseFlowControlFrame(bytes);
+                        action = parseFlowControlFrameStreaming(bytes, writeFrame);
                         break;
                         
                     default:
@@ -400,7 +427,8 @@ private:
     uint16_t receivingUnconfirmedFramesCounter = 0;
 
 private:
-    Action parseFlowControlFrame(const Bytes& bytes) {
+    template <typename FrameWriter>
+    Action parseFlowControlFrameStreaming(const Bytes& bytes, FrameWriter& writeFrame) {
         if (bytes.size() < 3) {
             return { Action::Type::protocolViolation, "Received FLOW CONTROL shorter than minimum length 3." };
         }
@@ -418,7 +446,7 @@ private:
                     reset();
                     return { Action::Type::protocolViolation, "Sending payload offset exceeds payload size." };
                 }
-                auto nextFrames = std::deque<Frame> {};
+                const auto separationTime = std::max(frame.separationTime(), txSeparationTime);
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
                     const auto remaining = sendingPayload.size() - sendingPayloadOffset;
                     if (remaining == 0) {
@@ -428,20 +456,23 @@ private:
                     auto nextChunkSize = static_cast<uint8_t>(std::min<size_t>(width - 1, remaining));
                     auto nextFrame = Frame::consecutive(sendingSequenceNumber, sendingPayload, sendingPayloadOffset, nextChunkSize, width);
                     sendingPayloadOffset += nextChunkSize;
-                    nextFrames.insert(nextFrames.end(), nextFrame);
-                    
-                    if (sendingPayloadOffset >= sendingPayload.size()) {
+
+                    const bool transferComplete = sendingPayloadOffset >= sendingPayload.size();
+                    const bool hasMoreInWindow = !transferComplete && i + 1 < numberOfUnconfirmedFrames;
+                    if (transferComplete) {
                         reset();
-                        break;
+                    } else {
+                        sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
                     }
-                    sendingSequenceNumber = (sendingSequenceNumber + 1) & 0x0F;
+                    writeFrame(std::move(nextFrame), separationTime, hasMoreInWindow);
+
+                    if (transferComplete) { break; }
                 }
                 return {
                     .type = Action::Type::writeFrames,
-                    .frames = nextFrames,
                     // NOTE: We are taking the maximum separation time from the received flow control frame
                     // and the separation time configured for this transceiver.
-                    .separationTime = std::max(frame.separationTime(), txSeparationTime),
+                    .separationTime = separationTime,
                 };
             }
                 

@@ -137,6 +137,38 @@ using namespace CANyonero::ISOTP;
     XCTAssertEqual(isotp.machineState(), Transceiver::State::idle);
 }
 
+-(void)testFlowControlStreamingEmitsWindowWithoutMaterializingActionFrames {
+    auto isotp = Transceiver(Transceiver::Behavior::strict, Transceiver::Mode::standard, 0, 0, 250);
+    std::vector<uint8_t> pdu(300);
+    std::iota(pdu.begin(), pdu.end(), 0);
+
+    auto firstAction = isotp.writePDU(pdu);
+    XCTAssertEqual(firstAction.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertEqual(firstAction.frames.size(), 1);
+
+    auto emitted = std::vector<std::vector<uint8_t>> {};
+    auto moreFlags = std::vector<bool> {};
+    auto flowControl = std::vector<uint8_t> { 0x30, 0x20, 0x00, padding, padding, padding, padding, padding };
+    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint16_t separationTime, bool hasMore) {
+        XCTAssertEqual(separationTime, 250);
+        emitted.emplace_back(std::move(frame.bytes));
+        moreFlags.emplace_back(hasMore);
+    });
+
+    XCTAssertEqual(action.type, Transceiver::Action::Type::writeFrames);
+    XCTAssertTrue(action.frames.empty());
+    XCTAssertEqual(action.separationTime, 250);
+    XCTAssertEqual(emitted.size(), 32);
+    XCTAssertEqual(moreFlags.size(), 32);
+    for (size_t i = 0; i + 1 < moreFlags.size(); ++i) {
+        XCTAssertTrue(moreFlags[i]);
+    }
+    XCTAssertFalse(moreFlags.back());
+    XCTAssertEqual(emitted.front()[0], 0x21);
+    XCTAssertEqual(emitted.back()[0], 0x20);
+    XCTAssertEqual(isotp.machineState(), Transceiver::State::sending);
+}
+
 -(void)testMaxPayloadNoFlowControl {
     std::vector<uint8_t> pdu(maximumTransferSize);
     std::iota(pdu.begin(), pdu.end(), 0);
