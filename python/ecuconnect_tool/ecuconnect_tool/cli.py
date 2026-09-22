@@ -17,7 +17,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import canyonero
+from . import __version__, canyonero
+from .annotations import (
+    FRAMING_PDU,
+    FRAMING_RAW_FRAMES,
+    MessageAnnotator,
+    print_annotation,
+)
 from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient
 from .test_runner import (
     open_channel_with_retry,
@@ -606,152 +612,6 @@ def _format_message(can_id: int, data: bytes) -> str:
     return f"{header}   {data_hex}\n ->  '{ascii_text}'"
 
 
-def _interpret_response(data: bytes) -> str | None:
-    if not data:
-        return None
-    sid = data[0]
-    if sid == 0x7F:
-        if len(data) < 3:
-            return "Negative Response (incomplete)"
-        requested_service = data[1]
-        nrc = data[2]
-        service_name = _service_id_name(requested_service)
-        nrc_desc = _negative_response_description(nrc)
-        return f"Negative Response to {service_name}: {nrc_desc}"
-    if 0x41 <= sid <= 0x4A:
-        service = sid - 0x40
-        service_name = _obd2_service_name(service)
-        if service in (0x01, 0x02) and len(data) >= 2:
-            pid_name = _obd2_pid_name(data[1])
-            return f"{service_name} - {pid_name}"
-        if service == 0x09 and len(data) >= 2:
-            info_name = _obd2_mode09_name(data[1])
-            return f"{service_name} - {info_name}"
-        return service_name
-    if sid >= 0x50:
-        service_name = _service_id_name(sid - 0x40)
-        return f"Positive Response to {service_name}"
-    return None
-
-
-def _service_id_name(sid: int) -> str:
-    services = {
-        0x01: "Show Current Data",
-        0x02: "Show Freeze Frame Data",
-        0x03: "Show Stored DTCs",
-        0x04: "Clear DTCs",
-        0x05: "O2 Sensor Monitoring",
-        0x06: "On-Board Monitoring",
-        0x07: "Show Pending DTCs",
-        0x08: "Control On-Board System",
-        0x09: "Request Vehicle Information",
-        0x0A: "Permanent DTCs",
-        0x10: "Diagnostic Session Control",
-        0x11: "ECU Reset",
-        0x14: "Clear Diagnostic Information",
-        0x19: "Read DTC Information",
-        0x22: "Read Data By Identifier",
-        0x23: "Read Memory By Address",
-        0x24: "Read Scaling Data By Identifier",
-        0x27: "Security Access",
-        0x28: "Communication Control",
-        0x2E: "Write Data By Identifier",
-        0x2F: "Input/Output Control By Identifier",
-        0x31: "Routine Control",
-        0x34: "Request Download",
-        0x35: "Request Upload",
-        0x36: "Transfer Data",
-        0x37: "Request Transfer Exit",
-        0x3E: "Tester Present",
-        0x85: "Control DTC Setting",
-    }
-    return services.get(sid, f"Service 0x{sid:02X}")
-
-
-def _obd2_service_name(service: int) -> str:
-    names = {
-        0x01: "Mode 01: Current Data",
-        0x02: "Mode 02: Freeze Frame Data",
-        0x03: "Mode 03: Stored DTCs",
-        0x04: "Mode 04: Clear DTCs",
-        0x09: "Mode 09: Vehicle Information",
-    }
-    return names.get(service, f"Mode 0x{service:02X}")
-
-
-def _obd2_pid_name(pid: int) -> str:
-    names = {
-        0x00: "Supported PIDs [01-20]",
-        0x01: "Monitor Status",
-        0x02: "Freeze DTC",
-        0x03: "Fuel System Status",
-        0x04: "Calculated Engine Load",
-        0x05: "Engine Coolant Temperature",
-        0x06: "Short Term Fuel Trim Bank 1",
-        0x0C: "Engine RPM",
-        0x0D: "Vehicle Speed",
-        0x0F: "Intake Air Temperature",
-        0x10: "MAF Air Flow Rate",
-        0x11: "Throttle Position",
-        0x1C: "OBD Standards Compliance",
-        0x1F: "Engine Run Time",
-        0x20: "Supported PIDs [21-40]",
-        0x21: "Distance with MIL On",
-        0x2F: "Fuel Tank Level",
-        0x33: "Barometric Pressure",
-        0x40: "Supported PIDs [41-60]",
-        0x42: "Control Module Voltage",
-        0x46: "Ambient Air Temperature",
-        0x51: "Fuel Type",
-        0x60: "Supported PIDs [61-80]",
-    }
-    return names.get(pid, f"PID 0x{pid:02X}")
-
-
-def _obd2_mode09_name(info_type: int) -> str:
-    names = {
-        0x00: "Supported Info Types",
-        0x01: "VIN Message Count",
-        0x02: "Vehicle Identification Number (VIN)",
-        0x03: "Calibration ID Message Count",
-        0x04: "Calibration IDs",
-        0x05: "Calibration Verification Numbers Message Count",
-        0x06: "Calibration Verification Numbers (CVN)",
-        0x08: "In-use Performance Tracking Message Count",
-        0x09: "ECU Name Message Count",
-        0x0A: "ECU Name",
-    }
-    return names.get(info_type, f"Info Type 0x{info_type:02X}")
-
-
-def _negative_response_description(nrc: int) -> str:
-    descriptions = {
-        0x10: "General Reject",
-        0x11: "Service Not Supported",
-        0x12: "Sub-Function Not Supported",
-        0x13: "Incorrect Message Length or Invalid Format",
-        0x14: "Response Too Long",
-        0x21: "Busy - Repeat Request",
-        0x22: "Conditions Not Correct",
-        0x24: "Request Sequence Error",
-        0x31: "Request Out of Range",
-        0x33: "Security Access Denied",
-        0x35: "Invalid Key",
-        0x36: "Exceeded Number of Attempts",
-        0x37: "Required Time Delay Not Expired",
-        0x78: "Request Correctly Received - Response Pending",
-        0x7E: "Sub-Function Not Supported in Active Session",
-        0x7F: "Service Not Supported in Active Session",
-        0x81: "RPM Too High",
-        0x82: "RPM Too Low",
-        0x83: "Engine Is Running",
-        0x84: "Engine Is Not Running",
-        0x92: "Voltage Too High",
-        0x93: "Voltage Too Low",
-    }
-    return descriptions.get(nrc, f"NRC 0x{nrc:02X}")
-
-
 def _is_ble_endpoint(endpoint: str) -> bool:
     if "://" not in endpoint:
         return False
@@ -849,6 +709,13 @@ def _recommend_payload_size(results: list[BenchmarkResult]) -> BenchmarkResult |
     return best
 
 
+def _version_callback(value: bool) -> None:
+    """The Swift variant of this tool reports "(Swift)" here; say which one this is."""
+    if value:
+        typer.echo(f"{__version__} (Python)")
+        raise typer.Exit()
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -860,6 +727,10 @@ def main(
     ),
     rx_buffer: str = typer.Option("4M", help="Socket receive buffer size (bytes or K/M/G suffix). Default: 4M."),
     tx_buffer: str = typer.Option("4M", help="Socket send buffer size (bytes or K/M/G suffix). Default: 4M."),
+    version: bool = typer.Option(
+        False, "--version", callback=_version_callback, is_eager=True,
+        help="Show the version.",
+    ),
 ) -> None:
     ctx.ensure_object(dict)
     ctx.obj["endpoint"] = endpoint
@@ -1319,6 +1190,7 @@ def term(
     tp20_setup: bool = typer.Option(True, "--tp20-setup/--no-tp20-setup", help="Run TP2.0 fixed-ID setup before opening the dynamic TP2.0 channel."),
     timeout: float = typer.Option(1.0, help="Response timeout in seconds."),
     idle_timeout: float = typer.Option(0.25, help="Idle timeout for multicast responses."),
+    annotate: bool = typer.Option(True, "--annotate/--no-annotate", help="Annotate requests and responses."),
 ) -> None:
     """Interactive CAN terminal."""
     endpoint = ctx.obj["endpoint"]
@@ -1328,6 +1200,11 @@ def term(
     channel_proto = _resolve_channel_proto(proto)
     selected_data_bitrate = _selected_data_bitrate(channel_proto, data_bitrate)
     history_path = _setup_interactive_history("term")
+    # Raw channels hand us single CAN frames, so any PDU there is still wrapped
+    # in ISO-TP framing and has to be unwrapped before decoding.
+    is_raw = channel_proto in (canyonero.ChannelProtocol.raw, canyonero.ChannelProtocol.raw_fd)
+    annotator = MessageAnnotator(FRAMING_RAW_FRAMES if is_raw else FRAMING_PDU)
+    annotations_enabled = annotate
 
     if channel_proto != canyonero.ChannelProtocol.tp20 and tp20_target is not None:
         raise typer.BadParameter("--tp20-target requires --proto tp20.")
@@ -1438,10 +1315,13 @@ def term(
                 console.print("Commands:")
                 console.print("  :REQ[,REPLY]   - Set addressing (e.g. :7df or :7df,7e8)")
                 console.print("  :6F1/12,612/F1 - Include CAN extended addressing bytes (EA/REA)")
+                console.print("  :annotate off  - Turn protocol annotations off (:annotate turns them back on)")
                 console.print("  0902           - Send hex data with current addressing")
                 console.print("  quit           - Exit")
                 if channel_proto == canyonero.ChannelProtocol.tp20 and negotiated_tp20 is None:
                     console.print("  Note: TP2.0 requires negotiated dynamic CAN IDs. Set them manually, e.g. :740,300")
+                if is_raw:
+                    console.print("  Note: on raw channels, annotations decode the ISO-TP framing of each CAN frame.")
                 console.print("")
 
                 current_addressing = default_addressing
@@ -1461,6 +1341,18 @@ def term(
                         if trimmed.lower().startswith("quit") or trimmed.lower().startswith("exit"):
                             console.print("Goodbye!")
                             return
+                        if trimmed.startswith(":annotate"):
+                            argument = trimmed[len(":annotate"):].strip().lower()
+                            if argument in ("", "on"):
+                                annotations_enabled = True
+                            elif argument == "off":
+                                annotations_enabled = False
+                            else:
+                                console.print("Usage: :annotate      – enable protocol annotations")
+                                console.print("       :annotate off  – disable them")
+                                continue
+                            console.print(f"Annotations: {'on' if annotations_enabled else 'off'}")
+                            continue
                         if trimmed.startswith(":"):
                             addressing = _parse_addressing(trimmed[1:])
                             if addressing is None:
@@ -1478,6 +1370,11 @@ def term(
                         if not payload:
                             console.print("SyntaxError: Invalid message format. Use hex bytes like: 0902")
                             continue
+
+                        if annotations_enabled:
+                            annotation = annotator.annotate_request(payload)
+                            if annotation:
+                                print_annotation(annotation)
 
                         client.send(channel, payload)
 
@@ -1500,9 +1397,10 @@ def term(
                                     responses.append(decoded)
                             for can_id, _ext, data in responses:
                                 print(_format_message(can_id, data))
-                                interpretation = _interpret_response(data)
-                                if interpretation:
-                                    print(f" info: {interpretation}")
+                                if annotations_enabled:
+                                    annotation = annotator.annotate_response(data)
+                                    if annotation:
+                                        print_annotation(annotation)
                             continue
 
                         # Unicast
@@ -1525,9 +1423,10 @@ def term(
                             continue
                         can_id, _ext, data = response
                         print(_format_message(can_id, data))
-                        interpretation = _interpret_response(data)
-                        if interpretation:
-                            print(f" info: {interpretation}")
+                        if annotations_enabled:
+                            annotation = annotator.annotate_response(data)
+                            if annotation:
+                                print_annotation(annotation)
                 finally:
                     try:
                         client.close_channel(channel, timeout=timeout)

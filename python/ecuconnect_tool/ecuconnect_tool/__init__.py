@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib
 
+__version__ = "1.0.0"
+
 try:
     canyonero = importlib.import_module(".canyonero_py", __name__)
 except Exception as exc:  # pragma: no cover
@@ -10,4 +12,4 @@ except Exception as exc:  # pragma: no cover
         "`python3 -m pip install -e ./python/ecuconnect_tool`"
     ) from exc
 
-__all__ = ["canyonero"]
+__all__ = ["canyonero", "__version__"]
