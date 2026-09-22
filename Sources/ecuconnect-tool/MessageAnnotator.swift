@@ -9,9 +9,29 @@ import Swift_Automotive_Client
 /// have yet live in `DiagnosticNames`.
 struct MessageAnnotator {
 
+    /// How much unwrapping a payload needs before it is a diagnostic PDU.
+    enum Framing {
+        /// The transport reassembles for us: ISO-TP, K-Line, TP2.0.
+        case pdu
+        /// Individual CAN frames, so any PDU is still wrapped in ISO-TP framing.
+        case rawFrames
+    }
+
+    let framing: Framing
+
+    init(framing: Framing = .pdu) {
+        self.framing = framing
+    }
+
     // MARK: - Requests
 
     func annotate(request bytes: [UInt8]) -> Annotation? {
+
+        guard self.framing == .pdu else { return self.annotateFrame(bytes, severity: .request) }
+        return self.annotatePDU(request: bytes)
+    }
+
+    private func annotatePDU(request bytes: [UInt8]) -> Annotation? {
 
         guard let sid = bytes.first else { return nil }
         let parameters = Array(bytes.dropFirst())
@@ -117,6 +137,12 @@ struct MessageAnnotator {
 
     func annotate(response message: Automotive.Message) -> Annotation? {
 
+        guard self.framing == .pdu else { return self.annotateFrame(message.bytes, severity: .ok) }
+        return self.annotatePDU(response: message)
+    }
+
+    private func annotatePDU(response message: Automotive.Message) -> Annotation? {
+
         let bytes = message.bytes
         guard let responseSid = bytes.first else { return nil }
 
@@ -214,7 +240,11 @@ struct MessageAnnotator {
                 return Self.dtcDetails([dtc], emptyNote: nil)
 
             case .invalid, .unknown, .oxygenSensorPositions, .performanceCounters:
-                break
+                // A few converters yield a typed status the generic response does
+                // not classify; their own descriptions are already localized.
+                if let status = Self.statusDescription(response.value) {
+                    return [.measurement(label: label, value: status)]
+                }
         }
 
         return [.field(label: "Parameter \(Self.hex(pid))", value: label)]
@@ -326,6 +356,58 @@ struct MessageAnnotator {
         }
     }
 
+    // MARK: - Raw CAN frames
+
+    private func annotateFrame(_ bytes: [UInt8], severity: Annotation.Severity) -> Annotation? {
+
+        guard let frame = ISOTPFrame(frame: bytes) else { return nil }
+
+        switch frame {
+            case .single(let payload):
+                // A single frame carries the whole PDU, so decode it as usual.
+                let pdu = MessageAnnotator(framing: .pdu)
+                let annotation = severity == .request
+                    ? pdu.annotate(request: payload)
+                    : pdu.annotate(response: Automotive.Message(addressing: .unicast(id: 0, reply: 0), bytes: payload))
+                guard let annotation else { return nil }
+                return Annotation(
+                    severity: annotation.severity,
+                    headline: annotation.headline,
+                    details: annotation.details + [.note("ISO-TP single frame, \(payload.count) byte(s)")]
+                )
+
+            case .first(let totalLength, let payload):
+                var details: [Annotation.Detail] = [.field(label: "Total length", value: "\(totalLength) bytes")]
+                if let sid = payload.first {
+                    details.append(.field(label: "Service", value: "\(Self.hex(sid)) \(DiagnosticNames.serviceName(sid & ~0x40))"))
+                }
+                details.append(.note("waiting for consecutive frames"))
+                return Annotation(severity: severity, headline: "ISO-TP first frame", details: details)
+
+            case .consecutive(let sequence, let payload):
+                return Annotation(
+                    severity: severity,
+                    headline: "ISO-TP consecutive frame #\(sequence)",
+                    details: [.note("\(payload.count) byte(s)")]
+                )
+
+            case .flowControl(let state, let blockSize, let separationTime):
+                let stateText = switch state {
+                    case .clearToSend: "clear to send"
+                    case .wait:        "wait"
+                    case .overflow:    "overflow — abort"
+                }
+                return Annotation(
+                    severity: state == .overflow ? .error : severity,
+                    headline: "ISO-TP flow control (\(stateText))",
+                    details: [
+                        .field(label: "Block size", value: blockSize == 0 ? "unlimited" : "\(blockSize)"),
+                        .field(label: "Separation time", value: ISOTPFrame.separationTimeDescription(separationTime)),
+                    ]
+                )
+        }
+    }
+
     // MARK: - Shared helpers
 
     private static func dtcDetails(_ dtcs: [Automotive.DTC], emptyNote: String?) -> [Annotation.Detail] {
@@ -341,6 +423,15 @@ struct MessageAnnotator {
                 explanation: DTCExplanations.explanation(for: dtc),
                 status: DiagnosticNames.statusFlags(dtc.state)
             )
+        }
+    }
+
+    private static func statusDescription(_ value: Any?) -> String? {
+        switch value {
+            case let status as OBD2.FuelSystemStatus:    status.description
+            case let status as OBD2.SecondaryAirStatus:  status.description
+            case let status as OBD2.AuxiliaryInputStatus: status.description
+            default: nil
         }
     }
 

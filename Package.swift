@@ -64,6 +64,10 @@ let package = Package(
                 "ObjC-CANyonero"
             ]
         ),
+        .testTarget(
+            name: "ecuconnect-tool-Tests",
+            dependencies: ["ecuconnect-tool"]
+        ),
         .executableTarget(
             name: "ecuconnect-tool",
             dependencies: [

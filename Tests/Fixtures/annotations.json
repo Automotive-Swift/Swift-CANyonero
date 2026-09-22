@@ -1,0 +1,605 @@
+{
+  "_comment": "Golden fixtures shared by the Swift and Python annotators. Rendered lines are colorless; regenerate with python/ecuconnect_tool/scripts/generate_annotation_fixtures.py after reviewing the diff.",
+  "cases": [
+    {
+      "name": "obd2-rpm",
+      "framing": "pdu",
+      "request": "010C",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 0C: Engine RPM"
+      ],
+      "response": "410C0CB5",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Engine RPM: 813.25 RPM"
+      ]
+    },
+    {
+      "name": "obd2-coolant-temperature",
+      "framing": "pdu",
+      "request": "0105",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 05: Engine Coolant Temperature"
+      ],
+      "response": "41055A",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Engine Coolant Temperature: 50 °C"
+      ]
+    },
+    {
+      "name": "obd2-multi-pid-request",
+      "framing": "pdu",
+      "request": "010C0D05",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 0C: Engine RPM",
+        "     PID 0D: Vehicle Speed",
+        "     PID 05: Engine Coolant Temperature"
+      ]
+    },
+    {
+      "name": "obd2-supported-pids",
+      "framing": "pdu",
+      "request": "0100",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 00: Supported PIDs (0x00-0x1F)"
+      ],
+      "response": "4100BE3EB811",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Supported PIDs (0x00-0x1F): 01 03 04 05 06 07 0B 0C 0D 0E 0F 11 13 14 15 1C 20"
+      ]
+    },
+    {
+      "name": "obd2-fuel-system-status",
+      "framing": "pdu",
+      "request": "0103",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 03: Fuel System Status"
+      ],
+      "response": "41030200",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Fuel System Status: System 1: Closed loop; using oxygen sensor feedback to determine fuel mix; System 2: Not available"
+      ]
+    },
+    {
+      "name": "obd2-secondary-air-status",
+      "framing": "pdu",
+      "request": "0112",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 12: Secondary Air Status"
+      ],
+      "response": "411204",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Secondary Air Status: From the outside atmosphere or off"
+      ]
+    },
+    {
+      "name": "obd2-auxiliary-input-status",
+      "framing": "pdu",
+      "request": "011E",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 1E: Auxiliary Input Status"
+      ],
+      "response": "411E01",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Auxiliary Input Status: Power Take Off active"
+      ]
+    },
+    {
+      "name": "obd2-vehicle-speed",
+      "framing": "pdu",
+      "request": "010D",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 0D: Vehicle Speed"
+      ],
+      "response": "410D64",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Vehicle Speed: 100 km/h"
+      ]
+    },
+    {
+      "name": "obd2-control-module-voltage",
+      "framing": "pdu",
+      "request": "0142",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 42: Control Module Voltage"
+      ],
+      "response": "41423A98",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Control Module Voltage: 15 V"
+      ]
+    },
+    {
+      "name": "obd2-maf",
+      "framing": "pdu",
+      "request": "0110",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 10: MAF Air Flow Rate"
+      ],
+      "response": "41100AF0",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     MAF Air Flow Rate: 28 g/s"
+      ]
+    },
+    {
+      "name": "obd2-obd-standard",
+      "framing": "pdu",
+      "request": "011C",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 1C: Standards Compliance"
+      ],
+      "response": "411C01",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Standards Compliance: OBD-II as defined by the CARB"
+      ]
+    },
+    {
+      "name": "obd2-fuel-trim",
+      "framing": "pdu",
+      "request": "0106",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 06: Short Term Fuel Trim - Bank 1"
+      ],
+      "response": "410670",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Short Term Fuel Trim - Bank 1: -12.5 %"
+      ]
+    },
+    {
+      "name": "obd2-timing-advance",
+      "framing": "pdu",
+      "request": "010E",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 0E: Timing Advance"
+      ],
+      "response": "410E90",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Timing Advance: 8 °"
+      ]
+    },
+    {
+      "name": "obd2-vin",
+      "framing": "pdu",
+      "request": "0902",
+      "expectedRequest": [
+        " »  09 Request Vehicle Information",
+        "     Info type 02: Vehicle Identification Number (VIN)"
+      ],
+      "response": "4902015742413341354335314446313233343536",
+      "expectedResponse": [
+        " ✓  49 Request Vehicle Information",
+        "     Vehicle Identification Number (VIN): WBA3A5C51DF123456"
+      ]
+    },
+    {
+      "name": "obd2-calibration-ids",
+      "framing": "pdu",
+      "request": "0904",
+      "expectedRequest": [
+        " »  09 Request Vehicle Information",
+        "     Info type 04: Calibration IDs"
+      ],
+      "response": "49040143414C2D49442D310043414C2D49442D32",
+      "expectedResponse": [
+        " ✓  49 Request Vehicle Information",
+        "     Calibration IDs: CAL-ID-1",
+        "     Calibration IDs: CAL-ID-2"
+      ]
+    },
+    {
+      "name": "obd2-stored-dtcs",
+      "framing": "pdu",
+      "request": "03",
+      "expectedRequest": [
+        " »  03 Show Stored DTCs"
+      ],
+      "response": "430201330420",
+      "expectedResponse": [
+        " ✓  43 Show Stored DTCs",
+        "     P0133 — O2 Sensor Circuit Slow Response (Bank 1 Sensor 1)",
+        "     P0420 — Catalyst System Efficiency Below Threshold (Bank 1)"
+      ]
+    },
+    {
+      "name": "obd2-no-dtcs",
+      "framing": "pdu",
+      "request": "03",
+      "expectedRequest": [
+        " »  03 Show Stored DTCs"
+      ],
+      "response": "4300",
+      "expectedResponse": [
+        " ✓  43 Show Stored DTCs",
+        "     no trouble codes reported"
+      ]
+    },
+    {
+      "name": "obd2-pending-dtcs",
+      "framing": "pdu",
+      "request": "07",
+      "expectedRequest": [
+        " »  07 Show Pending DTCs"
+      ],
+      "response": "47010171",
+      "expectedResponse": [
+        " ✓  47 Show Pending DTCs",
+        "     P0171 — System Too Lean (Bank 1)"
+      ]
+    },
+    {
+      "name": "obd2-clear-dtcs",
+      "framing": "pdu",
+      "request": "04",
+      "expectedRequest": [
+        " »  04 Clear DTCs"
+      ],
+      "response": "44",
+      "expectedResponse": [
+        " ✓  44 Clear DTCs",
+        "     trouble codes and freeze frame data cleared"
+      ]
+    },
+    {
+      "name": "uds-session-control",
+      "framing": "pdu",
+      "request": "1003",
+      "expectedRequest": [
+        " »  10 Diagnostic Session Control",
+        "     Sub-function: extended"
+      ],
+      "response": "5003003201F4",
+      "expectedResponse": [
+        " ✓  50 Diagnostic Session Control",
+        "     Session: extended",
+        "     Timings: P2 = 50 ms, P2* = 5000 ms"
+      ]
+    },
+    {
+      "name": "uds-ecu-reset",
+      "framing": "pdu",
+      "request": "1101",
+      "expectedRequest": [
+        " »  11 ECU Reset",
+        "     Sub-function: hardReset"
+      ],
+      "response": "5101",
+      "expectedResponse": [
+        " ✓  51 ECU Reset",
+        "     Sub-function: hardReset"
+      ]
+    },
+    {
+      "name": "uds-read-vin-by-did",
+      "framing": "pdu",
+      "request": "22F190",
+      "expectedRequest": [
+        " »  22 Read Data By Identifier",
+        "     DID 0xF190: VIN"
+      ],
+      "response": "62F1905742413341354335314446313233343536",
+      "expectedResponse": [
+        " ✓  62 Read Data By Identifier",
+        "     DID 0xF190: VIN",
+        "     Value: \"WBA3A5C51DF123456\""
+      ]
+    },
+    {
+      "name": "uds-vendor-did",
+      "framing": "pdu",
+      "request": "221234",
+      "expectedRequest": [
+        " »  22 Read Data By Identifier",
+        "     DID 0x1234: vendor-specific"
+      ],
+      "response": "621234DEADBEEF",
+      "expectedResponse": [
+        " ✓  62 Read Data By Identifier",
+        "     DID 0x1234: vendor-specific",
+        "     Value: DE AD BE EF"
+      ]
+    },
+    {
+      "name": "uds-write-did",
+      "framing": "pdu",
+      "request": "2EF19920260922",
+      "expectedRequest": [
+        " »  2E Write Data By Identifier",
+        "     DID 0xF199: Programming date",
+        "     Value: 20 26 09 22"
+      ],
+      "response": "6EF199",
+      "expectedResponse": [
+        " ✓  6E Write Data By Identifier",
+        "     DID 0xF199: Programming date",
+        "     written"
+      ]
+    },
+    {
+      "name": "uds-security-access",
+      "framing": "pdu",
+      "request": "2701",
+      "expectedRequest": [
+        " »  27 Security Access",
+        "     Security access: Request seed, level 1"
+      ],
+      "response": "670111223344",
+      "expectedResponse": [
+        " ✓  67 Security Access",
+        "     Security access: seed for level 1",
+        "     Seed: 11 22 33 44"
+      ]
+    },
+    {
+      "name": "uds-security-send-key",
+      "framing": "pdu",
+      "request": "2702AABB",
+      "expectedRequest": [
+        " »  27 Security Access",
+        "     Security access: Send key, level 1"
+      ],
+      "response": "6702",
+      "expectedResponse": [
+        " ✓  67 Security Access",
+        "     Security access: key accepted, level 1"
+      ]
+    },
+    {
+      "name": "uds-routine-control",
+      "framing": "pdu",
+      "request": "3101FF00",
+      "expectedRequest": [
+        " »  31 Routine Control",
+        "     Sub-function: startRoutine",
+        "     Routine: 0xFF00"
+      ],
+      "response": "7101FF0000",
+      "expectedResponse": [
+        " ✓  71 Routine Control",
+        "     Sub-function: startRoutine",
+        "     Routine: 0xFF00",
+        "     Status: 00"
+      ]
+    },
+    {
+      "name": "uds-tester-present-suppressed",
+      "framing": "pdu",
+      "request": "3E80",
+      "expectedRequest": [
+        " »  3E Tester Present",
+        "     Sub-function: doNotRespond",
+        "     positive response suppressed"
+      ]
+    },
+    {
+      "name": "uds-communication-control",
+      "framing": "pdu",
+      "request": "280301",
+      "expectedRequest": [
+        " »  28 Communication Control",
+        "     Sub-function: disableRxAndTx"
+      ],
+      "response": "6803",
+      "expectedResponse": [
+        " ✓  68 Communication Control",
+        "     Sub-function: disableRxAndTx"
+      ]
+    },
+    {
+      "name": "uds-control-dtc-setting",
+      "framing": "pdu",
+      "request": "8502",
+      "expectedRequest": [
+        " »  85 Control DTC Setting",
+        "     Sub-function: off"
+      ],
+      "response": "C502",
+      "expectedResponse": [
+        " ✓  C5 Control DTC Setting",
+        "     Sub-function: off"
+      ]
+    },
+    {
+      "name": "uds-read-dtc-by-status-mask",
+      "framing": "pdu",
+      "request": "19028C",
+      "expectedRequest": [
+        " »  19 Read DTC Information",
+        "     Sub-function: reportDTCByStatusMask"
+      ],
+      "response": "59024FCD04200C801C600F",
+      "expectedResponse": [
+        " ✓  59 Read DTC Information",
+        "     Report type: reportDTCByStatusMask",
+        "     U0D0420 — Network • Generic (SAE) • Vendor Specific – System internal failures [pending, confirmed]",
+        "     B001C60 — Body • Generic (SAE) • Circuit voltage out of range [testFailed, testFailedThisCycle, pending, confirmed]"
+      ]
+    },
+    {
+      "name": "uds-read-dtc-count",
+      "framing": "pdu",
+      "request": "19018C",
+      "expectedRequest": [
+        " »  19 Read DTC Information",
+        "     Sub-function: reportNumberOfDTCByStatusMask"
+      ],
+      "response": "5901FF010003",
+      "expectedResponse": [
+        " ✓  59 Read DTC Information",
+        "     Report type: reportNumberOfDTCByStatusMask",
+        "     Matching DTCs: 3"
+      ]
+    },
+    {
+      "name": "uds-request-download",
+      "framing": "pdu",
+      "request": "3400440000100000002000",
+      "expectedRequest": [
+        " »  34 Request Download",
+        "     Data format: 00",
+        "     Address/length format: 44"
+      ],
+      "response": "74200402",
+      "expectedResponse": [
+        " ✓  74 Request Download",
+        "     Max block length: 1026 bytes"
+      ]
+    },
+    {
+      "name": "uds-transfer-data",
+      "framing": "pdu",
+      "request": "3601AABB",
+      "expectedRequest": [
+        " »  36 Transfer Data",
+        "     Block sequence counter: 1"
+      ],
+      "response": "7601",
+      "expectedResponse": [
+        " ✓  76 Transfer Data",
+        "     Block sequence counter: 1"
+      ]
+    },
+    {
+      "name": "nrc-security-access-denied",
+      "framing": "pdu",
+      "response": "7F2233",
+      "expectedResponse": [
+        " ✗  Negative response",
+        "     Service: 22 Read Data By Identifier",
+        "     NRC 33: Security Access Denied"
+      ]
+    },
+    {
+      "name": "nrc-response-pending",
+      "framing": "pdu",
+      "response": "7F3178",
+      "expectedResponse": [
+        " …  Response pending",
+        "     Service: 31 Routine Control",
+        "     NRC 78: Request Correctly Received — Response Pending"
+      ]
+    },
+    {
+      "name": "nrc-service-not-supported",
+      "framing": "pdu",
+      "response": "7F1911",
+      "expectedResponse": [
+        " ✗  Negative response",
+        "     Service: 19 Read DTC Information",
+        "     NRC 11: Service Not Supported"
+      ]
+    },
+    {
+      "name": "nrc-truncated",
+      "framing": "pdu",
+      "response": "7F22",
+      "expectedResponse": [
+        " ✗  Negative response (truncated)"
+      ]
+    },
+    {
+      "name": "non-diagnostic-payload",
+      "framing": "pdu",
+      "response": "1234",
+      "expectedResponse": [
+        " !  Unrecognized payload",
+        "     first byte 12 is neither a positive nor a negative response"
+      ]
+    },
+    {
+      "name": "raw-single-frame-rpm",
+      "framing": "raw",
+      "request": "02010C",
+      "expectedRequest": [
+        " »  01 Show Current Data",
+        "     PID 0C: Engine RPM",
+        "     ISO-TP single frame, 2 byte(s)"
+      ],
+      "response": "04410C0CB5555555",
+      "expectedResponse": [
+        " ✓  41 Show Current Data",
+        "     Engine RPM: 813.25 RPM",
+        "     ISO-TP single frame, 4 byte(s)"
+      ]
+    },
+    {
+      "name": "raw-single-frame-nrc",
+      "framing": "raw",
+      "response": "037F223355555555",
+      "expectedResponse": [
+        " ✗  Negative response",
+        "     Service: 22 Read Data By Identifier",
+        "     NRC 33: Security Access Denied",
+        "     ISO-TP single frame, 3 byte(s)"
+      ]
+    },
+    {
+      "name": "raw-first-frame",
+      "framing": "raw",
+      "response": "1014490201574241",
+      "expectedResponse": [
+        " ✓  ISO-TP first frame",
+        "     Total length: 20 bytes",
+        "     Service: 49 Request Vehicle Information",
+        "     waiting for consecutive frames"
+      ]
+    },
+    {
+      "name": "raw-consecutive-frame",
+      "framing": "raw",
+      "response": "2133413543353144",
+      "expectedResponse": [
+        " ✓  ISO-TP consecutive frame #1",
+        "     7 byte(s)"
+      ]
+    },
+    {
+      "name": "raw-flow-control",
+      "framing": "raw",
+      "request": "30000A5555555555",
+      "expectedRequest": [
+        " »  ISO-TP flow control (clear to send)",
+        "     Block size: unlimited",
+        "     Separation time: 10 ms"
+      ]
+    },
+    {
+      "name": "raw-flow-control-overflow",
+      "framing": "raw",
+      "response": "3200F1",
+      "expectedResponse": [
+        " ✗  ISO-TP flow control (overflow — abort)",
+        "     Block size: unlimited",
+        "     Separation time: 100 µs"
+      ]
+    },
+    {
+      "name": "raw-not-isotp",
+      "framing": "raw",
+      "response": "DEADBEEF",
+      "expectedResponse": []
+    }
+  ]
+}

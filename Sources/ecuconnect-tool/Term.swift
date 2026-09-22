@@ -26,9 +26,7 @@ fileprivate class REPL {
     private var historyPath: String?
     private var lastAddressing: Automotive.Addressing?
     private var payloadProtocol: Automotive.PayloadProtocol
-    private let annotator: MessageAnnotator = .init()
-    /// Annotations assume the payload is a complete diagnostic PDU, which only
-    /// holds once the transport has reassembled it — hence ISO-TP only by default.
+    private let annotator: MessageAnnotator
     var annotationsEnabled: Bool
 
     static let allowedCharacterSet = CharacterSet(charactersIn: "0123456789ABCDEFabcdefxX:,/").inverted
@@ -36,10 +34,15 @@ fileprivate class REPL {
     init(
         defaultAddressing: Automotive.Addressing? = nil,
         channelProtocol: ECUconnect.ChannelProtocol,
-        payloadProtocol overridePayloadProtocol: Automotive.PayloadProtocol? = nil
+        payloadProtocol overridePayloadProtocol: Automotive.PayloadProtocol? = nil,
+        annotationsEnabled: Bool = true
     ) {
         self.lastAddressing = defaultAddressing
-        self.annotationsEnabled = channelProtocol == .isotp || channelProtocol == .isotpFD
+        self.annotationsEnabled = annotationsEnabled
+        // Raw channels hand us single CAN frames, so any PDU there is still
+        // wrapped in ISO-TP framing and has to be unwrapped before decoding.
+        let isRaw = channelProtocol == .raw || channelProtocol == .rawFD
+        self.annotator = .init(framing: isRaw ? .rawFrames : .pdu)
         if let overridePayloadProtocol {
             self.payloadProtocol = overridePayloadProtocol
         } else {
@@ -398,6 +401,9 @@ struct Term: ParsableCommand {
     @Flag(name: .long, help: "Skip TP2.0 fixed-ID setup and open only the dynamic TP2.0 channel.")
     var noTP20Setup: Bool = false
 
+    @Flag(name: .long, help: "Do not annotate requests and responses.")
+    var noAnnotate: Bool = false
+
     private static func parseUnsignedInteger(_ rawValue: String, optionName: String, max: UInt64) throws -> UInt64 {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let value: UInt64?
@@ -472,6 +478,7 @@ struct Term: ParsableCommand {
 
         let tp20SetupTimeoutMs = self.tp20SetupTimeoutMs
         let tp20SetupRetries = self.tp20SetupRetries
+        let annotationsDisabled = self.noAnnotate
 
         Task {
             do {
@@ -529,14 +536,14 @@ struct Term: ParsableCommand {
                 print("  :filter        - Enable auto response filtering (SID + 0x40)")
                 print("  :filter 62,6A  - Filter for specific response bytes")
                 print("  :filter off    - Disable response filtering")
-                print("  :annotate      - Annotate requests and responses (:annotate off to disable)")
+                print("  :annotate off  - Turn protocol annotations off (:annotate turns them back on)")
                 print("  0902           - Send hex data with current addressing")
                 print("  quit           - Exit")
                 if channelProto == .tp20, negotiatedTP20Channel == nil {
                     print("  Note: TP2.0 requires negotiated dynamic CAN IDs. Set them manually, e.g. :740,300")
                 }
-                if channelProto != .isotp, channelProto != .isotpFD {
-                    print("  Note: annotations are off, because only ISO-TP hands us complete PDUs. Enable with :annotate.")
+                if channelProto == .raw || channelProto == .rawFD {
+                    print("  Note: on raw channels, annotations decode the ISO-TP framing of each CAN frame.")
                 }
                 print("")
 
@@ -549,7 +556,8 @@ struct Term: ParsableCommand {
                 let repl = REPL(
                     defaultAddressing: defaultAddressing,
                     channelProtocol: channelProto,
-                    payloadProtocol: replPayloadProtocol
+                    payloadProtocol: replPayloadProtocol,
+                    annotationsEnabled: !annotationsDisabled
                 )
 
                 while true {

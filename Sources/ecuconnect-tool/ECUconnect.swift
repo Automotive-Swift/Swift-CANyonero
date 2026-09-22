@@ -42,11 +42,14 @@ func parseECUconnectURL(_ endpoint: String) throws -> URL {
 @main
 struct ECUconnectCommand: ParsableCommand {
 
-    static var _commandName: String = "ecuconnect-tool"
+    /// Derived from argv[0] so that usage text matches however the binary was
+    /// installed — it commonly sits next to the Python variant of this tool.
+    static var _commandName: String = ProcessInfo.processInfo.arguments.first
+        .map { URL(fileURLWithPath: $0).lastPathComponent } ?? "ecuconnect-tool"
 
     static var configuration = CommandConfiguration(
-        abstract: "A tool for the ECUconnect OBD2 adapter.",
-        version: "0.9.7",
+        abstract: "ECUconnect tool (Swift) for CANyonero adapters",
+        version: "1.0.0 (Swift)",
         subcommands: [
             Benchmark.self,
             Config.self,
