@@ -15,6 +15,7 @@ from typing import List, Optional
 
 import typer
 from rich.console import Console
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn
 from rich.table import Table
 
 from . import __version__, canyonero
@@ -1807,6 +1808,82 @@ def test(
         console.print("Test failed.")
         raise typer.Exit(code=1)
     console.print("Test passed.")
+
+
+@app.command()
+def update(
+    ctx: typer.Context,
+    filename: Path = typer.Argument(..., help="Firmware image to upload."),
+    chunk_size: int = typer.Option(4000, "--chunk-size", help="Bytes per update PDU."),
+    reconnect_delay: float = typer.Option(3.0, "--reconnect-delay", help="Seconds to wait before reconnecting."),
+    timeout: float = typer.Option(10.0, help="Per-step response timeout in seconds."),
+) -> None:
+    """Update firmware."""
+    endpoint = ctx.obj["endpoint"]
+    rx_buffer = ctx.obj["rx_buffer"]
+    tx_buffer = ctx.obj["tx_buffer"]
+
+    if not filename.is_file():
+        console.print(f"[red]Can't find file '{filename}'.[/red]")
+        raise typer.Exit(code=1)
+    image = filename.read_bytes()
+    if not image:
+        console.print(f"[red]'{filename}' is empty.[/red]")
+        raise typer.Exit(code=1)
+    if chunk_size < 1:
+        console.print("[red]--chunk-size must be at least 1.[/red]")
+        raise typer.Exit(code=1)
+
+    client = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
+    try:
+        _connect_with_spinner(client, endpoint)
+        with client:
+            info = client.request_info()
+            voltage = client.read_voltage()
+            console.print(f"Connected to ECUconnect: {info.vendor} {info.model} ({info.firmware}).")
+            console.print(f"Reported system voltage is {voltage:.2f}V.")
+            console.print(f"Uploading {filename.name} ({len(image)} bytes) in {chunk_size}-byte chunks.")
+
+            client.prepare_update(timeout=timeout)
+
+            chunks = [image[offset:offset + chunk_size] for offset in range(0, len(image), chunk_size)]
+            with Progress(
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
+                task = progress.add_task("Uploading firmware", total=len(image))
+                for chunk in chunks:
+                    client.send_update_data(chunk, timeout=timeout)
+                    progress.advance(task, len(chunk))
+
+            client.commit_update(timeout=timeout)
+            console.print("Uploading complete, resetting hardware.")
+            client.reset(timeout=timeout)
+    except (TimeoutError, py_socket.timeout):
+        console.print("[red]Timed out talking to the adapter. The firmware may be partially written — "
+                      "power-cycle the adapter and retry before using it.[/red]")
+        raise typer.Exit(code=1)
+    except (RuntimeError, OSError) as exc:
+        console.print(f"[red]Firmware update failed: {exc}[/red]")
+        raise typer.Exit(code=1)
+
+    time.sleep(reconnect_delay)
+    client = EcuconnectClient(endpoint=endpoint, rx_buffer=rx_buffer, tx_buffer=tx_buffer)
+    try:
+        _connect_with_spinner(client, endpoint)
+        with client:
+            info = client.request_info()
+        console.print(f"Connected to ECUconnect: {info.vendor} {info.model} ({info.firmware}).")
+    except (TimeoutError, py_socket.timeout, RuntimeError, OSError) as exc:
+        # The image is committed at this point; a failed reconnect is usually the
+        # adapter still rebooting, not a failed update.
+        console.print(f"[yellow]Update committed, but reconnecting failed: {exc}[/yellow]")
+        console.print("Give the adapter a moment and run `info` to confirm the new firmware.")
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

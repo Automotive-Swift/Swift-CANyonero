@@ -36,7 +36,29 @@ ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 term 500000 --proto raw
 ecuconnect-tool monitor --bitrate 500000
 ecuconnect-tool send "02 3E 80" --tx-id 0x123 --rx-id 0x321
 ecuconnect-tool test --can-interface can0 --busload 1 --duration 5
+ecuconnect-tool update firmware.bin
 ```
+
+## Firmware update
+
+`ecuconnect-tool update <image>` uploads a firmware image and reboots the
+adapter:
+
+```
+Connected to ECUconnect: ACME ECUconnect (1.2.3).
+Reported system voltage is 12.60V.
+Uploading firmware.bin (245760 bytes) in 4000-byte chunks.
+Uploading complete, resetting hardware.
+Connected to ECUconnect: ACME ECUconnect (1.3.0).
+```
+
+Every chunk is acknowledged before the next one is sent, and a refusal from the
+adapter aborts the upload instead of running into the timeout. Use
+`--chunk-size` if the transport needs smaller PDUs, and `--reconnect-delay` if
+the adapter takes longer than three seconds to come back.
+
+Do not interrupt an update in progress: the image is written as it arrives, so
+an adapter that is reset midway needs a repeat update before it is usable.
 
 ## TP2.0 terminal behavior
 

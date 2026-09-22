@@ -103,6 +103,19 @@ class PDUStream:
         return pdus
 
 
+#: An `ok`, or one of the ways the adapter says no.
+_ACKNOWLEDGEMENT_TYPES = (
+    canyonero.PDUType.ok,
+    canyonero.PDUType.error_unspecified,
+    canyonero.PDUType.error_hardware,
+    canyonero.PDUType.error_invalid_channel,
+    canyonero.PDUType.error_invalid_periodic,
+    canyonero.PDUType.error_no_response,
+    canyonero.PDUType.error_invalid_rpc,
+    canyonero.PDUType.error_invalid_command,
+)
+
+
 class EcuconnectClient:
     def __init__(
         self,
@@ -272,7 +285,26 @@ class EcuconnectClient:
 
     def reset(self, timeout: float = 2.0) -> None:
         self.send_pdu(canyonero.PDU.reset())
-        _ = self.wait_for(lambda p: p.type == canyonero.PDUType.ok, timeout)
+        self._expect_ok(timeout, "reset")
+
+    def prepare_update(self, timeout: float = 10.0) -> None:
+        self.send_pdu(canyonero.PDU.prepare_for_update())
+        self._expect_ok(timeout, "prepare the firmware update")
+
+    def send_update_data(self, data: bytes, timeout: float = 10.0) -> None:
+        self.send_pdu(canyonero.PDU.send_update_data(data))
+        self._expect_ok(timeout, "accept firmware data")
+
+    def commit_update(self, timeout: float = 10.0) -> None:
+        self.send_pdu(canyonero.PDU.commit_update())
+        self._expect_ok(timeout, "commit the firmware update")
+
+    def _expect_ok(self, timeout: float, what: str) -> None:
+        """Wait for an acknowledgement, and report a refusal as such instead of
+        letting the caller wait out the timeout."""
+        pdu = self.wait_for(lambda p: p.type in _ACKNOWLEDGEMENT_TYPES, timeout)
+        if pdu.type != canyonero.PDUType.ok:
+            raise RuntimeError(f"Adapter did not {what}: {pdu.type}")
 
     def rpc_call(self, method: str, params: Optional[dict] = None, timeout: float = 2.0) -> dict:
         if params is None:
