@@ -219,7 +219,7 @@
       "response": "430201330420",
       "expectedResponse": [
         " ✓  43 Show Stored DTCs",
-        "     P0133 — O2 Sensor Circuit Slow Response (Bank 1 Sensor 1)",
+        "     P0133 — O2 Sensor Slow Response (Bank 1, Sensor 1)",
         "     P0420 — Catalyst System Efficiency Below Threshold (Bank 1)"
       ]
     },

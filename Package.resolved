@@ -105,7 +105,7 @@
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
         "branch" : "master",
-        "revision" : "b7fc4f0153165c502e53db67381ff38dabd1f3e9"
+        "revision" : "6a5d1f83c143a46f85cca62d0b0bd8a109d0423a"
       }
     },
     {
