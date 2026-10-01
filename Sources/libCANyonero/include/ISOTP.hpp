@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
+#include <new>
 #include <string>
 #include <vector>
 #include <utility>
@@ -22,6 +23,24 @@ constexpr size_t maximumTransferSize = 0xFFF; // 4095 bytes
 constexpr uint8_t standardFrameWidth = 8;
 constexpr uint8_t extendedFrameWidth = 7;
 constexpr uint8_t padding = 0xAA;
+
+// A peer's advertised length must not let a failed large reservation escape
+// into an embedded receive task. Existing builds without exceptions retain
+// their allocator's failure policy.
+inline bool prepareReceiveBuffer(Bytes& payload, size_t length) {
+    payload.clear();
+#if defined(__cpp_exceptions)
+    try {
+        payload.reserve(length);
+    } catch (const std::bad_alloc&) {
+        Bytes{}.swap(payload);
+        return false;
+    }
+#else
+    payload.reserve(length);
+#endif
+    return true;
+}
 
 constexpr uint8_t singleFramePayloadCapacity(uint8_t width) {
     return static_cast<uint8_t>(width - 1);
@@ -513,8 +532,10 @@ private:
 
                 auto pduLength = frame.firstLength();
                 if (pduLength < width) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < frame width." }; }
-                receivingPayload.clear();
-                receivingPayload.reserve(pduLength);
+                if (!prepareReceiveBuffer(receivingPayload, pduLength)) {
+                    reset();
+                    return { Action::Type::protocolViolation, "RX out of RAM" };
+                }
                 receivingPayload.insert(receivingPayload.end(), bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - (width - 2);
                 receivingUnconfirmedFramesCounter = blockSize;

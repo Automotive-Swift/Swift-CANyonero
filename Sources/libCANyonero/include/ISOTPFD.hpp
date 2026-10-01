@@ -409,8 +409,10 @@ private:
                     return { Action::Type::protocolViolation, "Did receive FIRST with invalid length <= first-frame payload." };
                 }
 
-                receivingPayload.clear();
-                receivingPayload.reserve(pduLength);
+                if (!prepareReceiveBuffer(receivingPayload, pduLength)) {
+                    reset();
+                    return { Action::Type::protocolViolation, "RX out of RAM" };
+                }
                 receivingPayload.insert(receivingPayload.end(), bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - firstPayloadLength;
                 receivingUnconfirmedFramesCounter = blockSize == 0 ? std::numeric_limits<uint16_t>::max() : blockSize;
