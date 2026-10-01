@@ -153,7 +153,7 @@ static std::vector<uint8_t> payloadForLength(size_t length, uint8_t base = 0x10)
     auto emitted = std::vector<std::vector<uint8_t>> {};
     auto moreFlags = std::vector<bool> {};
     auto flowControl = std::vector<uint8_t> { 0x30, 0x20, 0x00 };
-    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint16_t separationTime, bool hasMore) {
+    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint32_t separationTime, bool hasMore) {
         XCTAssertEqual(separationTime, 300);
         emitted.emplace_back(std::move(frame.bytes));
         moreFlags.emplace_back(hasMore);

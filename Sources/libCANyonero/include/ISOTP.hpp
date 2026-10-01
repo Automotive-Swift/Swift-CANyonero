@@ -175,12 +175,12 @@ struct Frame {
     }
 
     /// Returns ST in microseconds.
-    uint16_t separationTime() {
+    uint32_t separationTime() {
         assert((bytes[0] & 0xF0) == 0x30); // ensure this is a flow control frame
         return separationTimeToMicroseconds(bytes[2]);
     }
     
-    static uint16_t separationTimeToMicroseconds(SeparationTime stMin) {
+    static uint32_t separationTimeToMicroseconds(SeparationTime stMin) {
         // Conversion as defined by ISO-15765-2:2016:
         // 1. Up to (and including) 0x7F, it's milliseconds.
         if (stMin < 0x80) { return stMin * 1000; }
@@ -276,7 +276,7 @@ public:
         /// Frames to write to the CAN bus (if type is ``writeFrames``).
         std::deque<Frame> frames;
         /// Separation time in microseconds (if type is ``writeFrames``).
-        uint16_t separationTime;
+        uint32_t separationTime;
     };
 
     /// Create a ``Transceiver`` with a default configuration.
@@ -327,10 +327,10 @@ public:
     /// Call this for any incoming frame.
     Action didReceiveFrame(const Bytes& bytes) {
         if (state != State::sending) {
-            return didReceiveFrameStreaming(bytes, [](Frame&&, uint16_t, bool) {});
+            return didReceiveFrameStreaming(bytes, [](Frame&&, uint32_t, bool) {});
         }
         auto streamedFrames = std::deque<Frame> {};
-        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint16_t, bool) {
+        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint32_t, bool) {
             streamedFrames.emplace_back(std::move(frame));
         });
         if (!streamedFrames.empty()) {
@@ -446,7 +446,7 @@ private:
                     reset();
                     return { Action::Type::protocolViolation, "Sending payload offset exceeds payload size." };
                 }
-                const auto separationTime = std::max(frame.separationTime(), txSeparationTime);
+                const auto separationTime = std::max<uint32_t>(frame.separationTime(), txSeparationTime);
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
                     const auto remaining = sendingPayload.size() - sendingPayloadOffset;
                     if (remaining == 0) {
@@ -513,7 +513,9 @@ private:
 
                 auto pduLength = frame.firstLength();
                 if (pduLength < width) { return { Action::Type::protocolViolation, "Did receive FIRST with invalid length < frame width." }; }
-                receivingPayload = std::vector<uint8_t>(bytes.begin() + 2, bytes.end());
+                receivingPayload.clear();
+                receivingPayload.reserve(pduLength);
+                receivingPayload.insert(receivingPayload.end(), bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - (width - 2);
                 receivingUnconfirmedFramesCounter = blockSize;
                 if (receivingUnconfirmedFramesCounter == 0) {
@@ -541,7 +543,7 @@ private:
                 if (receivingPendingCounter == 0) {
                     auto action = Action {
                         .type = Action::Type::process,
-                        .data = receivingPayload
+                        .data = std::move(receivingPayload)
                     };
                     reset();
                     return action;

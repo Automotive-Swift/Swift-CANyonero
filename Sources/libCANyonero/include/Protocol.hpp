@@ -254,8 +254,12 @@ public:
     PDU(const PDUType type, const std::vector<uint8_t>& payload): _type(type), _length(static_cast<uint16_t>(payload.size())), _payload(payload) {
         //printf("Creating packet with type %02X and payload length %d\n", uint8_t(_type), _payload.size());
     };
+    /// Adopt an already-built payload without a second allocation on embedded devices.
+    PDU(const PDUType type, Bytes&& payload): _type(type), _length(static_cast<uint16_t>(payload.size())), _payload(std::move(payload)) {};
     PDU(const Bytes& frame);
     const Bytes frame() const;
+    /// Consume the PDU and reuse its payload buffer for the wire frame.
+    Bytes takeFrame() &&;
 
     /// Returns the PDU type.
     PDUType type() const { return _type; }

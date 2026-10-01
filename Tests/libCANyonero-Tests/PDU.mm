@@ -91,6 +91,31 @@ using namespace CANyonero;
     XCTAssertTrue(std::equal(payload.begin(), payload.end(), data.begin()));
 }
 
+- (void)testMaximumClassicISOTPReceivedFrameRoundTrip {
+    Bytes input(4095);
+    for (size_t i = 0; i < input.size(); ++i) input[i] = static_cast<uint8_t>(i * 37);
+    auto pdu = PDU::received(3, 0x18DAF900, 0, input);
+    auto wire = pdu.frame();
+    XCTAssertEqual(wire.size(), input.size() + 10);
+    auto decoded = PDU(wire);
+    XCTAssertEqual(decoded.type(), PDUType::received);
+    XCTAssertEqual(decoded.channel(), 3);
+    XCTAssertTrue(decoded.data() == input);
+    XCTAssertEqual(input.size(), 4095); // Caller retains its ECU payload.
+}
+
+- (void)testConsumingFrameMatchesCopyingFrame {
+    for (size_t length : {0u, 1u, 255u, 256u, 1024u, 4095u}) {
+        Bytes data(length, 0xA5);
+        auto received = PDU::received(3, 0x18DAF900, 0, data);
+        const auto expected = received.frame();
+        XCTAssertTrue(std::move(received).takeFrame() == expected);
+        auto pong = PDU::pong(data);
+        const auto expectedPong = pong.frame();
+        XCTAssertTrue(std::move(pong).takeFrame() == expectedPong);
+    }
+}
+
 - (void)testContainsPDUScenarios {
     CANyonero::Bytes garbage = { 0x00, 0x00, 0x00 };
     XCTAssertEqual(CANyonero::PDU::scanBuffer(garbage), -3);

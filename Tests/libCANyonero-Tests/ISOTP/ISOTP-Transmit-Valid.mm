@@ -149,7 +149,7 @@ using namespace CANyonero::ISOTP;
     auto emitted = std::vector<std::vector<uint8_t>> {};
     auto moreFlags = std::vector<bool> {};
     auto flowControl = std::vector<uint8_t> { 0x30, 0x20, 0x00, padding, padding, padding, padding, padding };
-    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint16_t separationTime, bool hasMore) {
+    auto action = isotp.didReceiveFrameStreaming(flowControl, [&](Frame&& frame, uint32_t separationTime, bool hasMore) {
         XCTAssertEqual(separationTime, 250);
         emitted.emplace_back(std::move(frame.bytes));
         moreFlags.emplace_back(hasMore);

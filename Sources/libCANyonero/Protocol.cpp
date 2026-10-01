@@ -228,6 +228,15 @@ const Bytes PDU::frame() const {
     return frame;
 }
 
+Bytes PDU::takeFrame() && {
+    const uint8_t header[] = {PDU::ATT, static_cast<uint8_t>(_type),
+                             static_cast<uint8_t>(_payload.size() >> 8),
+                             static_cast<uint8_t>(_payload.size() & 0xff)};
+    _payload.insert(_payload.begin(), std::begin(header), std::end(header));
+    _length = 0;
+    return std::move(_payload);
+}
+
 // Check whether there is a PDU in the `Bytes`.
 // Returns > 0, if a complete PDU is found.
 // Returns 0, if the contents looks like a PDU, but more data is needed.
@@ -407,11 +416,13 @@ PDU PDU::channelClosed(const ChannelHandle handle) {
 }
 
 PDU PDU::received(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& data) {
-    auto payload = Bytes(1, handle);
+    Bytes payload;
+    payload.reserve(HEADER_SIZE + 6 + data.size());
+    payload.push_back(handle);
     vector_append_uint32(payload, id);
     payload.push_back(extension);
     payload.insert(payload.end(), data.begin(), data.end());
-    return PDU(PDUType::received, payload);
+    return PDU(PDUType::received, std::move(payload));
 }
 
 PDU PDU::receivedCompressed(const ChannelHandle handle, const uint32_t id, const uint8_t extension, const Bytes& uncompressedData) {

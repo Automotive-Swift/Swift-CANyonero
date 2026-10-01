@@ -144,10 +144,10 @@ public:
     /// RX does not enforce ``minimumDLC``; only CAN-FD validity and max width are checked.
     Action didReceiveFrame(const Bytes& bytes) {
         if (state != State::sending) {
-            return didReceiveFrameStreaming(bytes, [](Frame&&, uint16_t, bool) {});
+            return didReceiveFrameStreaming(bytes, [](Frame&&, uint32_t, bool) {});
         }
         auto streamedFrames = std::deque<Frame> {};
-        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint16_t, bool) {
+        auto action = didReceiveFrameStreaming(bytes, [&streamedFrames](Frame&& frame, uint32_t, bool) {
             streamedFrames.emplace_back(std::move(frame));
         });
         if (!streamedFrames.empty()) {
@@ -329,7 +329,7 @@ private:
                     return { Action::Type::protocolViolation, "Sending payload offset exceeds payload size." };
                 }
 
-                const auto separationTime = std::max(frame.separationTime(), txSeparationTime);
+                const auto separationTime = std::max<uint32_t>(frame.separationTime(), txSeparationTime);
                 for (uint16_t i = 0; i < numberOfUnconfirmedFrames; ++i) {
                     auto remaining = sendingPayload.size() - sendingPayloadOffset;
                     if (remaining == 0) {
@@ -409,7 +409,9 @@ private:
                     return { Action::Type::protocolViolation, "Did receive FIRST with invalid length <= first-frame payload." };
                 }
 
-                receivingPayload = std::vector<uint8_t>(bytes.begin() + 2, bytes.end());
+                receivingPayload.clear();
+                receivingPayload.reserve(pduLength);
+                receivingPayload.insert(receivingPayload.end(), bytes.begin() + 2, bytes.end());
                 receivingPendingCounter = pduLength - firstPayloadLength;
                 receivingUnconfirmedFramesCounter = blockSize == 0 ? std::numeric_limits<uint16_t>::max() : blockSize;
                 state = State::receiving;
@@ -436,7 +438,7 @@ private:
                 if (receivingPendingCounter == 0) {
                     auto action = Action {
                         .type = Action::Type::process,
-                        .data = receivingPayload
+                        .data = std::move(receivingPayload)
                     };
                     reset();
                     return action;
