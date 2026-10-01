@@ -248,7 +248,7 @@ private:
 
     Frame flowControlFrame() const {
         auto width = dynamicFrameWidthFor(3);
-        return Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime, width);
+        return Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, Frame::microsecondsToSeparationTime(rxSeparationTime), width);
     }
 
     Frame singleFrame(const Bytes& bytes) const {

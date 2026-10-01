@@ -521,7 +521,7 @@ private:
                 }
                 state = State::receiving;
                 receivingSequenceNumber = 0x01;
-                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime, width);
+                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, Frame::microsecondsToSeparationTime(rxSeparationTime), width);
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = { 1, frame }
@@ -551,7 +551,7 @@ private:
                 if (receivingUnconfirmedFramesCounter > 0) { return { Action::Type::waitForMore }; }
 
                 receivingUnconfirmedFramesCounter = blockSize;
-                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, rxSeparationTime, width);
+                auto frame = Frame::flowControl(Frame::FlowStatus::clearToSend, blockSize, Frame::microsecondsToSeparationTime(rxSeparationTime), width);
                 return {
                     .type = Action::Type::writeFrames,
                     .frames = { 1, frame }

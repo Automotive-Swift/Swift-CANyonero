@@ -134,7 +134,7 @@ static std::vector<uint8_t> makeSingleFrame(size_t payloadLength, uint8_t base =
     XCTAssertEqual(action.frames[0].bytes.size(), 8);
     XCTAssertEqual(action.frames[0].bytes[0], 0x30);
     XCTAssertEqual(action.frames[0].bytes[1], 5);
-    XCTAssertEqual(action.frames[0].bytes[2], 200);
+    XCTAssertEqual(action.frames[0].bytes[2], 0xF2); // 200 microseconds
 }
 
 -(void)testFlowControlReplyCanUseShortestValidFrameWhenMinimumDLCIsZero {
@@ -152,7 +152,7 @@ static std::vector<uint8_t> makeSingleFrame(size_t payloadLength, uint8_t base =
     XCTAssertEqual(action.frames[0].bytes.size(), 3);
     XCTAssertEqual(action.frames[0].bytes[0], 0x30);
     XCTAssertEqual(action.frames[0].bytes[1], 5);
-    XCTAssertEqual(action.frames[0].bytes[2], 200);
+    XCTAssertEqual(action.frames[0].bytes[2], 0xF2); // 200 microseconds
 }
 
 -(void)testExtendedAddressingLengthValidation {
