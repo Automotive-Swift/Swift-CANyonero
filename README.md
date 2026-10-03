@@ -123,6 +123,36 @@ An optional peripheral UUID selector can be appended as the URL path: `ecuconnec
 
 Python CLI socket buffers default to `4M` and accept friendly sizes (`200`, `10K`, `4M`, `1G`) via `--rx-buffer` and `--tx-buffer`.
 
+## Health diagnostics (Swift CLI)
+
+With health-enabled ECOS firmware, the Swift `ecuconnect-tool` reads diagnostics
+over its existing BLE L2CAP or TCP connection:
+
+```sh
+ecuconnect-tool health
+ecuconnect-tool health --watch --interval 1 --count 10 --json
+ecuconnect-tool health --url ecuconnect-tcp://192.168.42.42:129
+ecuconnect-tool diagnostics export --output ./adapter-health
+ecuconnect-tool diagnostics export --include-coredumps --output ./adapter-crashes
+```
+
+The default endpoint is `ecuconnect-l2cap://FFF1:129`. Health displays internal heap
+free/minimum/largest block, PSRAM, radio ownership and the retained before/after
+samples of the last BLE and network shutdown. Values are bytes and KiB. A watch
+holds the protocol connection until its count is reached or Ctrl-C is pressed.
+`--json` writes one JSON object per sample; errors go to stderr.
+
+Export creates a new directory with `health.json`, paged `events.json`, and a final
+`manifest.json`. Optional crash dumps download in bounded chunks and remain on the
+device. An interrupted dump retains a `.partial` suffix; an incomplete bundle has
+no manifest. The snapshot contains the exact firmware ELF hash for symbol matching.
+
+Opening BLE stops WiFi/network in ECOS; opening TCP stops BLE. Both return after the
+configured quiet period (default ten seconds). The historical stop samples preserve
+the opposite transport's measurement. Current free heap includes protocol buffers;
+the immediate shutdown measurement precedes their allocation. This is runtime
+internal heap, not linked instruction RAM. Measurements reset on adapter reboot.
+
 ## PDU Examples
 
 ### Request Information

@@ -53,6 +53,8 @@ struct ECUconnectCommand: ParsableCommand {
         subcommands: [
             Benchmark.self,
             Config.self,
+            Health.self,
+            Diagnostics.self,
             Info.self,
             Login.self,
             Monitor.self,
