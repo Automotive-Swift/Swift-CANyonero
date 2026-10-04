@@ -91,6 +91,9 @@ struct Benchmark: ParsableCommand {
     @Option(name: .customLong("sizes"), parsing: .upToNextOption, help: "Payload sizes in bytes (space-separated). If omitted, a default range is used (BLE cap 5000 bytes, TCP cap 16384 bytes). Protocol max is 65535 bytes.")
     var payloadSizes: [Int] = []
 
+    @Option(name: .long, parsing: .upToNextOption, help: "Diagnostic response payload sizes, 32...4096 bytes. Defaults to 32 256 1024 4096.")
+    var responses: [Int] = []
+
     @Flag(name: .long, help: "Allow payload sizes exceeding transport caps (may cause failures).")
     var force: Bool = false
 
@@ -116,11 +119,17 @@ struct Benchmark: ParsableCommand {
                 throw ValidationError("--diagnostic requires --expected-serial, positive -n and warmup 0...3600.")
             }
             guard payloadSizes.isEmpty, !force else {
-                throw ValidationError("--diagnostic uses requests 8/32 and responses 32/256/1024/4096; omit --sizes and --force.")
+                throw ValidationError("--diagnostic uses requests 8/32; use --responses for response sizes and omit --sizes and --force.")
             }
-            try runDiagnosticBenchmark(url: url, serial: serial, count: numberOfPings, warmup: warmup, output: output)
+            let responseSizes = responses.isEmpty ? [32, 256, 1024, 4096] : Array(Set(responses)).sorted()
+            guard responseSizes.allSatisfy({ (32...4096).contains($0) }) else {
+                throw ValidationError("--responses sizes must be between 32 and 4096 bytes.")
+            }
+            try runDiagnosticBenchmark(url: url, serial: serial, count: numberOfPings, warmup: warmup, output: output, responseSizes: responseSizes)
             return
         }
+
+        guard responses.isEmpty else { throw ValidationError("--responses requires --diagnostic.") }
 
         let blePayloadCap = 5000
         let isBLE = isBLELink(url)

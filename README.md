@@ -217,3 +217,23 @@ macOS controls the link parameters. This command neither forces nor promises
 2M PHY. Correlate the firmware's `BLELink` logs (PHY, interval, DLE and SDU MTU)
 with each run before comparing throughput. A PING echo rate counts both payload
 directions; this diagnostic rate counts only the response.
+
+### SDU boundary comparison
+
+```sh
+make benchmark-mtu
+```
+
+This runs the same sequential test with responses of 1024, 1247, 1248, 2048 and
+4096 bytes, for both request sizes (8/32 bytes). At a negotiated SDU MTU of 1251,
+1247 payload bytes plus the four-byte header fill exactly one SDU; 1248 payload
+bytes require another SDU. Check the firmware BLELink log to confirm the actual
+negotiated MTU. The test does not change link parameters or firmware buffers.
+
+Results go to `/tmp/s31-diagnostic-macos-mtu.json`; override with
+`BENCHMARK_MTU_OUTPUT`. `BENCHMARK_SERIAL` and `BENCHMARK_COUNT` also apply.
+For arbitrary response sizes, use `benchmark --diagnostic --responses ...`
+(32...4096 bytes) with the usual serial/output options. Compare median and p95
+completion times and first receive times around 1247/1248; the observed jump
+includes the transport and OS scheduling and does not alone identify a credit
+or buffer bottleneck.

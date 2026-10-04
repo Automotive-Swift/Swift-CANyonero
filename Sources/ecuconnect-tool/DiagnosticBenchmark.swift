@@ -181,7 +181,7 @@ private final class DiagnosticBLESession: NSObject, CBCentralManagerDelegate, CB
 }
 #endif
 
-func runDiagnosticBenchmark(url: URL, serial: String, count: Int, warmup: Double, output: String) throws {
+func runDiagnosticBenchmark(url: URL, serial: String, count: Int, warmup: Double, output: String, responseSizes: [Int]) throws {
 #if canImport(CoreBluetooth)
     guard ["ecuconnect-l2cap", "ble"].contains(url.scheme?.lowercased() ?? ""),
           let service = url.host, let psm = UInt16(exactly: url.port ?? 129), psm > 0,
@@ -204,7 +204,7 @@ func runDiagnosticBenchmark(url: URL, serial: String, count: Int, warmup: Double
     let info = Dictionary(uniqueKeysWithValues: zip(["vendor","model","hardware","serial","firmware"], fields))
     var results: [String: Any] = ["identity": info, "endpoint": url.absoluteString,
         "peer_uuid": session.peerIdentifier, "platform": ProcessInfo.processInfo.operatingSystemVersionString,
-        "count": count, "warmup_seconds": warmup,
+        "count": count, "warmup_seconds": warmup, "response_sizes": responseSizes,
         "connect_and_identify_ms": Double(DispatchTime.now().uptimeNanoseconds-started)/1e6,
         "complete": false]
     var samples: [[String: Any]] = []
@@ -231,7 +231,7 @@ func runDiagnosticBenchmark(url: URL, serial: String, count: Int, warmup: Double
     } while true
     print("REQ RESP FIRST median/p95 ms COMPLETE median/p95 ms RESPONSE KiB/s")
     for q in [8, 32] {
-        for r in [32, 256, 1024, 4096] {
+        for r in responseSizes {
             var firsts: [Double] = [], completes: [Double] = []
             for _ in 0..<count {
                 token &+= 1
