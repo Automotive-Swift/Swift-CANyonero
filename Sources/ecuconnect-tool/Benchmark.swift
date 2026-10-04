@@ -94,9 +94,33 @@ struct Benchmark: ParsableCommand {
     @Flag(name: .long, help: "Allow payload sizes exceeding transport caps (may cause failures).")
     var force: Bool = false
 
+    @Flag(help: "Measure small requests and large responses using the debug firmware command.")
+    var diagnostic = false
+
+    @Option(help: "Required serial check for --diagnostic after selecting the first matching adapter.")
+    var expectedSerial: String?
+
+    @Option(help: "Unmeasured diagnostic warmup in seconds.")
+    var warmup: Double = 5
+
+    @Option(help: "Diagnostic JSON output file.")
+    var output: String = "/tmp/s31-diagnostic-benchmark.json"
+
     mutating func run() throws {
 
         let url = try parseECUconnectURL(parentOptions.url)
+
+        if diagnostic {
+            guard let serial = expectedSerial, !serial.isEmpty, numberOfPings > 0,
+                  warmup.isFinite, warmup >= 0, warmup <= 3600 else {
+                throw ValidationError("--diagnostic requires --expected-serial, positive -n and warmup 0...3600.")
+            }
+            guard payloadSizes.isEmpty, !force else {
+                throw ValidationError("--diagnostic uses requests 8/32 and responses 32/256/1024/4096; omit --sizes and --force.")
+            }
+            try runDiagnosticBenchmark(url: url, serial: serial, count: numberOfPings, warmup: warmup, output: output)
+            return
+        }
 
         let blePayloadCap = 5000
         let isBLE = isBLELink(url)

@@ -170,3 +170,41 @@ internal heap, not linked instruction RAM. Measurements reset on adapter reboot.
 ### Stop Periodic Message
 
 `1F 36 0001 00` – Stop periodic message with handle `0`.
+
+## Diagnostic request/response benchmark (macOS)
+
+The S31 debug firmware provides a synthetic diagnostic command: small request,
+one complete response, then the next request. No vehicle bus is accessed.
+Build and run the Swift tool from this checkout:
+
+```sh
+swift run -c release ecuconnect-tool benchmark --diagnostic \
+  --expected-serial FFFEF3 -n 32 \
+  --output /tmp/s31-diagnostic-macos.json
+```
+
+The default endpoint is `ecuconnect-l2cap://FFF1:129`. The first peripheral
+advertising that service is selected, as with the existing tool. The serial
+check happens before benchmark requests; if another adapter was selected,
+disconnect/switch it off and retry. No explicit CoreBluetooth UUID is required.
+The ordinary `benchmark` command continues to measure PING echo throughput.
+
+The diagnostic mode uses requests of 8/32 bytes and responses of
+32/256/1024/4096 bytes, excluding the four-byte protocol header. It verifies the
+response token and every pattern byte. It uses five seconds of unmeasured
+warmup (`--warmup`) and 32 samples per combination (`-n`). Debug firmware with
+`CONFIG_ECOS_DIAGNOSTIC_BENCHMARK` is required; unsupported firmware fails clearly.
+
+The table reports median/p95 first receive and complete response times, plus
+response-only KiB/s (including the 12-byte timing metadata). JSON retains all
+samples, firmware dispatch/preparation times, identity and actual peer UUID.
+First receive means the first positive read in the CoreBluetooth input stream
+callback, not the first radio byte. The complete time ends at the read delivering
+the full frame. Payload validation happens outside the timed interval. Firmware
+dispatch excludes time waiting in the native callback queue. These definitions
+match the Python diagnostic runner in the firmware repository.
+
+macOS controls the link parameters. This command neither forces nor promises
+2M PHY. Correlate the firmware's `BLELink` logs (PHY, interval, DLE and SDU MTU)
+with each run before comparing throughput. A PING echo rate counts both payload
+directions; this diagnostic rate counts only the response.
