@@ -178,6 +178,15 @@ one complete response, then the next request. No vehicle bus is accessed.
 Build and run the Swift tool from this checkout:
 
 ```sh
+make benchmark-diagnostic
+```
+
+Defaults: serial `FFFEF3`, 32 samples per combination, output
+`/tmp/s31-diagnostic-macos.json`. Override with `BENCHMARK_SERIAL`,
+`BENCHMARK_COUNT` or `BENCHMARK_OUTPUT` as Make variables.
+The equivalent direct command is:
+
+```sh
 swift run -c release ecuconnect-tool benchmark --diagnostic \
   --expected-serial FFFEF3 -n 32 \
   --output /tmp/s31-diagnostic-macos.json
