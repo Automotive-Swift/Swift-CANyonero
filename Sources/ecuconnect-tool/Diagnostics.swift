@@ -23,7 +23,7 @@ struct DiagnosticsExport: ParsableCommand {
         try runHealthSession(url: endpoint) { adapter in
             let snapshot = try await healthRPC(adapter, "system.health")
             // Decode before creating a bundle, so old firmware produces a clear failure.
-            _ = try JSONDecoder().decode(HealthSnapshot.self, from: JSONEncoder().encode(snapshot))
+            _ = try HealthSnapshot.decode(JSONEncoder().encode(snapshot))
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
             try writeDiagnosticJSON(snapshot, to: directory.appendingPathComponent("health.json"))
             var pages: [Cornucopia.Core.StringAnyCollection] = []

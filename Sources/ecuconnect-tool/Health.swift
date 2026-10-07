@@ -25,7 +25,7 @@ struct Health: ParsableCommand {
             repeat {
                 let result = try await healthRPC(adapter, "system.health")
                 let data = try JSONEncoder().encode(result)
-                let snapshot = try JSONDecoder().decode(HealthSnapshot.self, from: data)
+                let snapshot = try HealthSnapshot.decode(data)
                 if json { try DiagnosticOutput.line(String(decoding: data, as: UTF8.self)) }
                 else { try DiagnosticOutput.line(snapshot.summary) }
                 samples += 1
@@ -65,6 +65,23 @@ struct HealthSnapshot: Decodable {
     let memory: Sample
     let radios: Radios
     let last_stops: [String: Stop?]
+    struct Failures: Decodable { let count: Int; let last_bytes: Int; let last_caps: Int }
+    let idf: String?
+    let boot_count: Int?
+    let reset_reason: Int?
+    let voltage: Double?
+    let task_count: Int?
+    let coredump_count: Int?
+    let allocation_failures: Failures?
+
+    static func decode(_ data: Data) throws -> Self {
+        struct Schema: Decodable { let schema: Int }
+        let decoder = JSONDecoder()
+        guard try decoder.decode(Schema.self, from: data).schema == 1 else {
+            throw ValidationError("Unsupported system.health schema; expected schema 1.")
+        }
+        return try decoder.decode(Self.self, from: data)
+    }
 
     static func bytes(_ value: Int) -> String { "\(value) B (\(String(format: "%.1f", Double(value) / 1024)) KiB)" }
 
@@ -72,9 +89,19 @@ struct HealthSnapshot: Decodable {
         var lines = [
             "ECUconnect \(serial) · \(firmware) · uptime \(uptime_ms / 1000) s",
             "Internal heap: \(Self.bytes(memory.internal.free)) free; minimum \(Self.bytes(memory.internal.minimum)); largest \(Self.bytes(memory.internal.largest))",
-            "PSRAM: \(Self.bytes(memory.psram.free)) free",
+            "PSRAM: \(Self.bytes(memory.psram.free)) free; minimum \(Self.bytes(memory.psram.minimum)); largest \(Self.bytes(memory.psram.largest))",
             "Radios: BLE \(radios.ble ? "on" : "off"), network \(radios.network ? "on" : "off"); owner \(radios.owner); restore in \(radios.restore_in_ms) ms",
         ]
+        lines.append("ELF SHA-256: \(elf_sha256)")
+        if let idf { lines.append("ESP-IDF: \(idf)") }
+        if let voltage { lines.append("Voltage: \(voltage) V") }
+        if let task_count { lines.append("Tasks: \(task_count)") }
+        if let boot_count { lines.append("Boot count: \(boot_count)") }
+        if let reset_reason { lines.append("Reset reason: \(reset_reason)") }
+        if let coredump_count { lines.append("Core dumps: \(coredump_count)") }
+        if let allocation_failures {
+            lines.append("Allocation failures: \(allocation_failures.count); last \(allocation_failures.last_bytes) bytes, caps \(allocation_failures.last_caps)")
+        }
         for name in ["network", "ble"] {
             if let value = last_stops[name], let stop = value {
                 lines.append("Last \(name) stop: \(Self.bytes(stop.before.internal.free)) → \(Self.bytes(stop.after.internal.free)); reclaimed \(Self.bytes(stop.internal_reclaimed))")

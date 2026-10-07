@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "serial": "3A6B4C",
+  "firmware": "0.9.536",
+  "elf_sha256": "abababababababababababababababababababababababababababababababab",
+  "idf": "v6.1",
+  "uptime_ms": 120000,
+  "boot_count": 8,
+  "reset_reason": 1,
+  "voltage": 14,
+  "task_count": 17,
+  "memory": {
+    "internal": {
+      "free": 120000,
+      "minimum": 90000,
+      "largest": 80000
+    },
+    "psram": {
+      "free": 6000000,
+      "minimum": 5800000,
+      "largest": 5900000
+    }
+  },
+  "radios": {
+    "ble": true,
+    "network": false,
+    "owner": "ble",
+    "restore_in_ms": 0,
+    "restore_delay_ms": 10000
+  },
+  "last_stops": {
+    "ble": null,
+    "network": {
+      "uptime_ms": 110000,
+      "before": {
+        "internal": {
+          "free": 50000,
+          "minimum": 45000,
+          "largest": 30000
+        },
+        "psram": {
+          "free": 6000000,
+          "minimum": 5800000,
+          "largest": 5900000
+        }
+      },
+      "after": {
+        "internal": {
+          "free": 120000,
+          "minimum": 45000,
+          "largest": 80000
+        },
+        "psram": {
+          "free": 6000000,
+          "minimum": 5800000,
+          "largest": 5900000
+        }
+      },
+      "internal_reclaimed": 70000
+    }
+  },
+  "allocation_failures": {
+    "count": 0,
+    "last_bytes": 0,
+    "last_caps": 0
+  },
+  "history_available": true,
+  "coredump_count": 2
+}

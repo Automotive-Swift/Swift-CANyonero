@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import os
+import json as jsonlib
+import math
+from datetime import datetime, timezone
 import re
 import statistics
 import socket as py_socket
@@ -26,6 +29,7 @@ from .annotations import (
     print_annotation,
 )
 from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient
+from .health import HealthEventCursor, health_snapshot, health_summary, write_json
 from .test_runner import (
     open_channel_with_retry,
     run_ecuconnect_test,
@@ -42,6 +46,8 @@ config_app = typer.Typer(help="Configure ECUconnect via JSON-RPC.")
 config_canvoy_app = typer.Typer(help="Configure CANvoy settings.")
 config_app.add_typer(config_canvoy_app, name="canvoy")
 app.add_typer(config_app, name="config")
+diagnostics_app = typer.Typer(help="Export system health and event history.")
+app.add_typer(diagnostics_app, name="diagnostics")
 
 _HISTORY_MAX_LENGTH = 1000
 _HISTORY_DIR_ENV = "ECUCONNECT_TOOL_HISTORY_DIR"
@@ -740,6 +746,81 @@ def main(
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit()
+
+
+
+@app.command("health")
+def health(
+    ctx: typer.Context,
+    json_output: bool = typer.Option(False, "--json", help="Output JSON; one object per watch sample."),
+    watch: bool = typer.Option(False, "--watch", help="Keep the connection open; Ctrl-C stops."),
+    interval: float = typer.Option(1.0, help="Watch interval in seconds (0.2–86400)."),
+    count: Optional[int] = typer.Option(None, help="Stop watching after this many samples."),
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Read schema-1 system health over BLE/L2CAP or TCP."""
+    if not math.isfinite(interval) or not 0.2 <= interval <= 86400:
+        raise typer.BadParameter("--interval must be between 0.2 and 86400 seconds.")
+    if count is not None and (not watch or count < 1):
+        raise typer.BadParameter("--count requires --watch and a positive number.")
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise typer.BadParameter("--timeout must be a positive finite number.")
+    try:
+        with EcuconnectClient(endpoint=ctx.obj["endpoint"], rx_buffer=ctx.obj["rx_buffer"], tx_buffer=ctx.obj["tx_buffer"]) as client:
+            samples = 0
+            while True:
+                result = health_snapshot(client.rpc_call("system.health", timeout=timeout))
+                typer.echo(jsonlib.dumps(result, separators=(",", ":"), ensure_ascii=False) if json_output else health_summary(result))
+                samples += 1
+                if not watch or samples == count:
+                    break
+                time.sleep(interval)
+    except KeyboardInterrupt:
+        raise typer.Exit(code=130)
+    except (RuntimeError, ValueError, OSError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+
+@diagnostics_app.command("export")
+def diagnostics_export(
+    ctx: typer.Context,
+    output: Optional[Path] = typer.Option(None, help="New output directory."),
+    timeout: float = typer.Option(2.0, help="RPC timeout in seconds."),
+) -> None:
+    """Export health and paged event history without deleting device evidence."""
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise typer.BadParameter("--timeout must be a positive finite number.")
+    directory = (output or Path(f"ecuconnect-diagnostics-{time.time_ns()}")).expanduser().resolve()
+    if directory.exists():
+        raise typer.BadParameter(f"Output already exists: {directory}")
+    try:
+        with EcuconnectClient(endpoint=ctx.obj["endpoint"], rx_buffer=ctx.obj["rx_buffer"], tx_buffer=ctx.obj["tx_buffer"]) as client:
+            snapshot = health_snapshot(client.rpc_call("system.health", timeout=timeout))
+            directory.mkdir()
+            write_json(directory / "health.json", snapshot)
+            cursor = HealthEventCursor()
+            pages = []
+            for _ in range(128):
+                params = {"after": cursor.after}
+                if cursor.through is not None:
+                    params["through"] = cursor.through
+                page = client.rpc_call("system.health.events", params=params, timeout=timeout)
+                more = cursor.advance(page)
+                pages.append(page)
+                if not more:
+                    break
+            else:
+                raise ValueError("Health history exceeded the page limit.")
+            write_json(directory / "events.json", pages)
+            write_json(directory / "manifest.json", {
+                "schema": "1", "captured_at": datetime.now(timezone.utc).isoformat(),
+                "endpoint": ctx.obj["endpoint"], "status": "complete",
+            })
+        typer.echo(str(directory))
+    except (RuntimeError, ValueError, OSError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
 
 
 @config_app.command("mode")

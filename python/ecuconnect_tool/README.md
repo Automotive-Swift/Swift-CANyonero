@@ -128,3 +128,41 @@ Use `--traffic rx` for CAN->ECU only, `--traffic tx` for ECU->CAN only.
 - Windows currently supports TCP endpoints only.
 - Socket buffers default to `4M`; override with `--rx-buffer/--tx-buffer` using bytes or `K/M/G` suffixes.
 - Set `ECUCONNECT_DEBUG_IO=1` to print raw TX/RX frame traces while debugging transport issues.
+
+## Health diagnostics
+
+Health-enabled S3 firmware (including 0.9.536) exposes schema 1 through the
+normal BLE/L2CAP or TCP connection. Older firmware, including 0.5.x and 0.8.1,
+does not provide this RPC: these commands report an error and close their
+connection; other commands do not acquire a new health requirement.
+
+```bash
+ecuconnect-tool-py health
+ecuconnect-tool-py health --json
+ecuconnect-tool-py health --watch --interval 1 --count 10 --json
+ecuconnect-tool-py --url ecuconnect-l2cap://FFF1:129 health
+ecuconnect-tool-py diagnostics export --output ./adapter-health
+```
+
+When installed from this Python package alone, its executable is named
+`ecuconnect-tool`; the combined installation uses `ecuconnect-tool-py` for
+Python and `ecuconnect-tool` for Swift.
+
+Health reports heap free/minimum/largest block, PSRAM, radio ownership, retained
+shutdown samples, firmware ELF hash, allocation failures and crash-dump count.
+`--json` writes unmodified schema-1 snapshots as JSON Lines, without connection
+banners. A watch reuses one connection and keeps an S3 adapter awake until its
+count is reached or Ctrl-C is pressed. A single sample closes the connection.
+
+Opening a BLE protocol connection on S3 stops WiFi/Ethernet; TCP stops BLE.
+For S31 management, explicitly use
+`--url ecuconnect-l2cap://FFF3:131/<peripheral-uuid>`. It uses the same default
+health schema 1 without taking diagnostic ownership. Do not fall back to
+diagnosis if management is unavailable.
+
+History export requires `system.health.events` on the chosen endpoint (the S3
+ECOS diagnostic endpoint provides it; S31 management currently does not).
+Export creates a new directory containing `health.json`, frozen paged
+`events.json` and, only on completion, `manifest.json`. It never deletes
+device evidence or overwrites an existing directory. Python export does not
+download core dumps; the Swift variant supports `--include-coredumps`.

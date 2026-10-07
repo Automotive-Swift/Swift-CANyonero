@@ -4,6 +4,25 @@ import CornucopiaCore
 @testable import ecuconnect_tool
 
 final class HealthTests: XCTestCase {
+    func testFullHealthFixtureAndUnsupportedSchema() throws {
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("Fixtures/health.json")
+        let data = try Data(contentsOf: fixture)
+        let snapshot = try HealthSnapshot.decode(data)
+        XCTAssertEqual(snapshot.schema, 1)
+        XCTAssertEqual(snapshot.firmware, "0.9.536")
+        XCTAssertEqual(snapshot.allocation_failures?.count, 0)
+        XCTAssertEqual(snapshot.coredump_count, 2)
+        XCTAssertTrue(snapshot.summary.contains("PSRAM:"))
+        XCTAssertTrue(snapshot.summary.contains("ELF SHA-256:"))
+        XCTAssertTrue(snapshot.summary.contains("Allocation failures: 0"))
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object["schema"] = 2
+        XCTAssertThrowsError(try HealthSnapshot.decode(JSONSerialization.data(withJSONObject: object)))
+        object.removeValue(forKey: "schema")
+        XCTAssertThrowsError(try HealthSnapshot.decode(JSONSerialization.data(withJSONObject: object)))
+    }
+
     func testWatchValidation() throws {
         XCTAssertThrowsError(try Health.parse(["--count", "2"]))
         XCTAssertThrowsError(try Health.parse(["--watch", "--interval", "nan"]))

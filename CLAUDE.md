@@ -230,3 +230,14 @@ The libCANyonero codebase has been analyzed for memory efficiency and CPU perfor
 - Consider placement new for critical fixed buffers
 
 These optimizations maintain full compatibility with existing ESP-IDF integration while significantly improving memory safety and performance for embedded deployment.
+
+## Health clients
+
+Swift and Python health commands use schema 1, preserve raw JSON for machine
+consumers, and close their connection on unsupported firmware or malformed
+responses. Python health/watch emits no connection banners on stdout; watch
+keeps one connection. Export freezes the history upper bound and only writes a
+complete manifest after all pages succeed. Python does not download/delete
+crash dumps. S31 health uses explicit FFF3/PSM131; event history is not currently
+exposed there. Never silently fall back to diagnostic PSM129. Tests use
+Tests/Fixtures/health.json and do not open real devices.

@@ -123,7 +123,7 @@ An optional peripheral UUID selector can be appended as the URL path: `ecuconnec
 
 Python CLI socket buffers default to `4M` and accept friendly sizes (`200`, `10K`, `4M`, `1G`) via `--rx-buffer` and `--tx-buffer`.
 
-## Health diagnostics (Swift CLI)
+## Health diagnostics (Swift and Python CLIs)
 
 With health-enabled ECOS firmware, the Swift `ecuconnect-tool` reads diagnostics
 over its existing BLE L2CAP or TCP connection:
@@ -135,6 +135,18 @@ ecuconnect-tool health --url ecuconnect-tcp://192.168.42.42:129
 ecuconnect-tool diagnostics export --output ./adapter-health
 ecuconnect-tool diagnostics export --include-coredumps --output ./adapter-crashes
 ```
+
+The Python variant now also supports `health`, `health --json/--watch`, and
+`diagnostics export` for health/event history; see the
+[Python instructions](python/ecuconnect_tool/README.md#health-diagnostics).
+In the combined installation it is named `ecuconnect-tool-py`; Python's default
+endpoint is TCP at `192.168.42.42:129`.
+
+Both variants request health schema 1 and reject unsupported formats. Older
+S3 firmware (such as 0.5.x and 0.8.1) reports an unsupported RPC; other commands
+remain usable. For S31 health use the explicit management endpoint
+`ecuconnect-l2cap://FFF3:131/<peripheral-uuid>`. History export needs
+`system.health.events`, which S31 management does not currently expose.
 
 The default endpoint is `ecuconnect-l2cap://FFF1:129`. Health displays internal heap
 free/minimum/largest block, PSRAM, radio ownership and the retained before/after
