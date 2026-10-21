@@ -119,7 +119,7 @@ ecuconnect-tool test --can-interface can0 --busload 20 --duration 5
 For VW TP2.0, `ecuconnect-tool term --proto tp20` performs the fixed-ID setup handshake for target `0x01` by default. Override the target with `--tp20-target 0xNN`, or pass `--no-tp20-setup` if you want to skip setup and work with negotiated dynamic CAN IDs manually.
 
 macOS BLE/L2CAP endpoints use the scheme `ecuconnect-l2cap://<service-uuid>:<psm>`, for example `ecuconnect-l2cap://FFF1:129`.  
-An optional peripheral UUID selector can be appended as the URL path: `ecuconnect-l2cap://FFF1:129/<peripheral-uuid>`.
+Without a peripheral UUID, the Swift tool scans advertisements for one second and asks you to choose if several adapters respond. In non-interactive use, supply the peripheral UUID when several are nearby: `ecuconnect-l2cap://FFF1:129/<peripheral-uuid>`.
 
 Python CLI socket buffers default to `4M` and accept friendly sizes (`200`, `10K`, `4M`, `1G`) via `--rx-buffer` and `--tx-buffer`.
 
@@ -204,10 +204,9 @@ swift run -c release ecuconnect-tool benchmark --diagnostic \
   --output /tmp/s31-diagnostic-macos.json
 ```
 
-The default endpoint is `ecuconnect-l2cap://FFF1:129`. The first peripheral
-advertising that service is selected, as with the existing tool. The serial
-check happens before benchmark requests; if another adapter was selected,
-disconnect/switch it off and retry. No explicit CoreBluetooth UUID is required.
+The default endpoint is `ecuconnect-l2cap://FFF1:129`. The tool scans for one
+second and asks you to choose when several adapters advertise that service.
+The serial check happens before benchmark requests.
 The ordinary `benchmark` command continues to measure PING echo throughput.
 
 The diagnostic mode uses requests of 8/32 bytes and responses of

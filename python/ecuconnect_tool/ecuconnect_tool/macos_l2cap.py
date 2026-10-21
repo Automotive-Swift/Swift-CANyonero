@@ -28,6 +28,54 @@ def _missing_runtime_error() -> RuntimeError:
 
 if objc is not None and CoreBluetooth is not None and Foundation is not None:
 
+    class _Scanner(Foundation.NSObject):  # type: ignore[misc]
+        def initWithService_(self, service_uuid):  # noqa: N802
+            self = objc.super(_Scanner, self).init()
+            if self is None:
+                return None
+            self._service_uuid = CoreBluetooth.CBUUID.UUIDWithString_(service_uuid)
+            self._manager = CoreBluetooth.CBCentralManager.alloc().initWithDelegate_queue_(self, None)
+            self._found = {}
+            self._started = None
+            self._error = None
+            return self
+
+        @objc.python_method
+        def scan(self, duration: float):
+            run_loop = Foundation.NSRunLoop.currentRunLoop()
+            ready_deadline = time.monotonic() + 5.0
+            while self._started is None and self._error is None and time.monotonic() < ready_deadline:
+                run_loop.runUntilDate_(Foundation.NSDate.dateWithTimeIntervalSinceNow_(0.05))
+            if self._error is not None:
+                raise self._error
+            if self._started is None:
+                raise TimeoutError("Bluetooth did not become ready for scanning")
+            try:
+                while time.monotonic() - self._started < duration:
+                    run_loop.runUntilDate_(Foundation.NSDate.dateWithTimeIntervalSinceNow_(0.05))
+            finally:
+                self._manager.stopScan()
+            return sorted(self._found.items())
+
+        def centralManagerDidUpdateState_(self, central):  # noqa: N802
+            state = int(central.state())
+            if state == int(CoreBluetooth.CBManagerStatePoweredOn):
+                central.scanForPeripheralsWithServices_options_([self._service_uuid], None)
+                self._started = time.monotonic()
+            elif state in (
+                int(CoreBluetooth.CBManagerStateUnsupported),
+                int(CoreBluetooth.CBManagerStateUnauthorized),
+                int(CoreBluetooth.CBManagerStatePoweredOff),
+            ):
+                self._error = RuntimeError(f"Bluetooth unavailable (state={state})")
+
+        def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(  # noqa: N802
+            self, _central, peripheral, advertisement_data, _rssi
+        ):
+            identifier = str(peripheral.identifier().UUIDString())
+            name = advertisement_data.get(CoreBluetooth.CBAdvertisementDataLocalNameKey) or peripheral.name() or ""
+            self._found[identifier] = str(name)
+
     class _Connector(Foundation.NSObject):  # type: ignore[misc]
         def initWithService_psm_peer_(self, service_uuid: str, psm: int, peer_uuid: Optional[str]):  # noqa: N802
             self = objc.super(_Connector, self).init()
@@ -362,6 +410,16 @@ class MacOSL2CAPSocket:
                     self._manager.cancelPeripheralConnection_(self._peripheral)
             except Exception:
                 pass
+
+
+def discover_devices(service_uuid: str, timeout: float = 1.0) -> list[tuple[str, str]]:
+    """Return peripheral identifiers and names seen during an active BLE scan."""
+    if objc is None or CoreBluetooth is None or Foundation is None:
+        raise _missing_runtime_error()
+    scanner = _Scanner.alloc().initWithService_(service_uuid)
+    if scanner is None:
+        raise RuntimeError("Unable to initialize CoreBluetooth scanner.")
+    return scanner.scan(timeout)
 
 
 def connect_l2cap(service_uuid: str, psm: int, timeout: float = 5.0, peer_uuid: Optional[str] = None):

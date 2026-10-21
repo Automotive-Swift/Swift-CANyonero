@@ -28,7 +28,7 @@ from .annotations import (
     MessageAnnotator,
     print_annotation,
 )
-from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient
+from .ecuconnect import DEFAULT_ENDPOINT, EcuconnectClient, parse_endpoint
 from .health import HealthEventCursor, health_snapshot, health_summary, write_json
 from .test_runner import (
     open_channel_with_retry,
@@ -723,6 +723,44 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
+def _resolve_ble_endpoint(endpoint: str) -> str:
+    """Resolve an unqualified BLE endpoint once before running a command."""
+    parsed = parse_endpoint(endpoint)
+    if parsed.scheme != "ble" or parsed.peer_uuid is not None:
+        return endpoint
+    if sys.platform == "darwin":
+        from .macos_l2cap import discover_devices
+    elif sys.platform == "linux":
+        from .linux_l2cap import discover_devices
+    else:
+        raise typer.BadParameter("BLE discovery is supported on macOS and Linux only.", param_hint="--endpoint")
+
+    print(f"Scanning for BLE adapters advertising {parsed.host} (1 second)...", file=sys.stderr, flush=True)
+    devices = discover_devices(parsed.host, timeout=1.0)
+    if not devices:
+        raise typer.BadParameter(f"No BLE adapter advertising {parsed.host} was found. Check power and range.", param_hint="--endpoint")
+    if len(devices) == 1:
+        identifier = devices[0][0]
+    else:
+        for index, (peer, name) in enumerate(devices, 1):
+            print(f"  {index}. {name or 'Unnamed adapter'} ({peer})", file=sys.stderr)
+        if not sys.stdin.isatty():
+            raise typer.BadParameter(
+                "Multiple BLE adapters found. Pass --endpoint with /<peer-identifier> to select one without a terminal.",
+                param_hint="--endpoint",
+            )
+        while True:
+            print(f"Select adapter [1-{len(devices)}]: ", end="", file=sys.stderr, flush=True)
+            answer = sys.stdin.readline()
+            if not answer:
+                raise typer.Abort()
+            if answer.strip().isdigit() and 1 <= int(answer.strip()) <= len(devices):
+                identifier = devices[int(answer.strip()) - 1][0]
+                break
+            print("Enter a number from the list.", file=sys.stderr)
+    return f"ecuconnect-l2cap://{parsed.host}:{parsed.port}/{identifier}"
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -740,12 +778,12 @@ def main(
     ),
 ) -> None:
     ctx.ensure_object(dict)
-    ctx.obj["endpoint"] = endpoint
-    ctx.obj["rx_buffer"] = _parse_size_bytes(rx_buffer, "--rx-buffer")
-    ctx.obj["tx_buffer"] = _parse_size_bytes(tx_buffer, "--tx-buffer")
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit()
+    ctx.obj["endpoint"] = _resolve_ble_endpoint(endpoint)
+    ctx.obj["rx_buffer"] = _parse_size_bytes(rx_buffer, "--rx-buffer")
+    ctx.obj["tx_buffer"] = _parse_size_bytes(tx_buffer, "--tx-buffer")
 
 
 

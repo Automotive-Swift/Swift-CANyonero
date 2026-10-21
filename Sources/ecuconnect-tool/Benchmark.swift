@@ -100,7 +100,7 @@ struct Benchmark: ParsableCommand {
     @Flag(help: "Measure small requests and large responses using the debug firmware command.")
     var diagnostic = false
 
-    @Option(help: "Required serial check for --diagnostic after selecting the first matching adapter.")
+    @Option(help: "Required serial check for --diagnostic after selecting an adapter.")
     var expectedSerial: String?
 
     @Option(help: "Unmeasured diagnostic warmup in seconds.")

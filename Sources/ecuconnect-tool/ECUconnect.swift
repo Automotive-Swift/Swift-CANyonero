@@ -25,7 +25,7 @@ func parseECUconnectURL(_ endpoint: String) throws -> URL {
         guard let url = components.url else {
             throw ValidationError(invalidEndpointError)
         }
-        return url
+        return try selectBLEAdapter(for: url)
     }
 
     guard let components = URLComponents(string: "ecuconnect-tcp://\(trimmed)"),

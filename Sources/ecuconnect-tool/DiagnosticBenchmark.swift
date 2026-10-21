@@ -53,15 +53,17 @@ private final class DiagnosticBLESession: NSObject, CBCentralManagerDelegate, CB
     private var channel: CBL2CAPChannel?
     private let service: CBUUID
     private let psm: CBL2CAPPSM
+    private let selectedPeer: UUID?
     private var failure: Error?
     private var received: [UInt8] = []
     private var firstRX: UInt64?
     private var lastRX: UInt64 = 0
     var peerIdentifier: String { peer?.identifier.uuidString ?? "" }
 
-    init(service: String, psm: UInt16) {
+    init(service: String, psm: UInt16, selectedPeer: UUID?) {
         self.service = CBUUID(string: service)
         self.psm = CBL2CAPPSM(psm)
+        self.selectedPeer = selectedPeer
         super.init()
         central = CBCentralManager(delegate: self, queue: .main)
     }
@@ -110,8 +112,8 @@ private final class DiagnosticBLESession: NSObject, CBCentralManagerDelegate, CB
     }
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                         advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        guard peer == nil else { return }
-        peer = peripheral // First matching service, as with the existing benchmark.
+        guard peer == nil, selectedPeer == nil || peripheral.identifier == selectedPeer else { return }
+        peer = peripheral
         central.stopScan()
         peripheral.delegate = self
         central.connect(peripheral)
@@ -185,10 +187,11 @@ func runDiagnosticBenchmark(url: URL, serial: String, count: Int, warmup: Double
 #if canImport(CoreBluetooth)
     guard ["ecuconnect-l2cap", "ble"].contains(url.scheme?.lowercased() ?? ""),
           let service = url.host, let psm = UInt16(exactly: url.port ?? 129), psm > 0,
-          url.path.isEmpty || url.path == "/" else {
-        throw DiagnosticBenchmarkWire.Failure("Use ecuconnect-l2cap://FFF1:129 (first matching adapter).")
+          (url.path.isEmpty || url.path == "/" || UUID(uuidString: String(url.path.dropFirst())) != nil) else {
+        throw DiagnosticBenchmarkWire.Failure("Use ecuconnect-l2cap://FFF1:129[/<peripheral-uuid>].")
     }
-    let session = DiagnosticBLESession(service: service, psm: psm)
+    let session = DiagnosticBLESession(service: service, psm: psm,
+                                       selectedPeer: UUID(uuidString: String(url.path.dropFirst())))
     defer { session.close() }
     let started = DispatchTime.now().uptimeNanoseconds
     try session.connect()

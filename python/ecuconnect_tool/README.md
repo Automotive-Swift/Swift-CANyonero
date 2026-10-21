@@ -78,6 +78,10 @@ Use the ECUconnect L2CAP endpoint format (works on both macOS and Linux):
 ecuconnect-tool --url ecuconnect-l2cap://FFF1:129 info
 ```
 
+Without a peer identifier, the tool scans advertisements for one second and
+asks which adapter to use if several respond. In scripts with several adapters
+nearby, include the peer identifier in the URL.
+
 ### macOS
 
 Install CoreBluetooth bindings:

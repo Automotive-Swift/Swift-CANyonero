@@ -13,7 +13,7 @@ import select
 import socket
 import sys
 import time
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 # ---------------------------------------------------------------------------
 # BlueZ D-Bus discovery (system packages: python3-dbus, python3-gi)
@@ -30,11 +30,13 @@ def _discover_device(
     service_uuid: str,
     timeout: float,
     peer_filter: Optional[str] = None,
-) -> Tuple[str, int]:
+    collect_all: bool = False,
+) -> Union[Tuple[str, int], list[tuple[str, int, str]]]:
     """Discover a BLE device advertising *service_uuid*.
 
     Returns ``(bdaddr, addr_type)`` where *addr_type* is one of the
-    ``BDADDR_LE_*`` constants (1 = public, 2 = random).
+    ``BDADDR_LE_*`` constants (1 = public, 2 = random). With *collect_all*,
+    returns every observed address, address type, and advertised name.
 
     *peer_filter*, when given, is matched as a case-insensitive substring
     against the device BD_ADDR (e.g. ``"DC:DA:0C"``).
@@ -81,12 +83,13 @@ def _discover_device(
         _DBUS_OBJECT_MANAGER_IFACE,
     )
     objects = om.GetManagedObjects()
-    for path, ifaces in objects.items():
-        if _BLUEZ_DEVICE_IFACE not in ifaces:
-            continue
-        props = ifaces[_BLUEZ_DEVICE_IFACE]
-        if _device_matches(props):
-            return str(props["Address"]), _addr_type_int(props)
+    if not collect_all:
+        for path, ifaces in objects.items():
+            if _BLUEZ_DEVICE_IFACE not in ifaces:
+                continue
+            props = ifaces[_BLUEZ_DEVICE_IFACE]
+            if _device_matches(props):
+                return str(props["Address"]), _addr_type_int(props)
 
     # ------------------------------------------------------------------
     # Phase 1b — active LE scan with GLib mainloop timeout
@@ -97,16 +100,22 @@ def _discover_device(
         _BLUEZ_ADAPTER_IFACE,
     )
 
-    result: list[Tuple[str, int]] = []
+    result: dict[str, tuple[str, int, str]] = {}
     loop = GLib.MainLoop()
+
+    def _record(props):
+        if not _device_matches(props):
+            return
+        address = str(props["Address"])
+        result[address] = (address, _addr_type_int(props), str(props.get("Name", "")))
+        if not collect_all:
+            loop.quit()
 
     def _on_ifaces_added(path, ifaces):
         if _BLUEZ_DEVICE_IFACE not in ifaces:
             return
         props = ifaces[_BLUEZ_DEVICE_IFACE]
-        if _device_matches(props):
-            result.append((str(props["Address"]), _addr_type_int(props)))
-            loop.quit()
+        _record(props)
 
     bus.add_signal_receiver(
         _on_ifaces_added,
@@ -119,15 +128,13 @@ def _discover_device(
     def _on_properties_changed(interface, changed, invalidated, path=None):
         if interface != _BLUEZ_DEVICE_IFACE:
             return
-        if "UUIDs" not in changed:
+        if not any(key in changed for key in ("UUIDs", "RSSI", "ServiceData", "ManufacturerData")):
             return
         try:
             dev_obj = bus.get_object(_BLUEZ_BUS_NAME, path)
             dev_props = dbus.Interface(dev_obj, _DBUS_PROPERTIES_IFACE)
             all_props = dev_props.GetAll(_BLUEZ_DEVICE_IFACE)
-            if _device_matches(all_props):
-                result.append((str(all_props["Address"]), _addr_type_int(all_props)))
-                loop.quit()
+            _record(all_props)
         except dbus.DBusException:
             pass
 
@@ -146,23 +153,43 @@ def _discover_device(
         adapter.SetDiscoveryFilter(scan_filter)
     except dbus.DBusException:
         pass  # Older BlueZ may not support filters; scan anyway.
-    adapter.StartDiscovery()
-
-    GLib.timeout_add(int(timeout * 1000), loop.quit)
-    loop.run()
-
+    timer = None
     try:
-        adapter.StopDiscovery()
-    except dbus.DBusException:
-        pass
+        adapter.StartDiscovery()
+
+        def _stop_scan():
+            loop.quit()
+            return True
+
+        timer = GLib.timeout_add(max(1, int(timeout * 1000)), _stop_scan)
+        loop.run()
+    finally:
+        if timer is not None:
+            GLib.source_remove(timer)
+        try:
+            adapter.StopDiscovery()
+        except dbus.DBusException:
+            pass
+        bus.remove_signal_receiver(_on_ifaces_added, dbus_interface=_DBUS_OBJECT_MANAGER_IFACE, signal_name="InterfacesAdded")
+        bus.remove_signal_receiver(_on_properties_changed, dbus_interface=_DBUS_PROPERTIES_IFACE, signal_name="PropertiesChanged")
 
     if result:
-        return result[0]
+        matches = sorted(result.values())
+        return matches if collect_all else matches[0][:2]
 
     raise TimeoutError(
         f"No BLE device found advertising service {service_uuid} "
         f"within {timeout:.1f}s"
     )
+
+
+def discover_devices(service_uuid: str, timeout: float = 1.0) -> list[tuple[str, str]]:
+    """Return addresses and names seen during an active BLE scan."""
+    try:
+        matches = _discover_device(service_uuid, timeout, collect_all=True)
+    except TimeoutError:
+        return []
+    return [(address, name) for address, _addr_type, name in matches]
 
 
 def _find_adapter(bus) -> str:
