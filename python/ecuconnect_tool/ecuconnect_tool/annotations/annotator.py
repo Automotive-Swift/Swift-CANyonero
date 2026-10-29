@@ -325,8 +325,11 @@ def _read_dtc_information_details(report_type: int, data: List[int]) -> List[Det
         return [Field("Matching DTCs", str((data[4] << 8) | data[5]))]
     if report_type in (0x02, 0x0A, 0x15, 0x17):
         records = data[3:]   # skip 59, sub-function, statusAvailabilityMask
-        codes = [dtc_module.decode(record) for record in dtc_module.chunked(records, 4)]
-        return _dtc_details([code for code in codes if code], "no trouble codes reported")
+        # This reply carries no DTCFormatIdentifier, so SAE notation and descriptions are unproven.
+        details = [DTC("UDS 0x" + "".join(f"{byte:02X}" for byte in record[:3]),
+                       None, names.status_flags(record[3]))
+                   for record in dtc_module.chunked(records, 4) if any(record[:3])]
+        return details or [Note("no trouble codes reported")]
     return []
 
 

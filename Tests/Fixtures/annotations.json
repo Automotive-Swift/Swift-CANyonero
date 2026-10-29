@@ -433,8 +433,8 @@
       "expectedResponse": [
         " ✓  59 Read DTC Information",
         "     Report type: reportDTCByStatusMask",
-        "     U0D0420 — Network • Generic (SAE) • Vendor Specific – System internal failures [pending, confirmed]",
-        "     B001C60 — Body • Generic (SAE) • Circuit voltage out of range [testFailed, testFailedThisCycle, pending, confirmed]"
+        "     UDS 0xCD0420 [pending, confirmed]",
+        "     UDS 0x801C60 [testFailed, testFailedThisCycle, pending, confirmed]"
       ]
     },
     {

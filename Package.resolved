@@ -37,6 +37,15 @@
       }
     },
     {
+      "identity" : "ecuconnect-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "ssh://git@gitlab.com/mcu7/ECUconnect-SDK.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "815ab3385071000e92c122739d505179032386c2"
+      }
+    },
+    {
       "identity" : "foundationbandaid",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mickeyl/FoundationBandAid",
@@ -105,7 +114,7 @@
       "location" : "ssh://git@gitlab.com/a11086/swift-automotive",
       "state" : {
         "branch" : "master",
-        "revision" : "6a5d1f83c143a46f85cca62d0b0bd8a109d0423a"
+        "revision" : "fe6c220490509119173a4be2e78a0d6f4e0cce00"
       }
     },
     {

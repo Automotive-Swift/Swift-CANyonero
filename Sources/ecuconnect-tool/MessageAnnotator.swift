@@ -239,6 +239,9 @@ struct MessageAnnotator {
                 guard let dtc = response.dtc else { break }
                 return Self.dtcDetails([dtc], emptyNote: nil)
 
+            case .monitoringResults:
+                return [.field(label: label, value: Self.hexString(Array(message.bytes.dropFirst(2))))]
+
             case .invalid, .unknown, .oxygenSensorPositions, .performanceCounters:
                 // A few converters yield a typed status the generic response does
                 // not classify; their own descriptions are already localized.
@@ -419,7 +422,7 @@ struct MessageAnnotator {
 
         return dtcs.map { dtc in
             .dtc(
-                code: dtc.obd2,
+                code: dtc.displayCode,
                 explanation: DTCExplanations.explanation(for: dtc),
                 status: DiagnosticNames.statusFlags(dtc.state)
             )
